@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<!-- index.html : Personal portfolio of Jerzy Sukiennik. Engineering Blueprint. Single self-contained SPA (3 tabs), bilingual PL/EN, light/dark, live accent. -->
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jerzy Sukiennik : Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&family=Michroma&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%}
+body{font-family:'Inter',system-ui,sans-serif;background:#fbfbfa;color:#0c0e12;overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body.dark-ui{background:#0b0d11}
+img{display:block;max-width:100%}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font:inherit}
+a{text-decoration:none;color:inherit}
+
+/* ---------- TOP BAR (LIQUID GLASS) ---------- */
+body{--ui-accent:#1f2933;--bar-bg:color-mix(in srgb,var(--ui-accent) 6%,rgba(255,255,255,.62));--bar-edge:rgba(255,255,255,.6);--bar-line:rgba(12,14,18,.1);--ui-fg:#0c0e12;--ui-mut:rgba(12,14,18,.55);--ui-faint:rgba(12,14,18,.16);--ui-ctrl-bg:rgba(12,14,18,.03)}
+body.dark-ui{--bar-bg:color-mix(in srgb,var(--ui-accent) 10%,rgba(16,18,24,.55));--bar-edge:rgba(255,255,255,.14);--bar-line:rgba(255,255,255,.08);--ui-fg:#eef1f6;--ui-mut:rgba(238,241,246,.6);--ui-faint:rgba(238,241,246,.16);--ui-ctrl-bg:rgba(255,255,255,.04)}
+.bar{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;gap:12px;padding:9px 16px;background:var(--bar-bg);backdrop-filter:saturate(150%) blur(18px);-webkit-backdrop-filter:saturate(150%) blur(18px);border-bottom:1px solid var(--bar-line);box-shadow:inset 0 1px 0 var(--bar-edge),0 6px 24px rgba(12,14,18,.08);overflow-x:auto;scrollbar-width:none}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  body{--bar-bg:color-mix(in srgb,var(--ui-accent) 6%,rgba(248,249,250,.96))}
+  body.dark-ui{--bar-bg:color-mix(in srgb,var(--ui-accent) 10%,rgba(16,18,24,.96))}
+}
+.bar::-webkit-scrollbar{display:none}
+.bar-brand{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--ui-mut);white-space:nowrap;flex-shrink:0;cursor:pointer}
+.bar-spacer{flex:1;min-width:8px}
+.tg{display:flex;gap:6px;flex-shrink:0}
+.tg-btn{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;padding:7px 11px;border-radius:8px;border:1px solid var(--ui-faint);color:var(--ui-mut);transition:border-color .25s,color .25s;min-width:46px;text-align:center;background:none;white-space:nowrap}
+.tg-btn:hover{border-color:var(--ui-mut);color:var(--ui-fg)}
+.tab-btn.active{border-color:var(--ui-accent);color:var(--ui-fg)}
+
+/* ================= APP / THEME ================= */
+#app{--bg:#fbfbfa;--fg:#0c0e12;--mut:#5b6573;--line:#e2e5ea;--accent:#1f2933;--surf:#ffffff;
+  --glass-bg:color-mix(in srgb,var(--accent) 6%,rgba(255,255,255,.6));
+  --glass-border:color-mix(in srgb,var(--accent) 12%,rgba(255,255,255,.5));
+  --glass-edge:rgba(255,255,255,.55);
+  --glass-sheen:rgba(255,255,255,.35);
+  --glass-shadow:0 18px 50px rgba(15,20,30,.14);
+  --accent-text:var(--accent);
+  font-family:'Archivo',system-ui,sans-serif;background:var(--bg);color:var(--fg);min-height:100vh}
+#app.dark{--bg:#0b0d11;--fg:#eef1f6;--mut:#8893a3;--line:#1d222b;--surf:#10141a;
+  --glass-bg:color-mix(in srgb,var(--accent) 10%,rgba(18,20,26,.5));
+  --glass-border:color-mix(in srgb,var(--accent) 18%,rgba(255,255,255,.12));
+  --glass-edge:rgba(255,255,255,.16);
+  --glass-sheen:rgba(255,255,255,.08);
+  --glass-shadow:0 18px 50px rgba(0,0,0,.5);
+  --accent-text:color-mix(in srgb,var(--accent) 60%,#cfd6e0)}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 7vw}
+@media(min-width:760px){.wrap{padding:0 6vw}}
+
+/* panes */
+.tabpane{display:none;padding-top:56px}
+.tabpane.active{display:block}
+
+/* entrance */
+.reveal{opacity:0;transform:translateY(14px)}
+.tabpane.show .reveal{animation:rev .8s cubic-bezier(.2,.8,.2,1) forwards}
+.tabpane.show .r1{animation-delay:.05s}.tabpane.show .r2{animation-delay:.18s}.tabpane.show .r3{animation-delay:.32s}
+.tabpane.show .r4{animation-delay:.46s}.tabpane.show .r5{animation-delay:.6s}.tabpane.show .r6{animation-delay:.74s}
+@keyframes rev{to{opacity:1;transform:translateY(0)}}
+.mag{display:inline-flex;align-items:center;will-change:transform;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+
+/* ================= HERO / SECTIONS ================= */
+.hero{position:relative;padding:60px 0 0}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:46px 46px;opacity:.6;pointer-events:none;mask-image:linear-gradient(180deg,#000 50%,transparent)}
+.coord{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--accent-text);text-transform:uppercase;display:flex;gap:18px;align-items:center}
+.coord::before{content:"";width:6px;height:6px;border:1px solid var(--accent);display:block}
+.name{font-family:'Archivo',system-ui,sans-serif;font-weight:900;font-size:clamp(46px,11vw,118px);line-height:.9;letter-spacing:.01em;font-feature-settings:"kern" 1;margin:22px 0 0}
+.tag{font-family:'Inter',system-ui,sans-serif;font-size:clamp(16px,2.1vw,19px);color:var(--mut);max-width:540px;margin-top:22px;line-height:1.5}
+.hr{height:1px;background:var(--line);margin:46px 0 0}
+.sech{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);margin:0 0 18px;display:flex;gap:12px;align-items:center}
+.sech span{color:var(--accent-text)}
+
+/* GSP brand card */
+.brands{display:flex;flex-wrap:wrap;gap:14px}
+.brand-card{display:inline-flex;align-items:center;gap:16px;text-decoration:none;cursor:pointer;border:1px solid var(--line);border-radius:14px;padding:12px 20px 12px 12px;background:var(--surf);transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .3s}
+.brand-card:hover{transform:translateY(-3px);border-color:var(--accent)}
+.brand-logo{display:flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:10px;background:#0a0c10;flex-shrink:0;overflow:hidden}
+.brand-logo .gspwm{font-family:'Michroma',system-ui,sans-serif;font-weight:400;font-size:17px;letter-spacing:.04em;line-height:1;color:#fff}
+.brand-logo .gspimg{width:100%;height:100%;object-fit:cover}
+.brand-meta{display:flex;flex-direction:column;gap:4px}
+.brand-name{font-family:'Archivo',system-ui,sans-serif;font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--fg);transition:color .3s}
+.brand-sub{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.brand-card:hover .brand-name{color:var(--accent-text)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;border:1px solid var(--line);background:var(--line)}
+@media(min-width:680px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{padding:22px 18px;background:var(--surf)}
+.stat .num{font-family:'Archivo',system-ui,sans-serif;font-weight:800;font-size:38px;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--fg)}
+.stat .lab{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;margin-top:9px;opacity:.55}
+
+/* contact */
+.contact-grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:560px){.contact-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:860px){.contact-grid{grid-template-columns:1fr 1fr 1fr}}
+.contact-card{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surf);color:inherit;transition:transform .35s cubic-bezier(.2,.8,.2,1),border-color .3s}
+.contact-card:hover{transform:translateY(-3px);border-color:var(--accent)}
+.contact-card .cc-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.contact-card .cc-val{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:var(--fg);word-break:break-word;transition:color .3s}
+.contact-card:hover .cc-val{color:var(--accent-text)}
+.cc-tag{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--mut);margin-left:8px}
+
+/* ================= HONEYCOMB ================= */
+.honeysec{display:grid;grid-template-columns:1fr;gap:30px;align-items:center}
+@media(min-width:860px){.honeysec{grid-template-columns:.95fr 1.05fr}}
+.honeyhint{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--mut);max-width:300px;line-height:1.7}
+.honey{position:relative;width:300px;height:300px;margin:6px auto 0;transform-origin:center;transform:scale(var(--honey-scale,1))}
+@media(min-width:760px){.honey{width:360px;height:340px;margin:0 auto}}
+.cellpos{position:absolute;left:50%;top:50%;width:0;height:0}
+.cell{position:absolute;left:50%;top:50%;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;will-change:transform;transform:translate(-50%,-50%);border:1px solid var(--line);background:var(--surf);transition:width .42s cubic-bezier(.2,.8,.2,1),height .42s cubic-bezier(.2,.8,.2,1),border-color .3s,box-shadow .3s,opacity .3s,filter .3s}
+.cell .mono{position:absolute;width:44%;height:44%;object-fit:contain;transition:opacity .3s,filter .3s;filter:grayscale(1) brightness(.55) contrast(1.2)}
+#app.dark .cell .mono{filter:grayscale(1) brightness(2)}
+.cell .ic{position:absolute;width:44%;height:44%;object-fit:contain;opacity:0;transition:opacity .3s}
+.cell .detail{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px;opacity:0;pointer-events:none;transition:opacity .3s .12s}
+.cell .detail .dname{font-family:'Archivo',system-ui,sans-serif;font-weight:800;font-size:15px;letter-spacing:-.01em;color:var(--fg);margin-top:2px}
+.cell .detail .ddesc{font-family:'Inter',system-ui,sans-serif;font-size:11px;line-height:1.35;color:var(--mut);margin-top:5px;max-width:140px}
+.cell .detail .dico{width:26px;height:26px;object-fit:contain}
+.cell .detail .dbtn{margin-top:9px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.06em;color:var(--accent-text);border:1px solid var(--accent);border-radius:7px;padding:5px 10px;background:transparent;transition:background .2s,color .2s}
+.cell .detail .dbtn:hover{background:var(--accent);color:var(--surf)}
+.honey.has-active .cell{opacity:.32;filter:blur(1.2px)}
+.honey .cellpos.active{z-index:40}
+.honey .cellpos.active .cell{opacity:1;filter:none;width:182px!important;height:182px!important;background:var(--glass-bg);border-color:var(--glass-border);backdrop-filter:saturate(150%) blur(18px);-webkit-backdrop-filter:saturate(150%) blur(18px);box-shadow:inset 0 1px 0 var(--glass-edge),var(--glass-shadow)}
+.honey .cellpos.active .cell::before{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(150deg,var(--glass-sheen),transparent 55%);pointer-events:none}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .honey .cellpos.active .cell{background:color-mix(in srgb,var(--accent) 8%,var(--surf))}
+}
+.cellpos.active .cell .mono,.cellpos.active .cell .ic{opacity:0}
+.cellpos.active .cell .detail{opacity:1;pointer-events:auto}
+@keyframes fl1{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% - 6px))}}
+@keyframes fl2{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-50%,calc(-50% + 5px))}}
+@keyframes fl3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(calc(-50% + 4px),calc(-50% - 4px))}}
+@keyframes fl4{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(calc(-50% - 4px),calc(-50% + 4px))}}
+.cellpos.active .cell{animation-play-state:paused}
+
+/* ================= PROJECTS ================= */
+.proj-controls{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-bottom:22px}
+.ctrl-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctrl-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg-btn{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;padding:7px 11px;border-radius:8px;border:1px solid var(--line);color:var(--mut);background:none;transition:border-color .25s,color .25s}
+.seg-btn:hover{border-color:var(--mut);color:var(--fg)}
+.seg-btn.active{border-color:var(--accent);color:var(--fg)}
+.proj-empty{font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.06em;color:var(--mut);padding:30px 0}
+.tiles{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:720px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{border-radius:14px;overflow:hidden;transition:transform .4s cubic-bezier(.2,.8,.2,1),border-color .3s;border:1px solid var(--line);background:var(--surf)}
+.tile:hover{border-color:var(--accent)}
+.tile-art{height:150px;position:relative;display:flex;align-items:flex-end;padding:16px;overflow:hidden;background:repeating-linear-gradient(45deg,var(--line),var(--line) 1px,transparent 1px,transparent 11px),var(--surf)}
+.tile-art.clk{cursor:pointer}
+.tile-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
+.tile-art .ptitle{font-family:'Archivo',system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-.012em;line-height:.98;position:relative;z-index:2;color:var(--fg)}
+.tile-art::after{content:attr(data-c);position:absolute;top:12px;right:14px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--accent-text);z-index:2}
+.tile-body{padding:16px}
+.tile-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.tile-name{font-size:16px;font-weight:700}
+.tile-name.clk{cursor:pointer}
+.tile-tag{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--mut);margin-top:6px;line-height:1.4}
+.diff{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.05em;opacity:.7;color:var(--mut);flex-shrink:0}
+.status{display:inline-flex;align-items:center;gap:7px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-top:11px;color:var(--mut)}
+.dot{width:8px;height:8px;border-radius:50%}
+.dot.live{animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 currentColor;opacity:1}50%{box-shadow:0 0 0 5px transparent;opacity:.55}}
+.more{margin-top:14px;font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;padding:8px 14px;border-radius:8px;transition:all .3s;border:1px solid var(--line);color:var(--fg)}
+.more:hover{border-color:var(--accent);color:var(--accent-text)}
+.expand{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.2,.8,.2,1)}
+.expand>div{overflow:hidden}
+.tile.open .expand{grid-template-rows:1fr}
+.exp-inner{position:relative;padding:16px;margin-top:15px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg);backdrop-filter:saturate(150%) blur(20px);-webkit-backdrop-filter:saturate(150%) blur(20px);box-shadow:inset 0 1px 0 var(--glass-edge),var(--glass-shadow);font-family:'Inter',system-ui,sans-serif;font-size:13.5px;line-height:1.65;color:var(--fg)}
+.exp-inner::before{content:"";position:absolute;inset:0;border-radius:12px;background:linear-gradient(160deg,var(--glass-sheen),transparent 50%);pointer-events:none}
+.exp-inner>*{position:relative}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .exp-inner{background:color-mix(in srgb,var(--accent) 7%,var(--surf))}
+}
+.exp-block{margin-top:12px}
+.exp-block .blab{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);display:block;margin-bottom:5px}
+.exp-meta{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.04em;margin-top:12px;display:grid;gap:5px;color:var(--mut)}
+.chip{display:inline-block;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.06em;padding:4px 9px;border:1px solid var(--line);border-radius:7px;color:var(--mut);margin:0 6px 6px 0}
+.exp-links{margin-top:12px;display:flex;flex-wrap:wrap;gap:14px}
+.exp-links a{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.06em;color:var(--accent-text);transition:opacity .2s}
+.exp-links a:hover{opacity:.7}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;transition-duration:.06s!important}
+  .cell{animation:none!important}
+  .reveal{opacity:1!important;transform:none!important}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="bar-brand" id="brand">JS / PORTFOLIO</div>
+  <div class="tg nav-tabs">
+    <button class="tg-btn tab-btn active" data-tab="home"></button>
+    <button class="tg-btn tab-btn" data-tab="projects"></button>
+    <button class="tg-btn tab-btn" data-tab="skills"></button>
+  </div>
+  <div class="bar-spacer"></div>
+  <div class="tg">
+    <button class="tg-btn" id="tLang">PL</button>
+    <button class="tg-btn" id="tTheme">JASNY</button>
+  </div>
+</div>
+
+<div id="app">
+  <div class="tabpane" id="tab-home"></div>
+  <div class="tabpane" id="tab-projects"></div>
+  <div class="tabpane" id="tab-skills"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+/* ---------------- DATA (inlined from data/*.json, _note keys dropped) ---------------- */
+let SITE={
+  identity:{
+    name:"Jerzy Sukiennik",
+    accent:"#1f2933",
+    motto:{
+      pl:"Projektuję, drukuję, koduję. Czasem coś wystrzeli.",
+      en:"I build things that fly. And a few that don't crash."
+    }
+  },
+  stats:[
+    {key:"projects",value:5,label:{pl:"Projekty",en:"Projects"}},
+    {key:"brands",value:1,label:{pl:"Marki",en:"Brands"}},
+    {key:"since",value:2025,isYear:true,label:{pl:"Od",en:"Since"}},
+    {key:"tools",value:9,label:{pl:"Narzędzia",en:"Tools"}}
+  ],
+  brands:[
+    {name:"GSP",fullName:{pl:"Gzowo Space Program",en:"Gzowo Space Program"},role:{pl:"Założyciel",en:"Founder"},url:"https://gspaerospace.pl",logo:"wordmark-michroma"}
+  ],
+  contact:{
+    emails:["jerzysukiennik10@gmail.com","kontakt@gspaerospace.pl","kalakasanyt@gmail.com"],
+    github:"https://github.com/JerzySukiennik",
+    instagram:[
+      {handle:"jurek_sukiennik",url:"https://instagram.com/jurek_sukiennik",label:{pl:"osobisty",en:"personal"}},
+      {handle:"gzowo_space_program",url:"https://instagram.com/gzowo_space_program",label:{pl:"GSP",en:"GSP"}}
+    ],
+    x:{handle:"kalakasanyt",url:"https://x.com/kalakasanyt"}
+  }
+};
+
+let SKILLS=[
+  {rank:1,name:"Claude Code",slug:"claude",hasProjects:true,desc:{pl:"Agentowy asystent AI do kodowania prosto w terminalu.",en:"Agentic AI coding assistant right in the terminal."}},
+  {rank:2,name:"Bambu Studio",slug:"bambulab",hasProjects:false,desc:{pl:"Slicer do druku 3D na drukarkach Bambu Lab.",en:"3D-print slicer for Bambu Lab printers."}},
+  {rank:3,name:"OpenRocket",slug:null,hasProjects:false,desc:{pl:"Symulator projektowania i lotu rakiet modelarskich.",en:"Model-rocket design and flight simulator."}},
+  {rank:4,name:"OpenClaw",slug:null,logo:"assets/openclaw-logo.svg",hasProjects:false,desc:{pl:"Otwartoźródłowy, lokalny agent AI łączący modele z Twoim systemem i narzędziami.",en:"Open-source local AI agent linking LLMs to your system and tools."}},
+  {rank:5,name:"GitHub",slug:"github",hasProjects:true,desc:{pl:"Hosting kodu i kontrola wersji projektów.",en:"Code hosting and version control."}},
+  {rank:6,name:"Netlify",slug:"netlify",hasProjects:true,desc:{pl:"Hosting i błyskawiczny deploy stron statycznych.",en:"Hosting and instant deploy for static sites."}},
+  {rank:7,name:"Blender",slug:"blender",hasProjects:false,desc:{pl:"Modelowanie, rendering i animacja 3D.",en:"3D modeling, rendering and animation."}},
+  {rank:8,name:"Visual Studio Code",slug:null,hasProjects:false,desc:{pl:"Rozszerzalny edytor kodu.",en:"Extensible code editor."}},
+  {rank:9,name:"OpenSCAD",slug:"openscad",hasProjects:false,desc:{pl:"Parametryczny CAD 3D opisywany kodem.",en:"Code-based parametric 3D CAD."}}
+];
+
+/* honeycomb layout, index = rank-1; sizes strictly decreasing */
+const HONEY=[
+  {sz:104,x:   0,y:   0,fl:'fl1'},
+  {sz: 92,x:-104,y: -30,fl:'fl2'},
+  {sz: 82,x:  98,y: -40,fl:'fl3'},
+  {sz: 74,x: -86,y:  78,fl:'fl4'},
+  {sz: 68,x:  94,y:  72,fl:'fl1'},
+  {sz: 62,x:  -4,y:-118,fl:'fl2'},
+  {sz: 57,x:  10,y: 120,fl:'fl3'},
+  {sz: 52,x:-150,y:  -2,fl:'fl4'},
+  {sz: 47,x: 150,y:  10,fl:'fl1'}
+];
+const SICOLOR={claude:"D97757",bambulab:"00AE42",github:"181717",netlify:"00C7B7",blender:"E87D0D",openscad:"F9D72C"};
+
+let PROJECTS=[
+  {name:"Galeria Gzowo",url:"https://galeria-gzowo.netlify.app",repo:null,startDate:"2026-06-20",endDate:"2026-06-23",difficulty:8,tools:["Claude Code","Firebase","Netlify"],
+   tagline:{pl:"Rodzinna galeria 3D z multiplayerem i kinem",en:"A 3D family gallery with multiplayer and cinema"},
+   description:{pl:"Galeria Gzowo to grywalna galeria zdjęć 3D w przeglądarce, zrobiona jako prezent na Dzień Ojca. Chodzisz po pokojach z rodzinnymi zdjęciami, wchodzisz do kina z trzema salami i odkrywasz sekretny pokój za ekranem z interaktywnymi zwierzętami. Można grać razem przez kod pokoju: widać nawzajem swoje awatary, a muzyka, film i interakcje są zsynchronizowane. Całość działa płynnie nawet na słabym sprzęcie.",en:"Galeria Gzowo is a playable 3D photo gallery in the browser, made as a Father's Day gift. You walk through rooms of family photos, enter a cinema with three halls, and find a secret room behind the screen full of interactive animals. You can play together with a room code: everyone sees each other's avatars, and the music, film and interactions stay in sync. It all runs smoothly even on weak hardware."},
+   howToUse:{pl:"Wejdź na stronę, kliknij Odkryj Gzowo i poruszaj się klawiszami WASD oraz myszką. Klikasz zdjęcia żeby je obejrzeć, wchodzisz do kina (G żeby usiąść, klik żeby puścić film), a przez ekran przejdziesz do sekretnego pokoju ze zwierzętami. Żeby grać z kimś, wejdź w Multiplayer i podaj kod pokoju.",en:"Open the site, click Discover Gzowo and move with WASD and the mouse. Click photos to view them, enter the cinema (G to sit, click to start a film), and walk through the screen into the secret animal room. To play with someone, open Multiplayer and share the room code."},
+   image:"assets/galeria-gzowo-cover.png"},
+  {name:"Benejnej Assistant",url:"https://benejnej-assistant.netlify.app",repo:"https://github.com/JerzySukiennik/benejnej-assistant",startDate:"2026-05-26",endDate:"2026-06-16",difficulty:8,tools:["Claude Code","Netlify","GitHub","Google Gemini"],
+   tagline:{pl:"Asystent AI ze słodką myszką 3D",en:"An AI assistant with a cute 3D mouse"},
+   description:{pl:"Benejnej to aplikacja-asystent (PWA) z proceduralną myszką w 3D, która mieszka na świecącym, izometrycznym kafelku. Rozmawia przez AI Gemini, otwiera wizualne karty z pogodą, kryptowalutami i newsami, ma edytowalny board, codzienny briefing, głos (czyta odpowiedzi i reaguje na 'Hej Benejnej'), rozpoznaje zdjęcia oraz pełne PL/EN. Kafelek pokazuje realną pogodę Twojej okolicy, a mysz przebiera się i bawi animacjami. Całość to jeden plik HTML/CSS/JS.",en:"Benejnej is an assistant PWA with a procedural 3D mouse that lives on a glowing isometric tile. It chats through the Gemini AI, opens visual cards for weather, crypto and news, has an editable board, a daily briefing, voice (it reads replies aloud and answers to 'Hey Benejnej'), photo understanding and full Polish and English. The tile shows the real weather of your area, and the mouse changes outfits and plays small animations. The whole thing is a single HTML/CSS/JS file."},
+   howToUse:{pl:"Wejdź na stronę (możesz zainstalować jako apkę na telefonie). Pisz albo mów do myszki w czacie, lub użyj komend ze slasha jak /weather, /crypto, /pomodoro. W Ustawieniach zmienisz język, motyw, głos, osobowość i kolor myszki. Otwórz Board, żeby przypiąć własne kafelki.",en:"Open the site (you can install it as an app on your phone). Type or talk to the mouse in chat, or use slash commands like /weather, /crypto, /pomodoro. In Settings you can change the language, theme, voice, personality and the mouse color. Open the Board to pin your own tiles."},
+   image:"assets/benejnej.png"},
+  {name:"Mars Logistics Sandbox",url:"https://mars-logistics-game.netlify.app/",repo:null,startDate:"2026-06-01",endDate:null,difficulty:7,tools:["Claude Code","Netlify"],
+   tagline:{pl:"Zbuduj flotę roverów i opanuj logistykę Marsa",en:"Build a rover fleet, run Mars logistics"},
+   description:{pl:"Marsjański sandbox logistyczny w 3D. Budujesz wyspecjalizowane rovery z modułów (kopacz, zbieracz, zwiadowca), wydobywasz rudę, wozisz ją do bazy i sprzedajesz, a za zarobek rozbudowujesz flotę. Pojazdy mają realną fizykę jazdy na proceduralnie generowanym terenie, dochodzi zarządzanie baterią i ładowaniem oraz zapis postępu. Całość to jeden plik HTML oparty na Three.js i Cannon-es, bez frameworków.",en:"A 3D Mars logistics sandbox. You build specialized rovers from modules (miner, collector, scout), mine ore, haul it back to base and sell it, then grow your fleet with the profit. Vehicles use real driving physics on procedurally generated terrain, with battery and charging management plus saved progress. The whole thing is a single HTML file built on Three.js and Cannon-es, with no frameworks."},
+   howToUse:{pl:"Otwórz grę w przeglądarce. Steruj aktywnym roverem na WASD, przełączaj pojazdy klawiszami 1-9 lub TAB. Kopaczem wydobywasz rudę (przytrzymaj E przy złożu), zbieraczem ją podnosisz (klik) i odwozisz na platformę bazy, gdzie sprzedaje się automatycznie. Za kredyty rozbudowujesz flotę w trybie budowania (B), a baterię ładujesz kablem przy bazie lub panelami słonecznymi.",en:"Open the game in a browser. Drive the active rover with WASD and switch vehicles with 1-9 or TAB. Use a miner to extract ore (hold E near a deposit), a collector to pick it up (click) and haul it to the base platform where it sells automatically. Spend credits to expand your fleet in build mode (B), and recharge batteries with the cable at base or with solar panels."},
+   image:null},
+  {name:"Modular",url:"https://play-modular.netlify.app",repo:"https://github.com/JerzySukiennik/civ-game",startDate:"2026-05-25",endDate:"2026-06-13",difficulty:7,tools:["Firebase","Netlify","GitHub","Claude Code"],
+   tagline:{pl:"Kooperacyjna piaskownica cywilizacyjna 3D z multiplayerem",en:"Co-op 3D civilization sandbox with multiplayer"},
+   description:{pl:"Modular to kooperacyjna gra 3D typu piaskownica, w której budujesz i rozwijasz cywilizację na rozrastającym się świecie. Jest tu pełny łańcuch logistyczny (depoty, magazyny, drony), sieć energetyczna, drzewko technologii, rakiety, łodzie podwodne, walka z barbarzyńcami, pogoda, role graczy i dynamiczne wydarzenia. Całość działa w czasie rzeczywistym przez multiplayer na Firebase, więc możesz grać razem z drugą osobą na jednej mapie. Zbudowana jako jeden plik HTML na silniku Three.js.",en:"Modular is a co-op 3D sandbox game where you build and grow a civilization on an expanding world. It has a full logistics chain (depots, warehouses, drones), a power grid, a tech tree, rockets, submarines, barbarian combat, weather, player roles and dynamic events. Everything runs in real time over Firebase multiplayer, so you can play together with another person on one map. It is built as a single HTML file on the Three.js engine."},
+   howToUse:{pl:"Wybierz tryb Solo albo Multiplayer (stwórz grę jako host albo dołącz kodem). Stawiaj budynki na siatce, łącz producentów z depotami i magazynami, a drony rozwożą surowce do wspólnego skarbca. Rozwijaj technologie, buduj rakiety, broń się przed barbarzyńcami i reaguj na pogodę oraz wydarzenia. W multiplayerze każdy gracz wybiera rolę z własnymi bonusami i gracie razem na jednej mapie.",en:"Pick Solo or Multiplayer mode (create a game as host or join with a code). Place buildings on the grid, connect producers to depots and warehouses, and drones carry the resources to a shared treasury. Research technologies, build rockets, defend against barbarians and react to weather and events. In multiplayer each player picks a role with its own bonuses and you play together on one map."},
+   image:"assets/modular.png"},
+  {name:"GSP_DK",url:"https://gsp-brand-kit.netlify.app",repo:null,startDate:"2026-06-26",endDate:"2026-06-26",difficulty:4,tools:["Claude Code","Netlify","Inkscape"],
+   tagline:{pl:"Animowany brand kit z doklejaniem końcówek w przeglądarce",en:"Animated brand kit with in-browser outro merging"},
+   description:{pl:"Kompletny animowany pakiet brandowy programu rakietowego GSP, zbudowany z jednego wektorowego logo (Michroma + Saira). Zawiera 72 końcówki wideo w 3 stylach i 4 motywach, gify do podpisu w Gmailu oraz profilówki, wszystko renderowane klatka po klatce z HTML przez własny pipeline (Playwright + ffmpeg) z syntezowanym dźwiękiem. Całość działa na stronie, gdzie z telefonu wybierasz końcówkę, wgrywasz swój film rakietowy i sklejasz je w przeglądarce, a potem zapisujesz do galerii.",en:"A complete animated brand kit for the GSP rocketry program, built from a single vector logo (Michroma + Saira). It includes 72 video outros in 3 styles and 4 themes, Gmail signature GIFs and profile pictures, all rendered frame by frame from HTML through a custom pipeline (Playwright + ffmpeg) with synthesized sound. The whole thing runs on a site where, from your phone, you pick an outro, upload your rocket video and merge them in the browser, then save it to your gallery."},
+   howToUse:{pl:"Wejdź na stronę, przejrzyj końcówki, gify i profilówki, pobierz pojedyncze pliki albo wszystko w ZIP. Żeby dodać końcówkę do swojego filmu, otwórz narzędzie „Doklej outro\", wybierz styl, wgraj film i zapisz gotowy klip do galerii.",en:"Open the site, browse the outros, GIFs and profile pictures, and download single files or everything as a ZIP. To add an ending to your own video, open the merge tool, pick a style, upload your clip and save the finished video to your gallery."},
+   image:"assets/gsp-dk.png"}
+];
+
+/* ---------------- I18N (UI strings) ---------------- */
+const I18N={
+  pl:{
+    tabHome:"Główna",tabProjects:"Projekty",tabSkills:"Umiejętności",
+    themeLight:"JASNY",themeDark:"CIEMNY",
+    secBrand:"Marka",secStats:"W liczbach",secContact:"Kontakt",secSkills:"Umiejętności",secProjects:"Projekty",
+    coord:"52.4064° N · 16.9252° E · BUILD LOG",
+    honeyHint:"Narzędzia których używam codziennie. Najedź na kółko (albo dotknij na telefonie), żeby je otworzyć. Większe znaczy pewniej.",
+    projectsBtn:"projekty",
+    sortLabel:"Sortuj",filterLabel:"Filtr narzędzia",
+    sortDiff:"trudność",sortDate:"data",sortName:"nazwa",filterAll:"wszystkie",
+    more:"więcej",less:"mniej",inprog:"w trakcie",done:"ukończony",
+    dates:"Daty",how:"Jak używać",tools:"Narzędzia",links:"Linki",open:"otwórz",repo:"repo",
+    empty:"brak projektów",
+    contactEmail:"E-mail",contactGithub:"GitHub",contactInsta:"Instagram",contactX:"X"
+  },
+  en:{
+    tabHome:"Home",tabProjects:"Projects",tabSkills:"Skills",
+    themeLight:"LIGHT",themeDark:"DARK",
+    secBrand:"Brand",secStats:"By the numbers",secContact:"Contact",secSkills:"Skills",secProjects:"Projects",
+    coord:"52.4064° N · 16.9252° E · BUILD LOG",
+    honeyHint:"The tools I reach for daily. Hover a circle (or tap on mobile) to open it. Bigger means more comfortable.",
+    projectsBtn:"projects",
+    sortLabel:"Sort",filterLabel:"Filter by tool",
+    sortDiff:"difficulty",sortDate:"date",sortName:"name",filterAll:"all",
+    more:"more",less:"less",inprog:"in progress",done:"done",
+    dates:"Dates",how:"How to use",tools:"Tools",links:"Links",open:"open",repo:"repo",
+    empty:"no projects",
+    contactEmail:"Email",contactGithub:"GitHub",contactInsta:"Instagram",contactX:"X"
+  }
+};
+
+let state={lang:'pl',theme:'light',accent:'#1f2933',tab:'home',projSort:'difficulty',projFilter:null};
+function L(){return I18N[state.lang];}
+const TODAY="2026-06-27";
+
+const app=document.getElementById('app');
+const homePane=document.getElementById('tab-home');
+const projPane=document.getElementById('tab-projects');
+const skillsPane=document.getElementById('tab-skills');
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ---------------- LOGO RESOLUTION (3-tier) ---------------- */
+function initials(name){
+  const parts=name.trim().split(/\s+/);
+  if(parts.length>=2)return (parts[0][0]+parts[1][0]).toUpperCase();
+  const caps=name.replace(/[^A-Za-z]/g,'').match(/[A-Z]/g);
+  if(caps&&caps.length>=2)return (caps[0]+caps[1]).toUpperCase();
+  return name.slice(0,2).toUpperCase();
+}
+window.monoFallback=function(name){
+  const d=document.createElement('div');
+  d.className='mono';d.style.display='flex';d.style.alignItems='center';d.style.justifyContent='center';
+  d.style.fontFamily="'Space Mono',monospace";d.style.fontWeight='700';d.style.fontSize='13px';d.style.opacity='.7';
+  d.style.filter='none';d.style.color='var(--mut)';
+  d.textContent=initials(name);
+  return d;
+};
+function monoFallbackHTML(name){
+  return `<div class="mono" style="display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;opacity:.7;filter:none;color:var(--mut)">${esc(initials(name))}</div>`;
+}
+function colorFallbackHTML(name){
+  return `<div class="ic" style="display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--accent-text)">${esc(initials(name))}</div>`;
+}
+function logoLayers(sk){
+  const nm=esc(sk.name);
+  if(sk.logo){
+    const mono=`<img class="mono" alt="" src="${esc(sk.logo)}" onerror="this.replaceWith(monoFallback('${nm}'))">`;
+    const col=`<img class="ic" alt="" src="${esc(sk.logo)}" style="filter:none">`;
+    return mono+col;
+  }
+  if(sk.slug){
+    const c=SICOLOR[sk.slug]||'888888';
+    const mono=`<img class="mono" alt="" src="https://cdn.simpleicons.org/${sk.slug}" onerror="this.replaceWith(monoFallback('${nm}'))">`;
+    const col=`<img class="ic" alt="" src="https://cdn.simpleicons.org/${sk.slug}/${c}" onerror="this.style.display='none'">`;
+    return mono+col;
+  }
+  return monoFallbackHTML(sk.name)+colorFallbackHTML(sk.name);
+}
+function detailIco(sk){
+  if(sk.logo)return `<img class="dico" alt="" src="${esc(sk.logo)}">`;
+  if(sk.slug){const c=SICOLOR[sk.slug]||'888888';return `<img class="dico" alt="" src="https://cdn.simpleicons.org/${sk.slug}/${c}" onerror="this.style.display='none'">`;}
+  return `<div class="dico" style="display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--accent-text)">${esc(initials(sk.name))}</div>`;
+}
+
+/* ---------------- HOME ---------------- */
+function brandTileHTML(){
+  const b=SITE.brands[0];
+  const host=b.url.replace(/^https?:\/\//,'').replace(/\/$/,'');
+  return `<a class="brand-card mag" href="${esc(b.url)}" target="_blank" rel="noopener" title="${esc(b.fullName[state.lang])}">
+    <span class="brand-logo"><img class="gspimg" alt="GSP" src="assets/gsp-logo.png" onerror="this.replaceWith(makeGspWordmark())"></span>
+    <span class="brand-meta">
+      <span class="brand-name">${esc(b.fullName[state.lang])}</span>
+      <span class="brand-sub">${esc(b.role[state.lang])} · ${esc(host)}</span>
+    </span>
+  </a>`;
+}
+window.makeGspWordmark=function(){
+  const s=document.createElement('span');
+  s.className='gspwm';s.textContent='GSP';
+  return s;
+};
+function statsHTML(){
+  return SITE.stats.map(s=>{
+    const yr=s.isYear?' data-year="1"':'';
+    return `<div class="stat"><div class="num" data-count="${s.value}"${yr}>0</div><div class="lab">${esc(s.label[state.lang])}</div></div>`;
+  }).join('');
+}
+function contactHTML(){
+  const c=SITE.contact,t=L();
+  const card=(href,label,val,blank)=>`<a class="contact-card" href="${esc(href)}"${blank?' target="_blank" rel="noopener"':''}><span class="cc-label">${esc(label)}</span><span class="cc-val">${val}</span></a>`;
+  let out='';
+  c.emails.forEach(e=>{ out+=card('mailto:'+e, t.contactEmail, esc(e), false); });
+  out+=card(c.github, t.contactGithub, esc('JerzySukiennik'), true);
+  c.instagram.forEach(ig=>{ out+=card(ig.url, t.contactInsta, esc('@'+ig.handle)+`<span class="cc-tag">${esc(ig.label[state.lang])}</span>`, true); });
+  out+=card(c.x.url, t.contactX, esc('@'+c.x.handle), true);
+  return `<div class="contact-grid">${out}</div>`;
+}
+function nameHTML(){
+  const parts=SITE.identity.name.split(/\s+/);
+  if(parts.length>=2)return esc(parts[0])+'<br>'+esc(parts.slice(1).join(' '));
+  return esc(SITE.identity.name);
+}
+function renderHome(){
+  homePane.innerHTML=`
+  <div class="hero">
+    <div class="wrap">
+      <div class="grid-bg"></div>
+      <div class="coord reveal r1">${esc(L().coord)}</div>
+      <h1 class="name reveal r2">${nameHTML()}</h1>
+      <p class="tag reveal r3">${esc(SITE.identity.motto[state.lang])}</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="hr reveal r3"></div>
+    <div style="padding:34px 0">
+      <div class="sech reveal r3"><span>/</span> ${esc(L().secBrand)}</div>
+      <div class="brands reveal r4">${brandTileHTML()}</div>
+    </div>
+    <div class="hr"></div>
+    <div style="padding:34px 0">
+      <div class="sech reveal r4"><span>/</span> ${esc(L().secStats)}</div>
+      <div class="stats reveal r4">${statsHTML()}</div>
+    </div>
+    <div class="hr"></div>
+    <div style="padding:40px 0 80px">
+      <div class="sech reveal r5"><span>/</span> ${esc(L().secContact)}</div>
+      <div class="reveal r5">${contactHTML()}</div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- SKILLS ---------------- */
+function renderSkills(){
+  const cells=SKILLS.slice(0,HONEY.length).map((sk,i)=>{
+    const lay=HONEY[i];
+    if(!lay) return '';
+    const dur=(5.5+(i%4)*0.8).toFixed(1);
+    const delay=((i*0.37)%2).toFixed(2);
+    const btn=sk.hasProjects?`<button class="dbtn" type="button" data-skill="${esc(sk.name)}">${esc(L().projectsBtn)} →</button>`:'';
+    return `<div class="cellpos" data-skill="${esc(sk.name)}" style="margin-left:${lay.x}px;margin-top:${lay.y}px">
+      <div class="cell" style="width:${lay.sz}px;height:${lay.sz}px;animation:${lay.fl} ${dur}s ease-in-out infinite ${delay}s">
+        ${logoLayers(sk)}
+        <div class="detail">
+          ${detailIco(sk)}
+          <div class="dname">${esc(sk.name)}</div>
+          <div class="ddesc">${esc(sk.desc[state.lang])}</div>
+          ${btn}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  skillsPane.innerHTML=`
+  <div class="wrap">
+    <div style="padding:40px 0 80px">
+      <div class="sech reveal r1"><span>/</span> ${esc(L().secSkills)}</div>
+      <div class="honeysec">
+        <div class="reveal r2"><div class="honey" id="honey">${cells}</div></div>
+        <div class="reveal r2"><p class="honeyhint">${esc(L().honeyHint)}</p></div>
+      </div>
+    </div>
+  </div>`;
+}
+function setHoneyScale(){
+  const honey=document.getElementById('honey');if(!honey)return;
+  const s=Math.max(0.78,Math.min(1,(window.innerWidth-32)/360));
+  honey.style.setProperty('--honey-scale',s.toFixed(3));
+}
+
+/* ---------------- PROJECTS ---------------- */
+function computeFilterTools(){const seen=[];PROJECTS.forEach(p=>(p.tools||[]).forEach(t=>{if(!seen.includes(t))seen.push(t);}));return seen;}
+
+function statusOf(p){return p.endDate===null?'live':'done';}
+function endYear(p){return p.endDate?p.endDate.slice(0,4):'';}
+function sortProjects(arr){
+  const a=arr.map((p,i)=>({p,i}));
+  const cmp={
+    difficulty:(x,y)=>{
+      if(y.p.difficulty!==x.p.difficulty)return y.p.difficulty-x.p.difficulty;
+      const xl=x.p.endDate===null,yl=y.p.endDate===null;
+      if(xl!==yl)return xl?-1:1;
+      if(x.p.startDate!==y.p.startDate)return y.p.startDate<x.p.startDate?-1:1;
+      return x.i-y.i;
+    },
+    date:(x,y)=>{
+      const xe=x.p.endDate||TODAY,ye=y.p.endDate||TODAY;
+      if(xe!==ye)return ye<xe?-1:1;
+      if(x.p.startDate!==y.p.startDate)return y.p.startDate<x.p.startDate?-1:1;
+      return x.i-y.i;
+    },
+    name:(x,y)=>{
+      const c=x.p.name.localeCompare(y.p.name);
+      return c!==0?c:x.i-y.i;
+    }
+  };
+  a.sort(cmp[state.projSort]||cmp.difficulty);
+  return a.map(o=>o.p);
+}
+function filterProjects(arr){
+  if(!state.projFilter)return arr.slice();
+  return arr.filter(p=>p.tools.includes(state.projFilter));
+}
+function tileHTML(p,idx){
+  const st=statusOf(p);
+  const hasImg=!!p.image;
+  const refInit=initials(p.name).replace(/[^A-Z0-9]/g,'')||'PRJ';
+  const refTag=`REF: ${refInit}-${String(idx+1).padStart(2,'0')}`;
+  const clickable=!!p.url;
+  let art;
+  if(hasImg){
+    art=`<div class="tile-art${clickable?' clk':''}" data-c="${esc(refTag)}"${clickable?' data-open="1"':''}>
+      <img alt="${esc(p.name)}" src="${esc(p.image)}" onerror="this.remove()">
+    </div>`;
+  }else{
+    const np=p.name.split(/\s+/);
+    const line=np.length>=2?esc(np[0])+'<br>'+esc(np.slice(1).join(' ')):esc(p.name);
+    art=`<div class="tile-art${clickable?' clk':''}" data-c="${esc(refTag)}"${clickable?' data-open="1"':''}>
+      <div class="ptitle">${line}</div>
+    </div>`;
+  }
+  const dotStyle=st==='live'?'background:currentColor;color:#19b36b':'background:currentColor;color:#9aa0ab';
+  const statusTxt=st==='live'?esc(L().inprog):esc(L().done)+' · '+endYear(p);
+  const dotCls=st==='live'?'dot live':'dot';
+
+  /* expanded panel */
+  let dates;
+  if(st==='live'){dates=esc(p.startDate)+' → '+esc(L().inprog);}
+  else{dates=esc(p.startDate)+' – '+esc(p.endDate);}
+  let exp=`<p class="exp-desc">${esc(p.description[state.lang])}</p>`;
+  exp+=`<div class="exp-block"><span class="blab">${esc(L().dates)}</span>${dates}</div>`;
+  if(p.howToUse){exp+=`<div class="exp-block"><span class="blab">${esc(L().how)}</span>${esc(p.howToUse[state.lang])}</div>`;}
+  exp+=`<div class="exp-block"><span class="blab">${esc(L().tools)}</span>${p.tools.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`;
+  let links='';
+  if(p.url)links+=`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(L().open)} →</a>`;
+  if(p.repo)links+=`<a href="${esc(p.repo)}" target="_blank" rel="noopener">${esc(L().repo)} →</a>`;
+  if(links)exp+=`<div class="exp-block"><span class="blab">${esc(L().links)}</span><div class="exp-links">${links}</div></div>`;
+
+  return `<div class="tile reveal r1" data-tile>
+    ${art}
+    <div class="tile-body">
+      <div class="tile-row"><div class="tile-name${clickable?' clk':''}"${clickable?' data-open="1"':''}>${esc(p.name)}</div><div class="diff">${p.difficulty}/10</div></div>
+      <div class="tile-tag">${esc(p.tagline[state.lang])}</div>
+      <div class="status"><span class="${dotCls}" style="${dotStyle}"></span>${statusTxt}</div>
+      <button class="more mag" data-more>${esc(L().more)} →</button>
+      <div class="expand"><div><div class="exp-inner">${exp}</div></div></div>
+    </div>
+  </div>`;
+}
+function renderProjects(){
+  const sortBtns=[['difficulty',L().sortDiff],['date',L().sortDate],['name',L().sortName]]
+    .map(([k,t])=>`<button class="seg-btn${state.projSort===k?' active':''}" data-sort="${k}">${esc(t)}</button>`).join('');
+  const filterBtns=`<button class="seg-btn${state.projFilter===null?' active':''}" data-filter="">${esc(L().filterAll)}</button>`+
+    computeFilterTools().map(t=>`<button class="seg-btn${state.projFilter===t?' active':''}" data-filter="${esc(t)}">${esc(t)}</button>`).join('');
+  const list=sortProjects(filterProjects(PROJECTS));
+  const grid=list.length?`<div class="tiles">${list.map((p,i)=>tileHTML(p,i)).join('')}</div>`:`<div class="proj-empty">${esc(L().empty)}</div>`;
+  projPane.innerHTML=`
+  <div class="wrap">
+    <div style="padding:40px 0 80px">
+      <div class="sech reveal r1"><span>/</span> ${esc(L().secProjects)}</div>
+      <div class="proj-controls reveal r1">
+        <div class="ctrl-group"><span class="ctrl-label">${esc(L().sortLabel)}</span><div class="seg" id="sortSeg">${sortBtns}</div></div>
+        <div class="ctrl-group"><span class="ctrl-label">${esc(L().filterLabel)}</span><div class="seg" id="filterSeg">${filterBtns}</div></div>
+      </div>
+      ${grid}
+    </div>
+  </div>`;
+}
+
+/* ---------------- BIND HELPERS ---------------- */
+function startCounters(scope){
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches){
+    scope.querySelectorAll('[data-count]').forEach(n=>n.textContent=n.dataset.count);return;
+  }
+  scope.querySelectorAll('[data-count]').forEach(n=>{
+    const target=+n.dataset.count,year=n.dataset.year==='1';
+    const from=year?2015:0;
+    const dur=year?1100:900;const start=performance.now();
+    function tick(now){
+      const p=Math.min(1,(now-start)/dur);
+      const e=1-Math.pow(1-p,3);
+      n.textContent=Math.round(from+(target-from)*e);
+      if(p<1)requestAnimationFrame(tick);else n.textContent=target;
+    }
+    requestAnimationFrame(()=>requestAnimationFrame(tick));
+  });
+}
+
+function bindTiles(){
+  projPane.querySelectorAll('[data-more]').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const tile=btn.closest('[data-tile]');
+      const open=tile.classList.toggle('open');
+      btn.textContent=(open?L().less:L().more)+' →';
+    });
+  });
+  projPane.querySelectorAll('[data-open]').forEach(el=>{
+    const tile=el.closest('[data-tile]');
+    const idx=[...projPane.querySelectorAll('[data-tile]')].indexOf(tile);
+    const p=sortProjects(filterProjects(PROJECTS))[idx];
+    if(!p||!p.url)return;
+    el.addEventListener('click',()=>window.open(p.url,'_blank','noopener'));
+  });
+  projPane.querySelectorAll('#sortSeg [data-sort]').forEach(b=>{
+    b.addEventListener('click',()=>{state.projSort=b.dataset.sort;renderProjects();bindTiles();bindMagnetic();});
+  });
+  projPane.querySelectorAll('#filterSeg [data-filter]').forEach(b=>{
+    b.addEventListener('click',()=>{state.projFilter=b.dataset.filter||null;renderProjects();bindTiles();bindMagnetic();});
+  });
+}
+
+const isTouch=window.matchMedia('(hover:none)').matches;
+function bindHoney(){
+  const honey=document.getElementById('honey');if(!honey)return;
+  const cells=[...honey.querySelectorAll('.cellpos')];
+  function activate(c){
+    cells.forEach(x=>x.classList.toggle('active',x===c));
+    honey.classList.toggle('has-active',!!c);
+  }
+  cells.forEach(c=>{
+    c.addEventListener('mouseenter',()=>{if(!isTouch)activate(c);});
+    c.addEventListener('click',e=>{
+      if(e.target.closest('.dbtn'))return;
+      e.stopPropagation();
+      activate(c.classList.contains('active')?null:c);
+    });
+    const db=c.querySelector('.dbtn');
+    if(db)db.addEventListener('click',e=>{
+      e.stopPropagation();
+      state.projFilter=db.dataset.skill;
+      goTab('projects',{force:true});
+    });
+  });
+  honey.addEventListener('mouseleave',()=>{if(!isTouch)activate(null);});
+  document.addEventListener('click',e=>{if(!e.target.closest('#honey'))activate(null);});
+}
+
+let magEls=[];
+function bindMagnetic(){magEls=[...document.querySelectorAll('#app .tabpane.active .mag')];}
+let mx=0,my=0,rafQ=false;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;if(!rafQ){rafQ=true;requestAnimationFrame(applyMag);}},{passive:true});
+function applyMag(){
+  rafQ=false;
+  if(window.matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  for(const el of magEls){
+    const r=el.getBoundingClientRect();
+    const cx=r.left+r.width/2,cy=r.top+r.height/2;
+    const dx=mx-cx,dy=my-cy;const dist=Math.hypot(dx,dy);const radius=90;
+    if(dist<radius){const f=(1-dist/radius)*0.3;el.style.transform=`translate(${dx*f}px,${dy*f}px)`;}
+    else if(el.style.transform){el.style.transform='';}
+  }
+}
+
+/* ---------------- TAB SWITCHING ---------------- */
+function goTab(name,opts){
+  opts=opts||{};
+  if(name===state.tab&&!opts.force)return;
+  state.tab=name;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  const panes={home:homePane,projects:projPane,skills:skillsPane};
+  Object.keys(panes).forEach(k=>panes[k].classList.toggle('active',k===name));
+  const pane=panes[name];
+  if(name==='home')renderHome();
+  else if(name==='projects')renderProjects();
+  else if(name==='skills'){renderSkills();}
+  pane.classList.remove('show');void pane.offsetWidth;pane.classList.add('show');
+  window.scrollTo(0,0);
+  if(name==='home'){startCounters(homePane);}
+  else if(name==='skills'){bindHoney();setHoneyScale();}
+  else if(name==='projects'){bindTiles();}
+  bindMagnetic();
+}
+
+/* ---------------- ACCENT / THEME / LANG ---------------- */
+function applyAccent(hex){
+  state.accent=hex;
+  app.style.setProperty('--accent',hex);
+  document.body.style.setProperty('--ui-accent',hex);
+}
+
+function applyTheme(){
+  app.classList.toggle('dark',state.theme==='dark');
+  document.body.classList.toggle('dark-ui',state.theme==='dark');
+  document.getElementById('tTheme').textContent=state.theme==='dark'?L().themeDark:L().themeLight;
+}
+document.getElementById('tTheme').addEventListener('click',()=>{
+  state.theme=state.theme==='light'?'dark':'light';
+  applyTheme();
+});
+document.getElementById('tLang').addEventListener('click',e=>{
+  state.lang=state.lang==='pl'?'en':'pl';
+  e.target.textContent=state.lang.toUpperCase();
+  syncChrome();
+  goTab(state.tab,{force:true});
+});
+
+function syncChrome(){
+  document.querySelector('.tab-btn[data-tab=home]').textContent=L().tabHome;
+  document.querySelector('.tab-btn[data-tab=projects]').textContent=L().tabProjects;
+  document.querySelector('.tab-btn[data-tab=skills]').textContent=L().tabSkills;
+  document.getElementById('tTheme').textContent=state.theme==='dark'?L().themeDark:L().themeLight;
+}
+
+document.querySelectorAll('.tab-btn').forEach(b=>{
+  b.addEventListener('click',()=>goTab(b.dataset.tab));
+});
+document.getElementById('brand').addEventListener('click',()=>goTab('home'));
+
+window.addEventListener('resize',()=>{if(state.tab==='skills')setHoneyScale();},{passive:true});
+
+/* ---------------- FIREBASE LIVE SYNC ---------------- */
+const FB_CONFIG={apiKey:"AIzaSyDSTWgiM2QKRqJQc99dlLPSw4E79vN52NA",authDomain:"portfolio-jurek.firebaseapp.com",projectId:"portfolio-jurek",storageBucket:"portfolio-jurek.firebasestorage.app",messagingSenderId:"656448612151",appId:"1:656448612151:web:6c1b454bac340ab1aa9cb2",databaseURL:"https://portfolio-jurek-default-rtdb.europe-west1.firebasedatabase.app"};
+function isValidData(d){
+  return d&&typeof d==='object'
+    &&d.site&&typeof d.site==='object'
+    &&Array.isArray(d.skills)
+    &&Array.isArray(d.projects);
+}
+function applyData(d){
+  if(!isValidData(d))return;
+  if(d.site&&d.site.identity)SITE=d.site;
+  SKILLS=d.skills;
+  PROJECTS=d.projects;
+  if(SITE.identity&&SITE.identity.accent)applyAccent(SITE.identity.accent);
+  goTab(state.tab,{force:true});
+}
+function initFirebaseSync(){
+  if(typeof firebase==='undefined'||!firebase.database)return;
+  try{
+    firebase.initializeApp(FB_CONFIG);
+    const db=firebase.database();
+    db.ref('portfolio/data').on('value',
+      snap=>{try{const d=snap.val();if(isValidData(d))applyData(d);}catch(e){}},
+      err=>{}
+    );
+  }catch(e){}
+}
+
+/* ---------------- INIT ---------------- */
+applyAccent('#1f2933');
+applyTheme();
+syncChrome();
+goTab('home',{force:true});
+initFirebaseSync();
+</script>
+</body>
+</html>
