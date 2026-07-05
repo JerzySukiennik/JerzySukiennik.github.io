@@ -53,18 +53,21 @@ a { color: inherit; }
   overflow: hidden;
 }
 
-.shader-canvas {
-  position: absolute;
+/* One shared fixed background canvas (see js/shaders.js) */
+.bg-canvas {
+  position: fixed;
   inset: 0;
   width: 100% !important;
   height: 100% !important;
   opacity: 0;
+  transition: opacity 1.4s ease;
   pointer-events: none;
   z-index: 0;
 }
+.bg-canvas.is-on { opacity: 1; }
 
 /* Static gradient fallback (mobile / reduced motion / no WebGL) */
-html.static-bg .shader-canvas { display: none; }
+html.static-bg .bg-canvas { display: none; }
 html.static-bg .section {
   background: radial-gradient(120% 100% at 30% 20%, var(--tint, var(--bg)) 0%, var(--bg) 70%);
 }
@@ -420,7 +423,7 @@ html.static-bg .section {
 /* ---- Reduced motion ---- */
 
 @media (prefers-reduced-motion: reduce) {
-  .shader-canvas { display: none; }
+  .bg-canvas { display: none; }
   .scroll-hint, .hero-name, .project-title { transform: none; }
   * { scroll-behavior: auto !important; }
 }

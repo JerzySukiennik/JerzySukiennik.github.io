@@ -1,9 +1,9 @@
-/* js/shaders.js — OGL fragment-shader backgrounds. One shared shader family
-   (2-octave value noise, single domain warp) with per-section uniforms:
-   uTint, uSpeed, uVariant, uIntensity, uMouse, uTime. A single rAF loop
-   renders only sections flagged visible by an IntersectionObserver and stops
-   entirely while the tab is hidden or blurred. DPR is capped at 1.75 and
-   canvases render at 0.66x resolution, upscaled by CSS. */
+/* js/shaders.js — OGL fragment-shader backgrounds on ONE shared fixed canvas.
+   A single WebGL context renders the visible section's preset (uTint, uSpeed,
+   uVariant, uIntensity) and morphs between neighbouring presets near section
+   boundaries (the scroll "wipe"). One rAF loop, stopped while the tab is
+   hidden. DPR is capped at 1.75 and the canvas renders at 0.66x resolution,
+   upscaled by CSS. initShaders() returns false if WebGL is unavailable. */
 
 import { Renderer, Program, Mesh, Triangle } from "ogl";
 
@@ -22,12 +22,17 @@ precision highp float;
 
 varying vec2 vUv;
 uniform float uTime;
-uniform vec3 uTint;
-uniform float uSpeed;
-uniform float uVariant;
-uniform float uIntensity;
 uniform vec2 uMouse;
 uniform vec2 uRes;
+uniform float uMix;
+uniform vec3 uTintA;
+uniform float uSpeedA;
+uniform float uVarA;
+uniform float uIntA;
+uniform vec3 uTintB;
+uniform float uSpeedB;
+uniform float uVarB;
+uniform float uIntB;
 
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
@@ -53,11 +58,8 @@ float field(vec2 p, float k, float t) {
   return fbm(p + drift + (w - 0.5) * 2.0 * k);
 }
 
-void main() {
-  vec2 p = (vUv - 0.5) * vec2(uRes.x / max(uRes.y, 1.0), 1.0);
-  float v = uVariant;
-  float t = uTime * uSpeed * 3.0;
-  vec2 m = uMouse * 0.3;
+vec3 scene(float v, vec3 tint, float speed, float inten, vec2 p, vec2 m) {
+  float t = uTime * speed * 3.0 + v * 43.7;
 
   vec2 sc = vec2(2.2);
   float k = 0.6;
@@ -107,15 +109,32 @@ void main() {
   n += (hash(vUv * uRes + t) - 0.5) * grain;
 
   vec3 bg = vec3(0.039, 0.039, 0.047);
-  float amt = clamp(n, 0.0, 1.0) * uIntensity;
-  vec3 col = mix(bg, uTint, amt);
-  col += uTint * fil * 0.9 * uIntensity;
+  float amt = clamp(n, 0.0, 1.0) * inten;
+  vec3 col = mix(bg, tint, amt);
+  col += tint * fil * 0.9 * inten;
 
-  if (v > 4.5 && v < 5.5) col += uTint * 0.30 * exp(-dot(p, p) * 3.0);
+  if (v > 4.5 && v < 5.5) col += tint * 0.30 * exp(-dot(p, p) * 3.0);
 
-  float vig = smoothstep(vigOuter, vigInner, length(p));
+  float vig = 1.0 - smoothstep(vigInner, vigOuter, length(p));
   col = mix(bg, col, vig);
+  return col;
+}
 
+void main() {
+  vec2 p = (vUv - 0.5) * vec2(uRes.x / max(uRes.y, 1.0), 1.0);
+  vec2 m = uMouse * 0.3;
+
+  vec3 col;
+  if (uMix < 0.004) {
+    col = scene(uVarA, uTintA, uSpeedA, uIntA, p, m);
+  } else if (uMix > 0.996) {
+    col = scene(uVarB, uTintB, uSpeedB, uIntB, p, m);
+  } else {
+    col = mix(
+      scene(uVarA, uTintA, uSpeedA, uIntA, p, m),
+      scene(uVarB, uTintB, uSpeedB, uIntB, p, m),
+      uMix);
+  }
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -125,79 +144,124 @@ function hexToVec3(hex) {
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
 }
 
-/* entries: [{ el, canvas, preset: { tint, speed, variant, intensity } }] */
+/* entries: [{ el, preset: { tint, speed, variant, intensity } }] in DOM order */
 export function initShaders(entries) {
-  const instances = [];
-  const mouse = { x: 0, y: 0 };
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.75) * 0.66;
+  if (!entries.length) return false;
 
+  const canvas = document.createElement("canvas");
+  canvas.className = "bg-canvas";
+  canvas.setAttribute("aria-hidden", "true");
+  document.body.prepend(canvas);
+
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.75) * 0.66;
+  let renderer;
+  try {
+    renderer = new Renderer({ canvas, dpr, alpha: false, antialias: false, depth: false, stencil: false });
+  } catch (err) {
+    console.warn("WebGL unavailable:", err);
+    canvas.remove();
+    return false;
+  }
+
+  const gl = renderer.gl;
+  const program = new Program(gl, {
+    vertex: VERTEX,
+    fragment: FRAGMENT,
+    uniforms: {
+      uTime: { value: 0 },
+      uMouse: { value: [0, 0] },
+      uRes: { value: [1, 1] },
+      uMix: { value: 0 },
+      uTintA: { value: [0, 0, 0] },
+      uSpeedA: { value: 0 },
+      uVarA: { value: 0 },
+      uIntA: { value: 0 },
+      uTintB: { value: [0, 0, 0] },
+      uSpeedB: { value: 0 },
+      uVarB: { value: 0 },
+      uIntB: { value: 0 },
+    },
+  });
+  const mesh = new Mesh(gl, { geometry: new Triangle(gl), program });
+
+  const presets = entries.map((e) => ({
+    tint: hexToVec3(e.preset.tint),
+    speed: e.preset.speed,
+    variant: e.preset.variant,
+    intensity: e.preset.intensity,
+  }));
+  let tops = [];
+
+  function measure() {
+    const y = window.scrollY;
+    tops = entries.map((e) => e.el.getBoundingClientRect().top + y);
+  }
+
+  function resize() {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    program.uniforms.uRes.value = [window.innerWidth, window.innerHeight];
+    measure();
+  }
+  resize();
+
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 180);
+  });
+
+  const mouse = { x: 0, y: 0 };
+  let mx = 0;
+  let my = 0;
   window.addEventListener("mousemove", (e) => {
     mouse.x = e.clientX / window.innerWidth - 0.5;
     mouse.y = 0.5 - e.clientY / window.innerHeight;
   }, { passive: true });
 
-  for (const { el, canvas, preset } of entries) {
-    let renderer;
-    try {
-      renderer = new Renderer({ canvas, dpr, alpha: false, antialias: false, depth: false, stencil: false });
-    } catch (err) {
-      console.warn("WebGL unavailable, skipping shader:", err);
-      continue;
-    }
-    const gl = renderer.gl;
-    const geometry = new Triangle(gl);
-    const program = new Program(gl, {
-      vertex: VERTEX,
-      fragment: FRAGMENT,
-      uniforms: {
-        uTime: { value: Math.random() * 200 },
-        uTint: { value: hexToVec3(preset.tint) },
-        uSpeed: { value: preset.speed },
-        uVariant: { value: preset.variant },
-        uIntensity: { value: preset.intensity },
-        uMouse: { value: [0, 0] },
-        uRes: { value: [1, 1] },
-      },
-    });
-    const mesh = new Mesh(gl, { geometry, program });
-    const inst = { el, renderer, program, mesh, active: false, mx: 0, my: 0 };
-    resize(inst);
-    instances.push(inst);
+  function setPreset(slot, p) {
+    const u = program.uniforms;
+    u["uTint" + slot].value = p.tint;
+    u["uSpeed" + slot].value = p.speed;
+    u["uVar" + slot].value = p.variant;
+    u["uInt" + slot].value = p.intensity;
   }
-
-  function resize(inst) {
-    const w = inst.el.clientWidth || window.innerWidth;
-    const h = inst.el.clientHeight || window.innerHeight;
-    inst.renderer.setSize(w, h);
-    inst.program.uniforms.uRes.value = [w, h];
-  }
-  window.addEventListener("resize", () => instances.forEach(resize));
-
-  const io = new IntersectionObserver((records) => {
-    for (const r of records) {
-      const inst = instances.find((i) => i.el === r.target);
-      if (inst) inst.active = r.isIntersecting;
-    }
-  }, { rootMargin: "15%" });
-  instances.forEach((i) => io.observe(i.el));
 
   let rafId = 0;
   let running = false;
   let last = performance.now();
+  let shown = false;
 
   function loop(now) {
     rafId = requestAnimationFrame(loop);
     const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
-    for (const inst of instances) {
-      if (!inst.active) continue;
-      inst.mx += (mouse.x - inst.mx) * 0.05;
-      inst.my += (mouse.y - inst.my) * 0.05;
-      const u = inst.program.uniforms;
-      u.uTime.value += dt;
-      u.uMouse.value[0] = inst.mx;
-      u.uMouse.value[1] = inst.my;
-      inst.renderer.render({ scene: inst.mesh });
+
+    mx += (mouse.x - mx) * 0.05;
+    my += (mouse.y - my) * 0.05;
+
+    const y = window.scrollY;
+    const vh = window.innerHeight;
+    let i = 0;
+    for (let s = 0; s < tops.length; s++) if (tops[s] <= y + 1) i = s;
+    let f = 0;
+    if (i + 1 < tops.length) {
+      const zone = vh * 0.7;
+      f = Math.min(1, Math.max(0, (y - (tops[i + 1] - zone)) / zone));
+      f = f * f * (3 - 2 * f);
+    }
+    setPreset("A", presets[i]);
+    setPreset("B", presets[Math.min(i + 1, presets.length - 1)]);
+
+    const u = program.uniforms;
+    u.uMix.value = f;
+    u.uTime.value += dt;
+    u.uMouse.value[0] = mx;
+    u.uMouse.value[1] = my;
+    renderer.render({ scene: mesh });
+
+    if (!shown) {
+      shown = true;
+      canvas.classList.add("is-on");
     }
   }
   function start() {
@@ -212,7 +276,6 @@ export function initShaders(entries) {
   }
 
   document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
-  window.addEventListener("blur", stop);
-  window.addEventListener("focus", start);
   start();
+  return true;
 }

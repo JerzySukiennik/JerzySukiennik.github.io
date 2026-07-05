@@ -156,6 +156,24 @@ function el(tag, className, text) {
 }
 
 /* ---------- carousel ---------- */
+/* Image discovery is deferred until the section approaches the viewport, and
+   auto-advance only runs while the carousel is actually near the screen. */
+const lazyIO = new IntersectionObserver((records) => {
+  for (const r of records) {
+    if (r.isIntersecting && r.target._load) {
+      r.target._load();
+      r.target._load = null;
+      lazyIO.unobserve(r.target);
+    }
+  }
+}, { rootMargin: "150%" });
+
+const viewIO = new IntersectionObserver((records) => {
+  for (const r of records) {
+    if (r.target._state) r.target._state.inView = r.isIntersecting;
+  }
+});
+
 function buildCarousel(project) {
   const wrap = el("div", "carousel");
   wrap.setAttribute("role", "group");
@@ -164,7 +182,11 @@ function buildCarousel(project) {
   const track = el("div", "carousel-track");
   wrap.appendChild(track);
 
-  const ready = discoverImages(project.folder).then((srcs) => {
+  const state = { paused: false, inView: false };
+  wrap._state = state;
+  viewIO.observe(wrap);
+
+  wrap._load = () => discoverImages(project.folder).then((srcs) => {
     if (!srcs.length) {
       const ph = el("div", "carousel-placeholder", (project.name || "?").trim().charAt(0).toUpperCase());
       track.appendChild(ph);
@@ -186,7 +208,6 @@ function buildCarousel(project) {
     /* dots + auto-advance only with 2+ images */
     if (imgs.length > 1) {
       let current = 0;
-      let paused = false;
       const dots = el("div", "carousel-dots");
       const dotBtns = imgs.map((_, i) => {
         const b = el("button", i === 0 ? "is-active" : "");
@@ -213,13 +234,13 @@ function buildCarousel(project) {
 
       if (!reduced) {
         setInterval(() => {
-          if (!paused && !document.hidden) goTo((current + 1) % imgs.length);
+          if (state.inView && !state.paused && !document.hidden) goTo((current + 1) % imgs.length);
         }, 4000);
       }
-      wrap.addEventListener("mouseenter", () => (paused = true));
-      wrap.addEventListener("mouseleave", () => (paused = false));
-      wrap.addEventListener("focusin", () => (paused = true));
-      wrap.addEventListener("focusout", () => (paused = false));
+      wrap.addEventListener("mouseenter", () => (state.paused = true));
+      wrap.addEventListener("mouseleave", () => (state.paused = false));
+      wrap.addEventListener("focusin", () => (state.paused = true));
+      wrap.addEventListener("focusout", () => (state.paused = false));
     }
 
     /* hover parallax on the whole track (transform only) */
@@ -243,7 +264,7 @@ function buildCarousel(project) {
     }
   });
 
-  wrap.ready = ready;
+  lazyIO.observe(wrap);
   return wrap;
 }
 
@@ -252,11 +273,6 @@ function buildProjectSection(project, i) {
   const preset = PRESETS.projects[i % PRESETS.projects.length];
   const sec = el("section", "section project");
   sec.style.setProperty("--tint", preset.tint);
-
-  const canvas = document.createElement("canvas");
-  canvas.className = "shader-canvas";
-  canvas.setAttribute("aria-hidden", "true");
-  sec.appendChild(canvas);
 
   const num = el("span", "section-num");
   num.setAttribute("aria-hidden", "true");
@@ -354,37 +370,14 @@ function initHero() {
   }
 }
 
-/* ---------- scroll motion (entry, drift, separators, canvas fades) ---------- */
+/* ---------- scroll motion (entry, drift, separators) ---------- */
+/* Section-to-section background morphing lives in shaders.js (single canvas). */
 function initSectionMotion(sections) {
   if (reduced) return;
 
   sections.forEach((sec, i) => {
     const isHero = i === 0;
     const isContact = i === sections.length - 1;
-
-    /* shader canvas crossfade between sections (the "wipe" feel) */
-    if (useShaders) {
-      const canvas = sec.querySelector(".shader-canvas");
-      if (canvas) {
-        if (isHero) {
-          gsap.to(canvas, { opacity: 1, duration: 1.6, ease: "power2.out", delay: 0.2 });
-        } else {
-          gsap.fromTo(canvas, { opacity: 0 }, {
-            opacity: 1,
-            ease: "none",
-            scrollTrigger: { trigger: sec, start: "top bottom", end: "top 70%", scrub: true },
-          });
-        }
-        if (!isContact) {
-          gsap.fromTo(canvas, { opacity: 1 }, {
-            opacity: 0,
-            ease: "none",
-            immediateRender: false,
-            scrollTrigger: { trigger: sec, start: "bottom 30%", end: "bottom top", scrub: true },
-          });
-        }
-      }
-    }
 
     if (isHero) return;
 
@@ -407,6 +400,7 @@ function initSectionMotion(sections) {
         ease: "power3.out",
         stagger: 0.08,
         scrollTrigger: { trigger: sec, start: "top 70%", toggleActions: "play none none reverse" },
+        onComplete: () => remeasureMagnetic && remeasureMagnetic(),
       });
     }
 
@@ -489,35 +483,76 @@ function initSnap(lenis, sections) {
 }
 
 /* ---------- magnetic elements (desktop only) ---------- */
+/* Element centers are cached (recomputed on resize / ScrollTrigger refresh /
+   entry-animation completion) and all work is coalesced into one gsap.ticker
+   callback — no getBoundingClientRect or tween spawning per mousemove event. */
+let remeasureMagnetic = null;
+
 function initMagnetic() {
   if (!finePointer || reduced) return;
-  const items = [...document.querySelectorAll(".magnetic")].map((node) => ({
-    el: node,
-    inner: node.querySelector(".magnetic-inner"),
-    strength: parseFloat(node.dataset.strength || "0.35"),
-    active: false,
-  }));
+  const items = [...document.querySelectorAll(".magnetic")].map((node) => {
+    const inner = node.querySelector(".magnetic-inner");
+    return {
+      el: node,
+      strength: parseFloat(node.dataset.strength || "0.35"),
+      active: false,
+      fixed: getComputedStyle(node).position === "fixed",
+      cx: 0,
+      cy: 0,
+      radius: 0,
+      qx: gsap.quickTo(node, "x", { duration: 0.4, ease: "power3.out" }),
+      qy: gsap.quickTo(node, "y", { duration: 0.4, ease: "power3.out" }),
+      inner,
+      ix: inner ? gsap.quickTo(inner, "x", { duration: 0.4, ease: "power3.out" }) : null,
+      iy: inner ? gsap.quickTo(inner, "y", { duration: 0.4, ease: "power3.out" }) : null,
+    };
+  });
 
-  window.addEventListener("mousemove", (e) => {
+  function measure() {
+    const sx = window.scrollX;
+    const sy = window.scrollY;
     for (const it of items) {
       const r = it.el.getBoundingClientRect();
-      const curX = Number(gsap.getProperty(it.el, "x")) || 0;
-      const curY = Number(gsap.getProperty(it.el, "y")) || 0;
-      const dx = e.clientX - (r.left + r.width / 2 - curX);
-      const dy = e.clientY - (r.top + r.height / 2 - curY);
-      const dist = Math.hypot(dx, dy);
-      const radius = Math.max(r.width, r.height) / 2 + 90;
-      if (dist < radius) {
+      const tx = Number(gsap.getProperty(it.el, "x")) || 0;
+      const ty = Number(gsap.getProperty(it.el, "y")) || 0;
+      it.cx = r.left + r.width / 2 - tx + (it.fixed ? 0 : sx);
+      it.cy = r.top + r.height / 2 - ty + (it.fixed ? 0 : sy);
+      it.radius = Math.max(r.width, r.height) / 2 + 90;
+    }
+  }
+  measure();
+  remeasureMagnetic = measure;
+  ScrollTrigger.addEventListener("refresh", measure);
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(measure, 180);
+  });
+
+  let mx = -1e5;
+  let my = -1e5;
+  let dirty = false;
+  window.addEventListener("mousemove", (e) => {
+    mx = e.clientX;
+    my = e.clientY;
+    dirty = true;
+  }, { passive: true });
+
+  gsap.ticker.add(() => {
+    if (!dirty) return;
+    dirty = false;
+    const sx = window.scrollX;
+    const sy = window.scrollY;
+    for (const it of items) {
+      const dx = mx - (it.fixed ? it.cx : it.cx - sx);
+      const dy = my - (it.fixed ? it.cy : it.cy - sy);
+      if (Math.hypot(dx, dy) < it.radius) {
         it.active = true;
-        gsap.to(it.el, {
-          x: clamp(dx * it.strength, -24, 24),
-          y: clamp(dy * it.strength, -24, 24),
-          duration: 0.4,
-          ease: "power3.out",
-          overwrite: "auto",
-        });
-        if (it.inner) {
-          gsap.to(it.inner, { x: dx * 0.15, y: dy * 0.15, duration: 0.4, ease: "power3.out", overwrite: "auto" });
+        it.qx(clamp(dx * it.strength, -24, 24));
+        it.qy(clamp(dy * it.strength, -24, 24));
+        if (it.ix) {
+          it.ix(dx * 0.15);
+          it.iy(dy * 0.15);
         }
       } else if (it.active) {
         it.active = false;
@@ -527,7 +562,7 @@ function initMagnetic() {
         }
       }
     }
-  }, { passive: true });
+  });
 }
 
 /* ---------- boot ---------- */
@@ -548,12 +583,7 @@ async function boot() {
   }
 
   const root = document.getElementById("projects-root");
-  const carousels = [];
-  projects.forEach((p, i) => {
-    const sec = buildProjectSection(p, i);
-    carousels.push(sec.querySelector(".carousel"));
-    root.appendChild(sec);
-  });
+  projects.forEach((p, i) => root.appendChild(buildProjectSection(p, i)));
 
   /* section numbering: hero = 01, contact = last */
   const sections = [...document.querySelectorAll(".section")];
@@ -577,31 +607,25 @@ async function boot() {
   initMagnetic();
   ScrollTrigger.refresh();
 
-  /* shaders (desktop, motion allowed only) */
+  /* shaders (desktop, motion allowed only) — one shared canvas */
   if (useShaders) {
     try {
       const { initShaders } = await import("./shaders.js");
-      const entries = sections
-        .map((sec, i) => ({
-          el: sec,
-          canvas: sec.querySelector(".shader-canvas"),
-          preset:
-            i === 0
-              ? PRESETS.hero
-              : i === sections.length - 1
-                ? PRESETS.contact
-                : PRESETS.projects[(i - 1) % PRESETS.projects.length],
-        }))
-        .filter((e) => e.canvas);
-      initShaders(entries);
+      const entries = sections.map((sec, i) => ({
+        el: sec,
+        preset:
+          i === 0
+            ? PRESETS.hero
+            : i === sections.length - 1
+              ? PRESETS.contact
+              : PRESETS.projects[(i - 1) % PRESETS.projects.length],
+      }));
+      if (!initShaders(entries)) document.documentElement.classList.add("static-bg");
     } catch (err) {
       console.warn("Shaders failed to start, falling back to static backgrounds.", err);
       document.documentElement.classList.add("static-bg");
     }
   }
-
-  /* re-measure once all carousels resolved their images */
-  Promise.all(carousels.map((c) => c.ready)).then(() => ScrollTrigger.refresh());
 }
 
 boot();
