@@ -36,9 +36,14 @@
   <header class="section hero" style="--tint:#123a4a">
     <span class="section-num" aria-hidden="true"></span>
     <div class="content hero-inner">
-      <h1 class="hero-name">JERZY SUKIENNIK</h1>
-      <p class="hero-tagline">I build things that fly. And a few that don't crash.</p>
-      <img class="avatar" src="avatar.jpg" alt="Jerzy Sukiennik" width="512" height="512">
+      <div class="hero-avatar">
+        <img src="avatar.jpg" alt="Jerzy Sukiennik" width="512" height="512">
+      </div>
+      <div class="hero-glow" aria-hidden="true"></div>
+      <div class="hero-text">
+        <h1 class="hero-name"><span class="hero-line">JERZY</span><span class="hero-line">SUKIENNIK</span></h1>
+        <p class="hero-tagline">I build things that fly. And a few that don't crash.</p>
+      </div>
     </div>
     <div class="scroll-hint" aria-hidden="true">
       <svg viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
@@ -70,15 +75,6 @@
     </div>
     <p class="copyright">© 2026 Jerzy Sukiennik</p>
   </footer>
-
-  <button id="mute-toggle" class="magnetic muted" type="button" aria-pressed="false" aria-label="Unmute sound effects">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/>
-      <path class="wave" d="M16.2 8.6a5 5 0 0 1 0 6.8" stroke="currentColor" fill="none" stroke-width="1.8" stroke-linecap="round"/>
-      <line class="slash" x1="15" y1="9" x2="21" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      <line class="slash" x1="21" y1="9" x2="15" y2="15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    </svg>
-  </button>
 
   <script type="module" src="js/main.js"></script>
 </body>

@@ -25,6 +25,7 @@ uniform float uTime;
 uniform vec2 uMouse;
 uniform vec2 uRes;
 uniform float uMix;
+uniform float uVel;
 uniform vec3 uTintA;
 uniform float uSpeedA;
 uniform float uVarA;
@@ -90,6 +91,10 @@ vec3 scene(float v, vec3 tint, float speed, float inten, vec2 p, vec2 m) {
     k = 0.5; sc = vec2(2.6);
   }
 
+  // scroll velocity boosts warp and lifts intensity while moving fast
+  k *= 1.0 + uVel * 0.5;
+  inten *= 1.0 + uVel * 0.15;
+
   vec2 q = p * sc + m;
   if (v > 4.5 && v < 5.5) q.y += t * 0.6;
 
@@ -106,7 +111,8 @@ vec3 scene(float v, vec3 tint, float speed, float inten, vec2 p, vec2 m) {
     n *= 0.55;
   }
 
-  n += (hash(vUv * uRes + t) - 0.5) * grain;
+  // fine global film grain; variant-specific grain (gsp) adds on top
+  n += (hash(vUv * uRes + t) - 0.5) * (0.02 + grain);
 
   vec3 bg = vec3(0.039, 0.039, 0.047);
   float amt = clamp(n, 0.0, 1.0) * inten;
@@ -122,7 +128,7 @@ vec3 scene(float v, vec3 tint, float speed, float inten, vec2 p, vec2 m) {
 
 void main() {
   vec2 p = (vUv - 0.5) * vec2(uRes.x / max(uRes.y, 1.0), 1.0);
-  vec2 m = uMouse * 0.3;
+  vec2 m = uMouse * 0.45;
 
   vec3 col;
   if (uMix < 0.004) {
@@ -172,6 +178,7 @@ export function initShaders(entries) {
       uMouse: { value: [0, 0] },
       uRes: { value: [1, 1] },
       uMix: { value: 0 },
+      uVel: { value: 0 },
       uTintA: { value: [0, 0, 0] },
       uSpeedA: { value: 0 },
       uVarA: { value: 0 },
@@ -230,6 +237,8 @@ export function initShaders(entries) {
   let running = false;
   let last = performance.now();
   let shown = false;
+  let prevY = window.scrollY;
+  let vel = 0;
 
   function loop(now) {
     rafId = requestAnimationFrame(loop);
@@ -241,6 +250,11 @@ export function initShaders(entries) {
 
     const y = window.scrollY;
     const vh = window.innerHeight;
+
+    /* smoothed |scroll velocity| 0..1 — fast attack, slow release */
+    const inst = Math.min(1, Math.abs(y - prevY) / (vh * 0.045));
+    prevY = y;
+    vel += (inst - vel) * (inst > vel ? 0.15 : 0.05);
     let i = 0;
     for (let s = 0; s < tops.length; s++) if (tops[s] <= y + 1) i = s;
     let f = 0;
@@ -254,6 +268,7 @@ export function initShaders(entries) {
 
     const u = program.uniforms;
     u.uMix.value = f;
+    u.uVel.value = vel;
     u.uTime.value += dt;
     u.uMouse.value[0] = mx;
     u.uMouse.value[1] = my;

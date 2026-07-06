@@ -1,6 +1,6 @@
 /* js/main.js — fetches and parses projects.md at runtime, builds one section
-   per project, then wires Lenis + GSAP ScrollTrigger, section snap, carousels,
-   magnetic buttons, WebAudio SFX and the OGL shader backgrounds.
+   per project, then wires Lenis + GSAP ScrollTrigger, section snap, progress
+   dots, carousels, magnetic buttons and the OGL shader backgrounds.
    Project images live in projectimages/<folder>/N.jpg (N = 1..3, numeric
    names, .jpg only); they are discovered at runtime with the Image() API. */
 
@@ -76,83 +76,28 @@ function discoverImages(folder) {
   ).then((list) => list.filter(Boolean));
 }
 
-/* ---------- SFX (WebAudio synth, muted by default) ---------- */
-const sfx = {
-  ctx: null,
-  master: null,
-  muted: true,
-  lastTick: 0,
-  ensure() {
-    if (!this.ctx) {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      this.ctx = new AC();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.12;
-      this.master.connect(this.ctx.destination);
-    }
-    if (this.ctx.state === "suspended") this.ctx.resume();
-  },
-  tone({ type, f0, f1 = 0, glide = 0, decay, gain = 1, at = 0 }) {
-    const t = this.ctx.currentTime + at;
-    const osc = this.ctx.createOscillator();
-    const g = this.ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(f0, t);
-    if (f1) osc.frequency.exponentialRampToValueAtTime(f1, t + glide);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(gain, t + 0.001);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
-    osc.connect(g).connect(this.master);
-    osc.start(t);
-    osc.stop(t + decay + 0.05);
-  },
-  tick() {
-    if (this.muted || !this.ctx) return;
-    const now = performance.now();
-    if (now - this.lastTick < 60) return;
-    this.lastTick = now;
-    this.tone({ type: "triangle", f0: 1800, f1: 1200, glide: 0.04, decay: 0.06, gain: 0.5 });
-  },
-  blip() {
-    if (this.muted || !this.ctx) return;
-    this.tone({ type: "sine", f0: 520, f1: 880, glide: 0.09, decay: 0.14, gain: 0.9 });
-    this.tone({ type: "square", f0: 520, f1: 880, glide: 0.09, decay: 0.14, gain: 0.03 });
-  },
-  confirm() {
-    if (!this.ctx) return;
-    this.tone({ type: "sine", f0: 660, decay: 0.07, gain: 0.8, at: 0 });
-    this.tone({ type: "sine", f0: 990, decay: 0.07, gain: 0.8, at: 0.11 });
-  },
-};
-
-function initSFX() {
-  const btn = document.getElementById("mute-toggle");
-  btn.addEventListener("click", () => {
-    sfx.muted = !sfx.muted;
-    btn.classList.toggle("muted", sfx.muted);
-    btn.setAttribute("aria-pressed", String(!sfx.muted));
-    btn.setAttribute("aria-label", sfx.muted ? "Unmute sound effects" : "Mute sound effects");
-    if (!sfx.muted) {
-      sfx.ensure();
-      sfx.confirm();
-    }
-  });
-  document.addEventListener("mouseover", (e) => {
-    if (e.target.closest("a, button")) sfx.tick();
-  });
-  document.addEventListener("click", (e) => {
-    const t = e.target.closest("a, button");
-    if (t && t.id !== "mute-toggle") sfx.blip();
-  });
-}
-
 /* ---------- DOM helpers ---------- */
 function el(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
   if (text !== undefined) node.textContent = text;
   return node;
+}
+
+/* Split a node's text into .word > .char spans (aria-label keeps the text
+   accessible). Used by the hero name lines and project titles. */
+function splitChars(node) {
+  const text = node.textContent.trim();
+  node.setAttribute("aria-label", text);
+  node.textContent = "";
+  const words = text.split(/\s+/);
+  words.forEach((word, wi) => {
+    const w = el("span", "word");
+    w.setAttribute("aria-hidden", "true");
+    for (const ch of word) w.appendChild(el("span", "char", ch));
+    node.appendChild(w);
+    if (wi < words.length - 1) node.appendChild(document.createTextNode(" "));
+  });
 }
 
 /* ---------- carousel ---------- */
@@ -283,7 +228,9 @@ function buildProjectSection(project, i) {
   grid.appendChild(carousel);
 
   const info = el("div", "project-info");
-  info.appendChild(el("h2", "project-title", project.name));
+  const title = el("h2", "project-title", project.name);
+  if (!reduced) splitChars(title);
+  info.appendChild(title);
   if (project.tagline) info.appendChild(el("p", "project-tagline", project.tagline));
 
   const meta = el("dl", "meta");
@@ -299,7 +246,9 @@ function buildProjectSection(project, i) {
     a.href = project.url;
     a.target = "_blank";
     a.rel = "noopener";
-    a.appendChild(el("span", "magnetic-inner", "Explore →"));
+    const inner = el("span", "magnetic-inner", "Explore");
+    inner.appendChild(el("span", "arrow", "→"));
+    a.appendChild(inner);
     info.appendChild(a);
   }
   grid.appendChild(info);
@@ -330,17 +279,17 @@ function initHero() {
   const name = hero.querySelector(".hero-name");
   if (reduced) return;
 
-  const text = name.textContent.trim();
-  name.setAttribute("aria-label", text);
-  name.textContent = "";
-  const words = text.split(/\s+/);
-  words.forEach((word, wi) => {
+  /* char-split each name line (one .word per line keeps the stacked layout) */
+  const lines = [...name.querySelectorAll(".hero-line")];
+  name.setAttribute("aria-label", lines.map((l) => l.textContent.trim()).join(" "));
+  for (const line of lines) {
+    const text = line.textContent.trim();
+    line.textContent = "";
+    line.setAttribute("aria-hidden", "true");
     const w = el("span", "word");
-    w.setAttribute("aria-hidden", "true");
-    for (const ch of word) w.appendChild(el("span", "char", ch));
-    name.appendChild(w);
-    if (wi < words.length - 1) name.appendChild(document.createTextNode(" "));
-  });
+    for (const ch of text) w.appendChild(el("span", "char", ch));
+    line.appendChild(w);
+  }
 
   gsap.from(name.querySelectorAll(".char"), {
     yPercent: 110,
@@ -349,14 +298,33 @@ function initHero() {
     stagger: 0.04,
     delay: 0.15,
   });
-  gsap.from([hero.querySelector(".hero-tagline"), hero.querySelector(".avatar")], {
+  gsap.from(hero.querySelector(".hero-tagline"), {
     y: 30,
     opacity: 0,
     duration: 1.0,
     ease: "power3.out",
-    stagger: 0.1,
     delay: 0.7,
   });
+  /* avatar fades in without transform to avoid an edge-blend seam flash */
+  const avatar = hero.querySelector(".hero-avatar");
+  gsap.from(avatar, { opacity: 0, duration: 1.0, ease: "power3.out", delay: 0.7 });
+  gsap.to(avatar.querySelector("img"), {
+    scale: 1.035,
+    duration: 9,
+    ease: "sine.inOut",
+    yoyo: true,
+    repeat: -1,
+  });
+  const glow = hero.querySelector(".hero-glow");
+  if (glow) {
+    gsap.fromTo(glow, { opacity: 0.5 }, {
+      opacity: 1,
+      duration: 6,
+      ease: "sine.inOut",
+      yoyo: true,
+      repeat: -1,
+    });
+  }
 
   const hint = hero.querySelector(".scroll-hint");
   const path = hero.querySelector(".hint-path");
@@ -381,11 +349,10 @@ function initSectionMotion(sections) {
 
     if (isHero) return;
 
-    /* entry stagger */
+    /* entry stagger (title is excluded — it gets its own char reveal) */
     const entryEls = isContact
       ? [sec.querySelector(".eyebrow"), sec.querySelector(".contact-email"), sec.querySelector(".socials")]
       : [
-          sec.querySelector(".project-title"),
           sec.querySelector(".project-tagline"),
           sec.querySelector(".meta"),
           sec.querySelector(".explore"),
@@ -405,6 +372,28 @@ function initSectionMotion(sections) {
     }
 
     if (isContact) return;
+
+    /* title char reveal on section enter */
+    const titleChars = sec.querySelectorAll(".project-title .char");
+    if (titleChars.length) {
+      gsap.from(titleChars, {
+        yPercent: 110,
+        duration: 0.9,
+        ease: "expo.out",
+        stagger: 0.03,
+        scrollTrigger: { trigger: sec, start: "top 70%", toggleActions: "play none none reverse" },
+      });
+    }
+
+    /* subtle scrub parallax on the carousel wrapper (track is owned by hover) */
+    const carousel = sec.querySelector(".carousel");
+    if (carousel) {
+      gsap.fromTo(carousel, { yPercent: 3.5 }, {
+        yPercent: -3.5,
+        ease: "none",
+        scrollTrigger: { trigger: sec, start: "top bottom", end: "bottom top", scrub: true },
+      });
+    }
 
     /* horizontal-on-vertical drift: title one way, meta the other */
     const title = sec.querySelector(".project-title");
@@ -439,46 +428,89 @@ function initSectionMotion(sections) {
 }
 
 /* ---------- section snap (desktop, fine pointer only) ---------- */
-function initSnap(lenis, sections) {
-  const expoOut = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
-  let timer = null;
-  let snapping = false;
+const expoOut = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
 
-  const cancel = () => {
+/* Returns shared state so programmatic scrolls (progress dots) can suppress
+   the snap while they run. Every Lenis scroll event resets a 140ms settle
+   timer; when it fires with no user input in the last 150ms, snap to the
+   nearest section top (sections are 100vh, so it is always <= 50vh away). */
+function initSnap(lenis, sections) {
+  const state = { snapping: false };
+  let timer = null;
+  let lastInput = 0;
+
+  const onInput = () => {
+    lastInput = performance.now();
     clearTimeout(timer);
     timer = null;
-    snapping = false;
+    state.snapping = false;
   };
-  window.addEventListener("wheel", cancel, { passive: true });
-  window.addEventListener("touchstart", cancel, { passive: true });
-  window.addEventListener("keydown", cancel, { passive: true });
+  window.addEventListener("wheel", onInput, { passive: true });
+  window.addEventListener("touchstart", onInput, { passive: true });
+  window.addEventListener("keydown", onInput, { passive: true });
 
-  lenis.on("scroll", (l) => {
-    if (snapping) return;
+  lenis.on("scroll", () => {
+    if (state.snapping) return;
     clearTimeout(timer);
-    if (Math.abs(l.velocity) < 0.1) {
-      timer = setTimeout(() => {
-        const y = window.scrollY;
-        let best = null;
-        let bestDist = Infinity;
-        for (const s of sections) {
-          const top = s.getBoundingClientRect().top + y;
-          const d = Math.abs(top - y);
-          if (d < bestDist) {
-            bestDist = d;
-            best = top;
-          }
+    timer = setTimeout(() => {
+      if (state.snapping || performance.now() - lastInput < 150) return;
+      const y = window.scrollY;
+      let best = null;
+      let bestDist = Infinity;
+      for (const s of sections) {
+        const top = s.getBoundingClientRect().top + y;
+        const d = Math.abs(top - y);
+        if (d < bestDist) {
+          bestDist = d;
+          best = top;
         }
-        if (best === null || bestDist < 2 || bestDist > window.innerHeight * 0.6) return;
-        snapping = true;
-        lenis.scrollTo(best, {
-          duration: 0.9,
-          easing: expoOut,
-          lock: false,
-          onComplete: () => (snapping = false),
-        });
-      }, 120);
-    }
+      }
+      if (best === null || bestDist < 2) return;
+      state.snapping = true;
+      lenis.scrollTo(best, {
+        duration: 0.9,
+        easing: expoOut,
+        lock: false,
+        onComplete: () => (state.snapping = false),
+      });
+    }, 140);
+  });
+
+  return state;
+}
+
+/* ---------- section progress dots (desktop only) ---------- */
+function initDots(lenis, sections, names, snapState) {
+  const nav = el("nav", "progress-dots");
+  nav.setAttribute("aria-label", "Sections");
+  const btns = sections.map((sec, i) => {
+    const b = el("button", i === 0 ? "is-active" : "");
+    b.type = "button";
+    b.setAttribute("aria-label", `Section ${i + 1}: ${names[i]}`);
+    b.addEventListener("click", () => {
+      const top = sec.getBoundingClientRect().top + window.scrollY;
+      if (snapState) snapState.snapping = true;
+      lenis.scrollTo(top, {
+        duration: 1.1,
+        easing: expoOut,
+        lock: false,
+        onComplete: () => {
+          if (snapState) snapState.snapping = false;
+        },
+      });
+    });
+    nav.appendChild(b);
+    return b;
+  });
+  document.body.appendChild(nav);
+
+  let active = 0;
+  lenis.on("scroll", () => {
+    const i = clamp(Math.round(window.scrollY / window.innerHeight), 0, sections.length - 1);
+    if (i === active) return;
+    btns[active].classList.remove("is-active");
+    btns[i].classList.add("is-active");
+    active = i;
   });
 }
 
@@ -570,7 +602,6 @@ async function boot() {
   if (!useShaders) document.documentElement.classList.add("static-bg");
 
   initHero();
-  initSFX();
 
   /* load + render project sections */
   let projects = [];
@@ -600,7 +631,11 @@ async function boot() {
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
-    if (snapEnabled) initSnap(lenis, sections);
+    if (snapEnabled) {
+      const snapState = initSnap(lenis, sections);
+      const names = ["Intro", ...projects.map((p) => p.name), "Contact"];
+      initDots(lenis, sections, names, snapState);
+    }
   }
 
   initSectionMotion(sections);
