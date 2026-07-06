@@ -435,7 +435,14 @@ const expoOut = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
    timer; when it fires with no user input in the last 150ms, snap to the
    nearest section top (sections are 100vh, so it is always <= 50vh away). */
 function initSnap(lenis, sections) {
-  const state = { snapping: false };
+  const state = {
+    snapping: false,
+    since: 0,
+    lock() {
+      this.snapping = true;
+      this.since = performance.now();
+    },
+  };
   let timer = null;
   let lastInput = 0;
 
@@ -450,7 +457,12 @@ function initSnap(lenis, sections) {
   window.addEventListener("keydown", onInput, { passive: true });
 
   lenis.on("scroll", () => {
-    if (state.snapping) return;
+    if (state.snapping) {
+      /* recover from a snap animation that was interrupted without
+         onComplete ever firing (e.g. superseded scrollTo, hidden tab) */
+      if (performance.now() - state.since < 2500) return;
+      state.snapping = false;
+    }
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (state.snapping || performance.now() - lastInput < 150) return;
@@ -466,7 +478,7 @@ function initSnap(lenis, sections) {
         }
       }
       if (best === null || bestDist < 2) return;
-      state.snapping = true;
+      state.lock();
       lenis.scrollTo(best, {
         duration: 0.9,
         easing: expoOut,
@@ -489,7 +501,7 @@ function initDots(lenis, sections, names, snapState) {
     b.setAttribute("aria-label", `Section ${i + 1}: ${names[i]}`);
     b.addEventListener("click", () => {
       const top = sec.getBoundingClientRect().top + window.scrollY;
-      if (snapState) snapState.snapping = true;
+      if (snapState) snapState.lock();
       lenis.scrollTo(top, {
         duration: 1.1,
         easing: expoOut,
@@ -628,6 +640,7 @@ async function boot() {
   let lenis = null;
   if (!reduced) {
     lenis = new Lenis();
+    window.__lenis = lenis;
     lenis.on("scroll", ScrollTrigger.update);
     gsap.ticker.add((t) => lenis.raf(t * 1000));
     gsap.ticker.lagSmoothing(0);
@@ -645,7 +658,7 @@ async function boot() {
   /* shaders (desktop, motion allowed only) — one shared canvas */
   if (useShaders) {
     try {
-      const { initShaders } = await import("./shaders.js");
+      const { initShaders } = await import("./shaders.js?v=22");
       const entries = sections.map((sec, i) => ({
         el: sec,
         preset:
