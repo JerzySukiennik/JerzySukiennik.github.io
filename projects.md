@@ -26,14 +26,14 @@
 ---
 
 ## 01
-- name: Gzowo Bowling
-- tagline: A Jackbox-style party game — your phone is the controller, the TV is the alley.
-- url: https://jerzysukiennik.github.io/gzowo-bowling/
+- name: Gzowo AI
+- tagline: Multiuse assistant - inspired by Jarvis from "Iron Man"
+- url: https://jerzysukiennik.github.io/gzowo-ai/
 - year: 2026
-- category: Game
-- status: Live
-- stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
-- folder: Gzowo Bowling
+- category: Experiment
+- status: Prototype
+- stack: Firebase, Gemini API, Claude Fable 5
+- folder: Gzowo AI
 
 ## 02
 - name: GSP
@@ -46,6 +46,16 @@
 - folder: GSP
 
 ## 03
+- name: Gzowo Bowling
+- tagline: A Jackbox-style party game — your phone is the controller, the TV is the alley.
+- url: https://jerzysukiennik.github.io/gzowo-bowling/
+- year: 2026
+- category: Game
+- status: Live
+- stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
+- folder: Gzowo Bowling
+
+## 04
 - name: Modular
 - tagline: A bite-size multiplayer civilization game inspired by Polytopia.
 - url: https://play-modular.netlify.app/
@@ -55,7 +65,7 @@
 - stack: HTML/CSS/JS, Three.js, Firebase RTDB
 - folder: Modular
 
-## 04
+## 05
 - name: Backrooms
 - tagline: A 1–4 player co-op escape-room horror rendered like a lost PS1 game.
 - url: https://jerzysukiennik.github.io/backrooms-labirynth/
@@ -65,7 +75,7 @@
 - stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
 - folder: Backrooms
 
-## 05
+## 06
 - name: Benejnej Assistant
 - tagline: A small but powerful AI assistant.
 - url: https://benejnej-assistant.netlify.app/
@@ -75,7 +85,7 @@
 - stack: HTML/CSS/JS, Three.js, Gemini API
 - folder: BA
 
-## 06
+## 07
 - name: Galeria Gzowo
 - tagline: An interactive multiplayer gallery full of memories — a Father's Day gift.
 - url: https://galeria-gzowo.netlify.app/
@@ -84,13 +94,3 @@
 - status: Live
 - stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
 - folder: GG
-
-## 07
-- name: Gzowo AI
-- tagline: Multiuse assistant - inspired by Jarvis from "Iron Man"
-- url: https://jerzysukiennik.github.io/gzowo-ai/
-- year: 2026
-- category: Experiment
-- status: Prototype
-- stack: Firebase, Gemini API, Claude Fable 5
-- folder: Gzowo AI
