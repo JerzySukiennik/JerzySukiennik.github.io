@@ -84,3 +84,13 @@
 - status: Live
 - stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
 - folder: GG
+
+## 07
+- name: Gzowo AI
+- tagline: Multiuse assistant - inspired by Jarvis from "Iron Man"
+- url: https://jerzysukiennik.github.io/gzowo-ai/
+- year: 2026
+- category: Experiment
+- status: Prototype
+- stack: Firebase, Gemini API, Claude Fable 5
+- folder: Gzowo AI
