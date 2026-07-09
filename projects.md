@@ -32,7 +32,7 @@
 - year: 2026
 - category: Experiment
 - status: Prototype
-- stack: Firebase, Gemini API, Claude Fable 5
+- stack: Firebase, Gemini API, Claude Fable 5, Cloudfare Worker
 - folder: Gzowo AI
 
 ## 02
@@ -94,3 +94,13 @@
 - status: Live
 - stack: HTML/CSS/JS, Three.js, Rapier, Firebase RTDB
 - folder: GG
+
+## 08
+- name: Grand Conductors
+- tagline: A Co-op train conducting game
+- url: https://jerzysukiennik.github.io/train-conductors/
+- year: 2026
+- category: Game
+- status: WIP
+- stack: Claude Fable 5, Firebase, kenney.nl
+- folder: GC
