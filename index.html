@@ -1,81 +1,51 @@
-<!DOCTYPE html>
-<!-- index.html — scroll-driven portfolio for jerzysukiennik.github.io.
-     Static hero + contact; project sections are rendered at runtime from
-     projects.md (see js/main.js). Zero build, pure static files. -->
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Jerzy Sukiennik — I build things that fly.</title>
-  <meta name="description" content="I build things that fly. And a few that don't crash. Rockets, games and web experiments by Jerzy Sukiennik.">
-  <meta property="og:title" content="Jerzy Sukiennik — Projects">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07080c">
+  <title>Jerzy Sukiennik — Things that fly</title>
+  <meta name="description" content="Games, apps and experimental digital worlds by Jerzy Sukiennik.">
+  <meta property="og:title" content="Jerzy Sukiennik — Things that fly">
   <meta property="og:description" content="I build things that fly. And a few that don't crash.">
   <meta property="og:image" content="https://jerzysukiennik.github.io/avatar.jpg">
   <meta property="og:url" content="https://jerzysukiennik.github.io/">
   <meta property="og:type" content="website">
-  <meta name="twitter:card" content="summary">
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=22">
-  <script async crossorigin="anonymous" src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
-  <script type="importmap">
-  {
-    "imports": {
-      "gsap": "https://esm.sh/gsap@3.12.5",
-      "gsap/ScrollTrigger": "https://esm.sh/gsap@3.12.5/ScrollTrigger",
-      "lenis": "https://esm.sh/lenis@1.1.14",
-      "ogl": "https://esm.sh/ogl@1.0.8"
-    }
-  }
-  </script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=30">
+  <link rel="stylesheet" href="css/fixes.css?v=1">
 </head>
 <body>
-
-  <header class="section hero" style="--tint:#123a4a">
-    <span class="section-num" aria-hidden="true"></span>
-    <div class="content hero-inner">
-      <div class="hero-avatar">
-        <img src="avatar.jpg" alt="Jerzy Sukiennik" width="512" height="512">
-      </div>
-      <div class="hero-glow" aria-hidden="true"></div>
-      <div class="hero-text">
-        <h1 class="hero-name"><span class="hero-line">JERZY</span><span class="hero-line">SUKIENNIK</span></h1>
-        <p class="hero-tagline">I build things that fly. And a few that don't crash.</p>
-      </div>
-    </div>
-    <div class="scroll-hint" aria-hidden="true">
-      <svg viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg">
-        <path class="hint-path" d="M12 2 C 10.6 9, 13.5 16, 12 25.5 M5.5 20 C 8 22.8, 10 25.4, 12 27.6 C 14 25.4, 16 22.8, 18.5 20"/>
-      </svg>
-    </div>
-  </header>
-
-  <main id="projects-root" aria-label="Projects"></main>
-
-  <footer class="section contact" style="--tint:#0b1013">
-    <span class="section-num" aria-hidden="true"></span>
-    <div class="content contact-inner">
-      <p class="eyebrow">Get in touch</p>
-      <a class="contact-email magnetic" data-strength="0.3" href="mailto:kalakasanyt@gmail.com">
-        <span class="magnetic-inner">kalakasanyt@gmail.com</span>
-      </a>
+  <canvas id="space" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <nav class="rail" id="rail" aria-label="Project navigation"></nav>
+  <main id="stage">
+    <section class="panel hero" id="top" data-accent="#e9f3ff">
+      <div class="hero-orbit" aria-hidden="true"></div>
+      <img class="portrait" src="avatar.jpg" alt="Jerzy Sukiennik">
+      <p class="kicker">Selected worlds · 2026</p>
+      <h1>Jerzy<br><em>Sukiennik</em></h1>
+      <p class="hero-copy">I build things that fly.<br>And a few that don't crash.</p>
+      <a class="hero-enter" href="#gzowo-ai">Enter the archive <span>↓</span></a>
+    </section>
+    <div id="projects" aria-label="Projects"></div>
+    <section class="panel contact" id="contact" data-accent="#f3e9dc">
+      <p class="kicker">End of transmission</p>
+      <h2>Get in <em>touch.</em></h2>
+      <a class="email" href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
       <div class="socials">
-        <a class="social magnetic" data-strength="0.2" href="https://github.com/JerzySukiennik" target="_blank" rel="noopener" aria-label="GitHub">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
-        </a>
-        <a class="social magnetic" data-strength="0.2" href="https://x.com/kalakasanyt" target="_blank" rel="noopener" aria-label="X (Twitter)">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        </a>
-        <a class="social magnetic" data-strength="0.2" href="https://www.instagram.com/jurek_sukiennik/" target="_blank" rel="noopener" aria-label="Instagram">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-        </a>
+        <a href="https://x.com/kalakasanyt" target="_blank" rel="noreferrer">X <span>↗</span></a>
+        <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noreferrer">Instagram <span>↗</span></a>
+        <a href="https://github.com/JerzySukiennik" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
       </div>
-    </div>
-    <p class="copyright">© 2026 Jerzy Sukiennik</p>
-  </footer>
-
-  <script type="module" src="js/main.js?v=22"></script>
+      <p class="copyright">© 2026 Jerzy Sukiennik</p>
+    </section>
+  </main>
+  <dialog id="project-dialog" aria-label="Project details"></dialog>
+  <script type="module" src="js/main.js?v=30"></script>
 </body>
 </html>
