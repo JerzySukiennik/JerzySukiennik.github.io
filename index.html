@@ -2,50 +2,116 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#07080c">
-  <title>Jerzy Sukiennik — Things that fly</title>
-  <meta name="description" content="Games, apps and experimental digital worlds by Jerzy Sukiennik.">
-  <meta property="og:title" content="Jerzy Sukiennik — Things that fly">
-  <meta property="og:description" content="I build things that fly. And a few that don't crash.">
-  <meta property="og:image" content="https://jerzysukiennik.github.io/avatar.jpg">
-  <meta property="og:url" content="https://jerzysukiennik.github.io/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#D6C39B">
+  <meta name="color-scheme" content="light">
+  <title>Jerzy Sukiennik</title>
+  <meta name="description" content="I build things that fly. And a few that don't crash.">
+  <link rel="canonical" href="https://jerzysukiennik.github.io/">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://jerzysukiennik.github.io/">
+  <meta property="og:title" content="Jerzy Sukiennik">
+  <meta property="og:description" content="I build things that fly. And a few that don't crash.">
+  <meta property="og:image" content="https://jerzysukiennik.github.io/og-launch-rail.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Jerzy Sukiennik — Launch Rail project hub">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Jerzy Sukiennik">
+  <meta name="twitter:description" content="I build things that fly. And a few that don't crash.">
+  <meta name="twitter:image" content="https://jerzysukiennik.github.io/og-launch-rail.png">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Syne:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/main.css?v=30">
-  <link rel="stylesheet" href="css/fixes.css?v=1">
+  <link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono:ital@0;1&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css?v=relay-2">
 </head>
 <body>
-  <canvas id="space" aria-hidden="true"></canvas>
-  <div class="grain" aria-hidden="true"></div>
-  <nav class="rail" id="rail" aria-label="Project navigation"></nav>
-  <main id="stage">
-    <section class="panel hero" id="top" data-accent="#e9f3ff">
-      <div class="hero-orbit" aria-hidden="true"></div>
-      <img class="portrait" src="avatar.jpg" alt="Jerzy Sukiennik">
-      <p class="kicker">Selected worlds · 2026</p>
-      <h1>Jerzy<br><em>Sukiennik</em></h1>
-      <p class="hero-copy">I build things that fly.<br>And a few that don't crash.</p>
-      <a class="hero-enter" href="#gzowo-ai">Enter the archive <span>↓</span></a>
-    </section>
-    <div id="projects" aria-label="Projects"></div>
-    <section class="panel contact" id="contact" data-accent="#f3e9dc">
-      <p class="kicker">End of transmission</p>
-      <h2>Get in <em>touch.</em></h2>
-      <a class="email" href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
-      <div class="socials">
-        <a href="https://x.com/kalakasanyt" target="_blank" rel="noreferrer">X <span>↗</span></a>
-        <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noreferrer">Instagram <span>↗</span></a>
-        <a href="https://github.com/JerzySukiennik" target="_blank" rel="noreferrer">GitHub <span>↗</span></a>
+  <a class="skip-link" href="#project-board">Skip to projects</a>
+  <canvas id="drafting-field" aria-hidden="true"></canvas>
+
+  <header class="hero" id="top">
+    <div class="hero-copy">
+      <p class="system-label hero-enter">Independent builder / Warsaw</p>
+      <h1 class="hero-enter"><span>Jerzy</span> <span>Sukiennik</span></h1>
+      <p class="tagline hero-enter">I build things that fly.<br>And a few that don't crash.</p>
+      <a class="hero-link hero-enter" href="#project-board">View project relay <span aria-hidden="true">↓</span></a>
+    </div>
+
+    <div class="launch-rail hero-enter" aria-hidden="true">
+      <div class="rail-readout"><span>RELAY</span><span id="hero-progress">000</span></div>
+      <div class="rail-track">
+        <span class="rail-node node-a"></span>
+        <span class="rail-node node-b"></span>
+        <span class="rail-node node-c"></span>
+        <span class="payload">JS</span>
       </div>
-      <p class="copyright">© 2026 Jerzy Sukiennik</p>
+      <div class="rail-terminal"><span>ASSEMBLY</span><span>LIVE</span></div>
+    </div>
+  </header>
+
+  <main id="project-board" class="board" tabindex="-1">
+    <section class="board-head" aria-labelledby="board-title">
+      <div>
+        <p class="system-label">Live project feed</p>
+        <h2 id="board-title">Selected work</h2>
+      </div>
+      <p class="board-intro">Games, web apps, and experiments sent from the workbench to the world.</p>
     </section>
+
+    <section class="controls" aria-label="Project controls">
+      <fieldset class="filter-group">
+        <legend>Filter</legend>
+        <div class="button-row" id="filters">
+          <button type="button" class="control is-active" data-filter="All" aria-pressed="true">All</button>
+          <button type="button" class="control" data-filter="Game" aria-pressed="false">Game</button>
+          <button type="button" class="control" data-filter="Web app" aria-pressed="false">Web app</button>
+          <button type="button" class="control" data-filter="Experiment" aria-pressed="false">Experiment</button>
+        </div>
+      </fieldset>
+      <fieldset class="sort-group">
+        <legend>Sort</legend>
+        <div class="button-row" id="sorts">
+          <button type="button" class="control" data-sort="newest" aria-pressed="false">Newest</button>
+          <button type="button" class="control" data-sort="popular" aria-pressed="false">Most popular</button>
+        </div>
+      </fieldset>
+    </section>
+
+    <div class="work-layout">
+      <aside class="board-rail" aria-hidden="true">
+        <div class="board-rail-track">
+          <span class="board-payload"></span>
+        </div>
+        <p><span>FEED</span><span id="project-count">—</span></p>
+      </aside>
+
+      <section class="project-feed" aria-live="polite" aria-busy="true">
+        <div class="state-panel" id="project-state" role="status">
+          <span class="state-pulse" aria-hidden="true"></span>
+          <div>
+            <strong>Receiving projects</strong>
+            <p>Connecting to the live relay.</p>
+          </div>
+        </div>
+        <div class="project-grid" id="project-grid"></div>
+      </section>
+    </div>
   </main>
-  <dialog id="project-dialog" aria-label="Project details"></dialog>
-  <script type="module" src="js/main.js?v=30"></script>
+
+  <footer class="footer">
+    <p class="footer-mark">Relay complete.</p>
+    <nav aria-label="Contact links">
+      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X @kalakasanyt</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram @jurek_sukiennik</a>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub JerzySukiennik</a>
+    </nav>
+  </footer>
+
+  <noscript>
+    <div class="no-script">JavaScript is required to receive the live project feed.</div>
+  </noscript>
+  <script type="module" src="js/main.js?v=relay-2"></script>
 </body>
 </html>

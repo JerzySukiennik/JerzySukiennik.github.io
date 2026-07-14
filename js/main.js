@@ -1,22 +1,421 @@
-const github = "https://github.com/JerzySukiennik";
-const projects = [
-  {id:"gzowo-ai",name:"Gzowo AI",accent:"#9ee9ff",cover:"assets/covers/gzowo-ai.png",type:"Private build",link:github,linkLabel:"View on GitHub",summary:"A voice-first personal AI cockpit: wake it with a phrase, speak naturally, and let a living interface handle the rest.",story:"Gzowo AI is designed as a personal command centre rather than a chat box. A custom voice interface, animated avatar and tool-driven widgets make it feel present without turning the screen into a dashboard.",stack:["Gemini Live","Canvas","Firebase","Vosk"],images:["assets/source/gzowo-ai-talking.png","assets/source/gzowo-ai-idle.png"]},
-  {id:"gsp",name:"GSP",accent:"#ff9e59",cover:"assets/covers/gsp.png",type:"Live project",link:"https://gspaerospace.pl/",linkLabel:"Go to project",summary:"A personal aerospace brand for model rockets, 3D-printed flight hardware and every launch along the way.",story:"GSP turns real flight work into a living archive: flight hardware, launch footage and the experiments behind each new vehicle. It is equal parts maker log, brand and engineering playground.",stack:["HTML","CSS","JavaScript","Firebase"],images:["projectimages/GSP/1.jpg","projectimages/GSP/2.jpg","projectimages/GSP/3.jpg"]},
-  {id:"gzowo-bowling",name:"Gzowo Bowling",accent:"#ff5ead",cover:"assets/covers/gzowo-bowling.png",type:"Live game",link:"https://jerzysukiennik.github.io/gzowo-bowling/",linkLabel:"Go to project",summary:"A Jackbox-style party bowling game: phones are the controllers, the big screen is the alley.",story:"Gather friends around one screen, scan in with a phone and throw a real physics-powered ball. Spin, weight, themed lanes, replays and a full bowling score system turn a familiar game into a room-sized event.",stack:["Three.js","Rapier","Firebase RTDB"],images:["projectimages/Gzowo Bowling/1.jpg"]},
-  {id:"modular",name:"Modular",accent:"#9ee875",cover:"assets/covers/modular.png",type:"Live game",link:"https://play-modular.netlify.app/",linkLabel:"Go to project",summary:"A bite-size multiplayer civilisation game built from a world of modular strategy tiles.",story:"Modular makes the satisfaction of a long strategy session immediate. Players grow a small living island through tactical tile placement, then compete in the same compact world.",stack:["Three.js","Firebase RTDB","JavaScript"],images:["projectimages/Modular/1.jpg","projectimages/Modular/2.jpg","projectimages/Modular/3.jpg"]},
-  {id:"grand-conductors",name:"Grand Conductors",accent:"#ffe066",cover:"assets/covers/grand-conductors.png",type:"Live game",link:"https://jerzysukiennik.github.io/train-conductors/",linkLabel:"Go to project",summary:"A co-op party game where phones run bright little trains across one shared island.",story:"One person is never enough. Players accelerate trains, flip shared switches, honk at sheep and race to deliver passengers before the network turns into a charming disaster.",stack:["Three.js","Firebase RTDB","WebGL"],images:[]},
-  {id:"viewfinder",name:"Viewfinder",accent:"#b6a3ff",cover:"assets/covers/viewfinder.png",type:"Live game",link:"https://jerzysukiennik.github.io/viewfinder-capture/",linkLabel:"Go to project",summary:"Photograph part of a world, place the picture, and walk into the geometry you captured.",story:"Viewfinder is a browser puzzle experiment with real geometry operations. Captures cut through the scene, placed photos become walkable objects, and every solution asks you to rethink what a picture can be.",stack:["three.js","CSG","BVH"],images:[]},
-  {id:"backrooms",name:"Backrooms Labirynth",accent:"#d1c56a",cover:"assets/covers/backrooms.png",type:"Live game",link:"https://jerzysukiennik.github.io/backrooms-labirynth/",linkLabel:"Go to project",summary:"A 1–4 player escape-room horror game rendered like a lost PS1 memory.",story:"Rooms, keys and unsettling physics puzzles stand between the players and an exit gate. The horror comes from spaces that feel wrong, not monsters: flickering lights, knocks, whispers and things just beyond sight.",stack:["Three.js","Rapier","WebRTC"],images:["projectimages/Backrooms/1.jpg"]},
-  {id:"raft",name:"Raft",accent:"#73d6dc",cover:"assets/covers/raft.png",type:"Live game",link:"https://jerzysukiennik.github.io/raft",linkLabel:"Go to project",summary:"Build a raft, hook what the ocean gives you, and survive an endless procedural sea.",story:"Raft is a deterministic survival simulation with a clean separation between its game engine and presentation. Start with a bare platform, gather drifting materials and turn improvisation into a floating home.",stack:["Three.js","Vite","JavaScript"],images:[]},
-  {id:"mars-logistics",name:"Mars Logistics",accent:"#ff7652",cover:"assets/covers/mars-logistics.png",type:"Project build",link:"https://github.com/JerzySukiennik/mars-logistics-mp",linkLabel:"View on GitHub",summary:"A multiplayer logistics experiment set on a harsh Martian worksite.",story:"Mars Logistics turns a hostile red world into a shared operations challenge. Vehicles, materials and a growing base give every choice a visible consequence in the landscape.",stack:["Three.js","Rapier","Firebase RTDB"],images:[]},
-  {id:"brain-console",name:"Brain Console",accent:"#f1f5ff",cover:"assets/covers/brain-console.png",type:"Local tool",link:github,linkLabel:"View on GitHub",summary:"A read-only visual console for navigating a personal Obsidian second brain.",story:"Brain Console turns a private knowledge vault into a living graph. It maps links, recent changes, project states and notes without ever writing to the underlying archive.",stack:["Node.js","SSE","Obsidian"],images:["assets/source/brain-console-icon.png"]}
-];
-const $ = (s,p=document)=>p.querySelector(s); const vibe=pattern=>navigator.vibrate?.(pattern);
-function escape(s){return s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
-function card(p,i){const target=p.linkLabel==="Go to project"?"Go to project":"View on GitHub";return `<section class="project" id="${p.id}" style="--accent:${p.accent}" data-id="${p.id}"><div class="project-info"><p class="project-index">${String(i+1).padStart(2,"0")} / 10 · ${p.type}</p><h2>${escape(p.name)}</h2><p class="project-summary">${escape(p.summary)}</p><div class="tags">${p.stack.map(x=>`<span>${escape(x)}</span>`).join("")}</div><button class="project-action" data-open="${p.id}">Explore <span>→</span></button></div><div class="project-image"><img src="${p.cover}" alt="Atmospheric cover for ${escape(p.name)}" loading="lazy"><a class="image-link" href="${p.link}" target="_blank" rel="noreferrer"><span>${target} →</span></a></div></section>`}
-function build(){const root=$("#projects"),rail=$("#rail");root.innerHTML=projects.map(card).join("");[...projects].forEach(p=>{const b=document.createElement("button");b.setAttribute("aria-label",`Go to ${p.name}`);b.title=p.name;b.onclick=()=>{vibe(10);document.getElementById(p.id).scrollIntoView({behavior:"smooth"})};rail.append(b)});document.addEventListener("click",e=>{const id=e.target.closest("[data-open]")?.dataset.open;if(id)openProject(projects.find(p=>p.id===id))});}
-function openProject(p){const d=$("#project-dialog"),slides=[p.cover,...p.images];d.style.setProperty("--accent",p.accent);d.innerHTML=`<article class="detail"><div class="detail-top"><p class="kicker">${p.type}</p><button class="close" aria-label="Close project">Close ×</button></div><h2>${escape(p.name)}</h2><div class="detail-grid"><div class="detail-copy"><p>${escape(p.summary)}</p><h3>Inside the project</h3><p>${escape(p.story)}</p><h3>Built with</h3><p>${escape(p.stack.join(" · "))}</p><div class="detail-links"><a href="${p.link}" target="_blank" rel="noreferrer">${p.linkLabel} ↗</a></div></div><div class="gallery">${slides.map((x,i)=>`<img src="${x}" alt="${escape(p.name)} image ${i+1}" ${i?"loading=\"lazy\"":""}>`).join("")}<div class="gallery-dots">${slides.map((_,i)=>`<button class="${i?"":"active"}" aria-label="Show image ${i+1}"></button>`).join("")}</div></div></div></article>`;d.showModal();history.pushState({project:p.id},"",`#${p.id}`);vibe([12,25,12]);$(".close",d).onclick=()=>closeProject();$(".gallery",d).querySelectorAll(".gallery-dots button").forEach((b,i)=>b.onclick=()=>{vibe(8);$(".gallery",d).querySelectorAll("img").forEach((im,k)=>im.style.opacity=k===i?1:0);$(".gallery",d).querySelectorAll("button").forEach((x,k)=>x.classList.toggle("active",k===i))});}
-function closeProject(){const d=$("#project-dialog");if(d.open)d.close();if(history.state?.project)history.back();vibe(10)}
-$("#project-dialog").addEventListener("close",()=>{if(history.state?.project)history.replaceState(null,"",location.pathname+location.search)});window.addEventListener("popstate",()=>{const d=$("#project-dialog");if(d.open)d.close()});
-function webgl(){const c=$("#space"),gl=c.getContext("webgl",{alpha:false,antialias:false,powerPreference:"high-performance"});if(!gl)return;const vs=`attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`,fs=`precision mediump float;uniform vec2 r;uniform float t;uniform vec3 a;void main(){vec2 uv=(gl_FragCoord.xy-.5*r)/r.y;float n=sin(uv.x*5.+t*.2)+sin(uv.y*7.-t*.17);float wave=sin(length(uv)*12.-t*.7+n)*.5+.5;float glow=.018/(abs(wave-.52)+.025);vec3 col=vec3(.016,.02,.04)+a*glow*.26;col+=a*.09/(length(uv-vec2(sin(t*.09)*.3,cos(t*.12)*.16))+.13);gl_FragColor=vec4(col,1.);}`;function sh(type,src){let s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);return s}let pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);let b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);let loc=gl.getAttribLocation(pr,"p");gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);let accent=[.4,.8,1],size=()=>{c.width=Math.round(innerWidth*.75);c.height=Math.round(innerHeight*.75);gl.viewport(0,0,c.width,c.height)};size();addEventListener("resize",size);document.querySelectorAll(".panel,.project").forEach(x=>new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){let hex=getComputedStyle(e.target).getPropertyValue("--accent").trim();if(hex?.startsWith("#"))accent=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16)/255)}}),{threshold:.55}).observe(x));function draw(ms){gl.uniform2f(gl.getUniformLocation(pr,"r"),c.width,c.height);gl.uniform1f(gl.getUniformLocation(pr,"t"),ms*.001);gl.uniform3fv(gl.getUniformLocation(pr,"a"),accent);gl.drawArrays(gl.TRIANGLES,0,3);requestAnimationFrame(draw)}requestAnimationFrame(draw)}
-build();webgl();if(location.hash){setTimeout(()=>document.querySelector(location.hash)?.scrollIntoView(),100)}
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js";
+import { gsap } from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js";
+import { ScrollTrigger } from "https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  collection,
+  doc,
+  getFirestore,
+  increment,
+  onSnapshot,
+  query,
+  updateDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {
+  safeProjectImageUrl,
+  safeProjectUrl,
+  toMillis,
+} from "./project-utils.js?v=relay-2";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const firebaseConfig = {
+  apiKey: "AIzaSyC7g3qGlm2gvn9be3q_62uB8pENTfjYO8E",
+  authDomain: "jerzysukiennik-hub.firebaseapp.com",
+  projectId: "jerzysukiennik-hub",
+  messagingSenderId: "224427251535",
+  appId: "1:224427251535:web:48e701ac5e6c006a36573a",
+};
+
+const db = getFirestore(initializeApp(firebaseConfig));
+const grid = document.querySelector("#project-grid");
+const feed = document.querySelector(".project-feed");
+const statePanel = document.querySelector("#project-state");
+const projectCount = document.querySelector("#project-count");
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+let projects = [];
+let activeFilter = "All";
+let activeSort = "initial";
+let renderSequence = 0;
+let hasRendered = false;
+
+function orderedProjects() {
+  const visible = projects.filter((project) => !project.hidden && (activeFilter === "All" || project.category === activeFilter));
+  return visible.sort((a, b) => {
+    const pinDelta = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+    if (pinDelta) return pinDelta;
+    if (activeSort === "popular") return (Number(b.clicks) || 0) - (Number(a.clicks) || 0) || (Number(a.order) || 0) - (Number(b.order) || 0);
+    if (activeSort === "newest") return toMillis(b.createdAt, b.year) - toMillis(a.createdAt, a.year) || (Number(a.order) || 0) - (Number(b.order) || 0);
+    return (Number(a.order) || 0) - (Number(b.order) || 0);
+  });
+}
+
+export function refreshCard(link, project) {
+  const projectUrl = safeProjectUrl(project.url);
+  const imageUrl = safeProjectImageUrl(project.imageUrl);
+
+  link.dataset.id = project.id;
+  link.dataset.projectUrl = projectUrl;
+  if (projectUrl) {
+    link.href = projectUrl;
+    link.removeAttribute("aria-disabled");
+  } else {
+    link.removeAttribute("href");
+    link.setAttribute("aria-disabled", "true");
+  }
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.setAttribute("aria-label", `Open ${project.name || "project"} in a new tab`);
+  link.classList.toggle("is-pinned", Boolean(project.pinned));
+
+  const imageWrap = document.createElement("div");
+  imageWrap.className = "card-image";
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.alt = `${project.name || "Project"} project preview`;
+    image.loading = project.pinned ? "eager" : "lazy";
+    image.decoding = "async";
+    image.addEventListener("error", () => {
+      image.remove();
+      imageWrap.classList.add("image-failed");
+      imageWrap.textContent = "Image unavailable";
+    }, { once: true });
+    imageWrap.append(image);
+  } else {
+    imageWrap.classList.add("image-failed");
+    imageWrap.textContent = "Image unavailable";
+  }
+
+  const copy = document.createElement("div");
+  copy.className = "card-copy";
+  const heading = document.createElement("h3");
+  heading.textContent = project.name || "Untitled project";
+  const description = document.createElement("p");
+  description.textContent = project.description || "No description available.";
+  copy.append(heading, description);
+  link.replaceChildren(imageWrap, copy);
+  return link;
+}
+
+export function makeCard(project) {
+  const link = document.createElement("a");
+  link.className = "project-card";
+
+  link.addEventListener("click", (event) => {
+    const projectUrl = safeProjectUrl(link.dataset.projectUrl);
+    const projectId = link.dataset.id;
+    if (!projectUrl || !projectId) {
+      event.preventDefault();
+      return;
+    }
+    updateDoc(doc(db, "projects", projectId), { clicks: increment(1) }).catch(() => {});
+  });
+  return refreshCard(link, project);
+}
+
+function showState(kind, title, message) {
+  statePanel.hidden = false;
+  statePanel.classList.toggle("is-error", kind === "error");
+  statePanel.querySelector("strong").textContent = title;
+  statePanel.querySelector("p").textContent = message;
+  statePanel.querySelector(".state-pulse").hidden = kind === "empty";
+}
+
+function installCardReveals(cards) {
+  if (reduceMotion.matches) return;
+  cards.forEach((card, index) => {
+    gsap.fromTo(card,
+      { autoAlpha: 0, y: 28 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        duration: .42,
+        delay: Math.min(index % 4, 3) * .045,
+        ease: "power2.out",
+        clearProps: "visibility,opacity,transform",
+        scrollTrigger: {
+          id: `card-reveal-${card.dataset.id}`,
+          trigger: card,
+          start: "top 92%",
+          once: true,
+        },
+      });
+  });
+}
+
+function commitCards(next, previousRects, sequence) {
+  if (sequence !== renderSequence) return;
+  const oldCards = new Map([...grid.children].map((card) => [card.dataset.id, card]));
+  const fragment = document.createDocumentFragment();
+  next.forEach((project) => {
+    const existingCard = oldCards.get(project.id);
+    const card = existingCard ? refreshCard(existingCard, project) : makeCard(project);
+    fragment.append(card);
+  });
+  grid.replaceChildren(fragment);
+  projectCount.textContent = String(next.length).padStart(2, "0");
+  feed.setAttribute("aria-busy", "false");
+
+  if (!next.length) {
+    showState("empty", "No projects on this channel", "Choose another filter to continue.");
+    return;
+  }
+  statePanel.hidden = true;
+
+  if (reduceMotion.matches || !previousRects.size) {
+    if (!hasRendered) installCardReveals([...grid.children]);
+    hasRendered = true;
+    ScrollTrigger.refresh();
+    return;
+  }
+
+  [...grid.children].forEach((card) => {
+    const before = previousRects.get(card.dataset.id);
+    if (!before) {
+      gsap.fromTo(card, { autoAlpha: 0, scale: .96 }, { autoAlpha: 1, scale: 1, duration: .34, ease: "power2.out", clearProps: "visibility,opacity,transform" });
+      return;
+    }
+    const after = card.getBoundingClientRect();
+    gsap.fromTo(card,
+      { x: before.left - after.left, y: before.top - after.top },
+      { x: 0, y: 0, duration: .5, ease: "power3.inOut", clearProps: "transform", overwrite: true });
+  });
+  ScrollTrigger.refresh();
+}
+
+function renderProjects({ animate = true } = {}) {
+  const sequence = ++renderSequence;
+  const next = orderedProjects();
+  const existing = [...grid.children];
+  const previousRects = new Map(existing.map((card) => [card.dataset.id, card.getBoundingClientRect()]));
+  const nextIds = new Set(next.map((project) => project.id));
+  const outgoing = existing.filter((card) => !nextIds.has(card.dataset.id));
+
+  if (animate && outgoing.length && !reduceMotion.matches) {
+    gsap.to(outgoing, {
+      autoAlpha: 0,
+      y: 14,
+      duration: .16,
+      ease: "power1.in",
+      stagger: .025,
+      onComplete: () => commitCards(next, previousRects, sequence),
+    });
+  } else {
+    commitCards(next, previousRects, sequence);
+  }
+}
+
+document.querySelector("#filters").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-filter]");
+  if (!button || button.dataset.filter === activeFilter) return;
+  activeFilter = button.dataset.filter;
+  document.querySelectorAll("[data-filter]").forEach((item) => {
+    const active = item === button;
+    item.classList.toggle("is-active", active);
+    item.setAttribute("aria-pressed", String(active));
+  });
+  renderProjects();
+});
+
+document.querySelector("#sorts").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-sort]");
+  if (!button) return;
+  activeSort = button.dataset.sort;
+  document.querySelectorAll("[data-sort]").forEach((item) => {
+    const active = item === button;
+    item.classList.toggle("is-active", active);
+    item.setAttribute("aria-pressed", String(active));
+  });
+  renderProjects();
+});
+
+onSnapshot(query(collection(db, "projects")), (snapshot) => {
+  projects = snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+  if (!projects.some((project) => !project.hidden)) {
+    grid.replaceChildren();
+    projectCount.textContent = "00";
+    feed.setAttribute("aria-busy", "false");
+    showState("empty", "No projects transmitted", "The live collection is currently empty.");
+    return;
+  }
+  renderProjects({ animate: hasRendered });
+}, (error) => {
+  console.error("Firestore project feed failed:", error);
+  grid.replaceChildren();
+  projectCount.textContent = "ERR";
+  feed.setAttribute("aria-busy", "false");
+  showState("error", "Project relay offline", "The live Firestore feed could not be loaded. Refresh to try again.");
+});
+
+function initMotion() {
+  const media = gsap.matchMedia();
+  media.add({
+    desktop: "(min-width: 761px)",
+    mobile: "(max-width: 760px)",
+    reduce: "(prefers-reduced-motion: reduce)",
+  }, (context) => {
+    const { desktop, reduce } = context.conditions;
+    if (reduce) {
+      gsap.set(".hero-enter", { autoAlpha: 1, x: 0, y: 0 });
+      return;
+    }
+
+    gsap.timeline({ defaults: { ease: "power3.out" } })
+      .fromTo(".hero-copy .hero-enter", { autoAlpha: 0, y: 24 }, { autoAlpha: 1, y: 0, duration: .4, stagger: .055 })
+      .fromTo(".launch-rail", { autoAlpha: 0, x: desktop ? 22 : 0, y: desktop ? 0 : 12 }, { autoAlpha: 1, x: 0, y: 0, duration: .28 }, "<.12");
+
+    gsap.to(".payload", {
+      [desktop ? "y" : "x"]: desktop ? "68vh" : "72vw",
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top",
+        scrub: .25,
+        onUpdate: (self) => {
+          document.querySelector("#hero-progress").textContent = String(Math.round(self.progress * 100)).padStart(3, "0");
+        },
+      },
+    });
+
+    gsap.to(".board-payload", {
+      [desktop ? "y" : "x"]: () => desktop
+        ? Math.max(0, document.querySelector(".board-rail-track").clientHeight - 58)
+        : Math.max(0, document.querySelector(".board-rail-track").clientWidth - 48),
+      ease: "none",
+      scrollTrigger: {
+        trigger: ".work-layout",
+        start: "top 72%",
+        end: "bottom 30%",
+        scrub: .35,
+        invalidateOnRefresh: true,
+      },
+    });
+
+    gsap.fromTo(".board-head > *", { autoAlpha: 0, y: 32 }, {
+      autoAlpha: 1,
+      y: 0,
+      duration: .5,
+      stagger: .08,
+      ease: "power2.out",
+      scrollTrigger: { trigger: ".board-head", start: "top 86%", once: true },
+    });
+  });
+}
+
+function initDraftingField() {
+  const canvas = document.querySelector("#drafting-field");
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const lowPower = coarse || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) || (navigator.deviceMemory && navigator.deviceMemory <= 4);
+  const fps = lowPower ? 30 : 60;
+  const frameInterval = 1000 / fps;
+  let renderer;
+
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, depth: false, stencil: false, powerPreference: "low-power" });
+  } catch (error) {
+    console.warn("WebGL background unavailable:", error);
+    document.documentElement.classList.add("no-webgl");
+    return;
+  }
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, coarse ? 1 : 1.25) * (lowPower ? .58 : .7));
+  renderer.setSize(window.innerWidth, window.innerHeight, false);
+  const scene = new THREE.Scene();
+  const camera = new THREE.Camera();
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthTest: false,
+    uniforms: {
+      uTime: { value: 0 },
+      uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+    },
+    vertexShader: `
+      void main() {
+        gl_Position = vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      precision mediump float;
+      uniform float uTime;
+      uniform vec2 uResolution;
+
+      void main() {
+        vec2 uv = gl_FragCoord.xy / uResolution.xy;
+        vec2 gridUv = uv * vec2(uResolution.x / uResolution.y, 1.0) * 18.0;
+        vec2 lineDistance = min(fract(gridUv), 1.0 - fract(gridUv));
+        float grid = 1.0 - step(0.035, min(lineDistance.x, lineDistance.y));
+        float wideLine = 1.0 - step(0.018, min(abs(fract(gridUv.x * 0.2) - 0.5), abs(fract(gridUv.y * 0.2) - 0.5)));
+        float bandA = step(0.53, fract(uv.y * 7.0 - uTime * 0.055));
+        float bandB = step(0.72, fract(uv.x * 3.0 + uTime * 0.025));
+        float oneBit = abs(bandA - bandB);
+        vec3 ink = vec3(0.09, 0.075, 0.055);
+        float alpha = grid * 0.24 + wideLine * 0.12 + oneBit * 0.035;
+        gl_FragColor = vec4(ink, alpha);
+      }
+    `,
+  });
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
+
+  let raf = 0;
+  let running = true;
+  let lastDraw = 0;
+  let previousFrame = performance.now();
+  let sampledFrames = 0;
+  let sampledTime = 0;
+  let fallbackStatic = false;
+
+  function draw(now) {
+    if (!running) return;
+    raf = requestAnimationFrame(draw);
+    const frameTime = now - previousFrame;
+    previousFrame = now;
+    if (sampledFrames < 36) {
+      sampledFrames += 1;
+      sampledTime += Math.min(frameTime, 100);
+      if (sampledFrames === 36 && sampledTime / sampledFrames > (lowPower ? 45 : 28)) {
+        fallbackStatic = true;
+        document.documentElement.classList.add("webgl-static");
+      }
+    }
+    if (now - lastDraw < frameInterval) return;
+    lastDraw = now;
+    material.uniforms.uTime.value = now * .001;
+    renderer.render(scene, camera);
+    if (fallbackStatic || reduceMotion.matches) {
+      running = false;
+      cancelAnimationFrame(raf);
+    }
+  }
+
+  function resize() {
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    material.uniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+    renderer.render(scene, camera);
+  }
+  let resizeTimer = 0;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(resize, 160);
+  }, { passive: true });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      running = false;
+      cancelAnimationFrame(raf);
+    } else if (!fallbackStatic && !reduceMotion.matches && !running) {
+      running = true;
+      previousFrame = performance.now();
+      raf = requestAnimationFrame(draw);
+    }
+  });
+
+  renderer.render(scene, camera);
+  if (!reduceMotion.matches) raf = requestAnimationFrame(draw);
+}
+
+initMotion();
+initDraftingField();
