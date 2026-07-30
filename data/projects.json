@@ -239,7 +239,9 @@
         "WebSockets"
       ],
       "image": "project-images/voxel-demolition.webp",
-      "shots": []
+      "shots": [
+        "project-images/voxel-demolition.webp"
+      ]
     },
     {
       "slug": "galeria-gzowo",
