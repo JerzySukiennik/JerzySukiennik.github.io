@@ -136,10 +136,13 @@ async function main() {
   await browser.close();
 
   await fs.mkdir(path.dirname(out), { recursive: true });
-  await sharp(raw)
-    .resize(args.width, args.height, { fit: 'cover', position: 'centre' })
-    .webp({ quality: args.quality })
-    .toFile(out);
+  // honour the extension: a .png that is secretly WebP breaks link previews
+  const ext = path.extname(out).toLowerCase();
+  let pipeline = sharp(raw).resize(args.width, args.height, { fit: 'cover', position: 'centre' });
+  if (ext === '.png') pipeline = pipeline.png();
+  else if (ext === '.jpg' || ext === '.jpeg') pipeline = pipeline.jpeg({ quality: args.quality });
+  else pipeline = pipeline.webp({ quality: args.quality });
+  await pipeline.toFile(out);
 
   const stat = await fs.stat(out);
   console.log(JSON.stringify({
