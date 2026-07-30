@@ -1,0 +1,300 @@
+{
+  "version": 1,
+  "updated": "2026-07-30",
+  "projects": [
+    {
+      "slug": "gzowo-builders",
+      "name": "Gzowo Builders",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": true,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/gzowo-builders/",
+      "repo": "https://github.com/JerzySukiennik/gzowo-builders",
+      "description": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
+      "body": [
+        "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be — the whole game is the workshop.",
+        "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted — an overloaded cantilever fails because it is overloaded.",
+        "Wheels are raycast rather than physical bodies, which is why a car at 40 km/h through a slalom keeps all four corners instead of shaking itself apart. It runs co-op over the local network, with one machine acting as the authority on physics and running exactly the same code the browser runs."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "Node",
+        "Blender",
+        "Firebase"
+      ],
+      "image": "project-images/gzowo-builders.webp",
+      "shots": []
+    },
+    {
+      "slug": "narew-labs",
+      "name": "Narew Labs",
+      "author": "Jerzy Sukiennik",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "pinned": true,
+      "hidden": false,
+      "url": "https://g-micro-web.web.app/",
+      "repo": "https://github.com/JerzySukiennik/g-micro",
+      "description": "Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.",
+      "body": [
+        "G-Micro is a 110-million-parameter language model built from nothing: the tokenizer, the training loop and the Polish corpus are all ours. This is the app you talk to it through.",
+        "The page itself computes nothing. It writes a task into a database, a MacBook picks it up, runs the model and streams the answer back token by token. Both sides dial out, so no port is ever opened on the Mac — deliberately chosen over a tunnel.",
+        "The same window also edits photos with G-Images, a second model of ours. Ask for black and white or a blur and it makes the change directly, with no service in the middle."
+      ],
+      "stack": [
+        "PyTorch",
+        "Electron",
+        "Firebase",
+        "Python"
+      ],
+      "image": "project-images/narew-labs.webp",
+      "shots": []
+    },
+    {
+      "slug": "gsp",
+      "name": "GSP",
+      "author": "Jerzy Sukiennik",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "pinned": true,
+      "hidden": false,
+      "url": "https://gspaerospace.pl/",
+      "repo": "",
+      "description": "Gzowo Space Program — the site for the model rockets we actually launch.",
+      "body": [
+        "GSP is the name everything that flies goes out under. The site collects the rockets, the launches and the parts we print, and it is the closest thing the workshop has to a front door.",
+        "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo — the same field the background of this page is made of."
+      ],
+      "stack": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "image": "project-images/gsp.webp",
+      "shots": []
+    },
+    {
+      "slug": "cruise-control",
+      "name": "Cruise Control",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/cruise-control/",
+      "repo": "https://github.com/JerzySukiennik/cruise-control",
+      "description": "A precision driving game with retro pixel post-processing, moving hazards and a shop.",
+      "body": [
+        "Steer through courses where the obstacles move with you rather than sitting still. Version 2 added seven levels, a sensitivity setting, an economy with a shop, and three-player multiplayer.",
+        "The look comes from a post-processing pass that resolves the whole frame down to chunky pixels, so the clean vector shapes underneath arrive looking like something from a much older machine."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas",
+        "Firebase"
+      ],
+      "image": "project-images/cruise-control.webp",
+      "shots": []
+    },
+    {
+      "slug": "gzowo-bowling",
+      "name": "Gzowo Bowling",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/gzowo-bowling/",
+      "repo": "https://github.com/JerzySukiennik/gzowo-bowling",
+      "description": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
+      "body": [
+        "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw — the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
+        "Under the alley is a proper physics simulation with three.js and Rapier, built without a bundler: modules straight from a CDN, which is the pattern most of the games here still use."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebRTC",
+        "Firebase"
+      ],
+      "image": "project-images/gzowo-bowling.webp",
+      "shots": []
+    },
+    {
+      "slug": "gargantua",
+      "name": "Gargantua",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/Gargantua/",
+      "repo": "https://github.com/JerzySukiennik/Gargantua",
+      "description": "Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.",
+      "body": [
+        "You move by pushing off surfaces and firing short bursts, which means every mistake keeps travelling. Working together is less about coordination than about not sending your partner spinning.",
+        "The black hole is the reason for the whole thing: light bends around it, and the closer you drift the more the view stops behaving the way your eyes expect."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL",
+        "Firebase"
+      ],
+      "image": "project-images/gargantua.webp",
+      "shots": []
+    },
+    {
+      "slug": "untitled-pogo-game",
+      "name": "Untitled Pogo Game",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://untitled-pogo-game.web.app/",
+      "repo": "",
+      "description": "Fifteen levels of pogo-stick parkour, playable together, installable as an app.",
+      "body": [
+        "One button, one stick, fifteen levels that get mean quickly. The jump is a spring rather than a fixed arc, so timing the compression matters more than timing the press.",
+        "It runs as an installable web app and has a co-op mode, which turns the harder levels into a race where both of you are usually wrong."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas",
+        "PWA",
+        "Firebase"
+      ],
+      "image": "project-images/untitled-pogo-game.webp",
+      "shots": []
+    },
+    {
+      "slug": "airwave",
+      "name": "Airwave",
+      "author": "Jerzy Sukiennik",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/airwave/",
+      "repo": "https://github.com/JerzySukiennik/airwave",
+      "description": "An instrument you play with your hands in the air, in front of a webcam. No hardware.",
+      "body": [
+        "Your right hand sets the pitch and snaps to a pentatonic scale so it is hard to sound bad; your left hand is the volume. Fingers pick the octave, a fist morphs the timbre, a pinch adds vibrato, and your mouth works as a wah pedal.",
+        "Hand tracking runs locally in the browser and the sound is synthesised in the page, so nothing about you leaves the machine. Desktop only — it needs a camera and a real amount of light."
+      ],
+      "stack": [
+        "MediaPipe",
+        "Tone.js",
+        "JavaScript"
+      ],
+      "image": "project-images/airwave.webp",
+      "shots": []
+    },
+    {
+      "slug": "voxel-demolition",
+      "name": "Voxel Demolition",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/voxel-demolition",
+      "description": "A destruction sandbox with twenty-five tools and co-op for four. Runs on a server at home.",
+      "body": [
+        "Everything in the plaza is made of voxels and everything comes apart: hammers, charges, a shotgun and a launcher, plus builder tools that put material back. Twenty-five of them, grouped so you can cycle by category rather than hunting through a list.",
+        "Up to four people share one world through a headless Node server that holds the authoritative state. That is also why there is no link to play here yet — the server runs on a laptop at home, so for now the code is what you can look at."
+      ],
+      "stack": [
+        "three.js",
+        "Node",
+        "WebSockets"
+      ],
+      "image": "project-images/voxel-demolition.webp",
+      "shots": []
+    },
+    {
+      "slug": "galeria-gzowo",
+      "name": "Galeria Gzowo",
+      "author": "Jerzy Sukiennik",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://galeria-gzowo.netlify.app/",
+      "repo": "",
+      "description": "A gallery for the place the rest of this site is named after.",
+      "body": [
+        "Photographs from Gzowo, put somewhere they can actually be looked at rather than buried in a phone.",
+        "Small, quick and deliberately plain — the pictures are the whole point."
+      ],
+      "stack": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "image": "project-images/galeria-gzowo.webp",
+      "shots": []
+    },
+    {
+      "slug": "backrooms",
+      "name": "Backrooms",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/backrooms-labirynth/",
+      "repo": "https://github.com/JerzySukiennik/backrooms-labirynth",
+      "description": "Yellow rooms, buzzing lights, and a maze that does not care whether you get out.",
+      "body": [
+        "A first-person walk through an endless office that never quite repeats. There is no map and no marker; the only thing you build up is a sense of which corridor you have already ruined an hour on.",
+        "The tension is carried almost entirely by sound and by light that hums at the wrong frequency — there is very little in the way of enemies, and it does not need them."
+      ],
+      "stack": [
+        "three.js",
+        "JavaScript"
+      ],
+      "image": "project-images/backrooms.webp",
+      "shots": []
+    },
+    {
+      "slug": "modular",
+      "name": "Modular",
+      "author": "Jerzy Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "url": "https://jerzysukiennik.github.io/modular/",
+      "repo": "https://github.com/JerzySukiennik/modular",
+      "description": "Drop sixteen kinds of building on a plot and watch a town assemble itself around them.",
+      "body": [
+        "A calm builder: you place buildings, they connect, and the place slowly turns into somewhere. Saves persist and you can build alongside someone else.",
+        "Most of the work went into the parts you do not notice — shadows that make the models sit on the ground properly, an audio bus so the ambience does not stack into noise, and a pixel ratio that drops itself on weaker machines instead of stuttering."
+      ],
+      "stack": [
+        "three.js",
+        "JavaScript",
+        "Firebase"
+      ],
+      "image": "project-images/modular.webp",
+      "shots": []
+    }
+  ]
+}
