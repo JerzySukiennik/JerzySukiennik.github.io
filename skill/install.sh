@@ -50,9 +50,13 @@ else
   git -C "$REPO" pull --quiet --rebase --autostash origin main || true
 fi
 
-echo "Installing the screenshot tools (this downloads a browser the first time)"
-( cd "$DEST/tools" && npm install --silent --no-audit --no-fund >/dev/null 2>&1 )
-( cd "$DEST/tools" && npx --yes playwright install chromium >/dev/null 2>&1 ) || \
+echo "Installing the screenshot tools"
+echo "  The first run downloads a browser — this takes several minutes. Leave it be."
+( cd "$DEST/tools" && npm install --no-audit --no-fund ) || {
+  echo "  npm install failed. Run it yourself in $DEST/tools and then re-run this script." >&2
+  exit 1
+}
+( cd "$DEST/tools" && npx --yes playwright install chromium ) || \
   echo "  (Chromium download failed — run 'npx playwright install chromium' in $DEST/tools later)"
 
 echo
