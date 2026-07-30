@@ -27,7 +27,9 @@
         "Firebase"
       ],
       "image": "project-images/gzowo-builders.webp",
-      "shots": []
+      "shots": [
+        "project-images/gzowo-builders.webp"
+      ]
     },
     {
       "slug": "narew-labs",
@@ -53,7 +55,9 @@
         "Python"
       ],
       "image": "project-images/narew-labs.webp",
-      "shots": []
+      "shots": [
+        "project-images/narew-labs.webp"
+      ]
     },
     {
       "slug": "gsp",
@@ -77,7 +81,9 @@
         "JavaScript"
       ],
       "image": "project-images/gsp.webp",
-      "shots": []
+      "shots": [
+        "project-images/gsp.webp"
+      ]
     },
     {
       "slug": "cruise-control",
@@ -101,7 +107,9 @@
         "Firebase"
       ],
       "image": "project-images/cruise-control.webp",
-      "shots": []
+      "shots": [
+        "project-images/cruise-control.webp"
+      ]
     },
     {
       "slug": "gzowo-bowling",
@@ -126,7 +134,9 @@
         "Firebase"
       ],
       "image": "project-images/gzowo-bowling.webp",
-      "shots": []
+      "shots": [
+        "project-images/gzowo-bowling.webp"
+      ]
     },
     {
       "slug": "gargantua",
@@ -150,7 +160,9 @@
         "Firebase"
       ],
       "image": "project-images/gargantua.webp",
-      "shots": []
+      "shots": [
+        "project-images/gargantua.webp"
+      ]
     },
     {
       "slug": "untitled-pogo-game",
@@ -175,7 +187,9 @@
         "Firebase"
       ],
       "image": "project-images/untitled-pogo-game.webp",
-      "shots": []
+      "shots": [
+        "project-images/untitled-pogo-game.webp"
+      ]
     },
     {
       "slug": "airwave",
@@ -199,7 +213,9 @@
         "JavaScript"
       ],
       "image": "project-images/airwave.webp",
-      "shots": []
+      "shots": [
+        "project-images/airwave.webp"
+      ]
     },
     {
       "slug": "voxel-demolition",
@@ -247,7 +263,9 @@
         "JavaScript"
       ],
       "image": "project-images/galeria-gzowo.webp",
-      "shots": []
+      "shots": [
+        "project-images/galeria-gzowo.webp"
+      ]
     },
     {
       "slug": "backrooms",
@@ -270,7 +288,9 @@
         "JavaScript"
       ],
       "image": "project-images/backrooms.webp",
-      "shots": []
+      "shots": [
+        "project-images/backrooms.webp"
+      ]
     },
     {
       "slug": "modular",
@@ -294,7 +314,9 @@
         "Firebase"
       ],
       "image": "project-images/modular.webp",
-      "shots": []
+      "shots": [
+        "project-images/modular.webp"
+      ]
     }
   ]
 }

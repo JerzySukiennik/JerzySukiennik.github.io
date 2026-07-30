@@ -23,6 +23,10 @@
  *   --width/--height     Output size. Default 1200x900.
  *   --quality <n>        WebP quality. Default 82.
  *   --repo <path>        Site repo. Default: from the skill config.
+ *   --camera             Feed the page a synthetic webcam, for camera-driven projects.
+ *   --hide <selectors>   Comma-separated CSS to hide before the shot. Use it for the
+ *                        click-to-play veil that only appears because a headless
+ *                        browser cannot take pointer lock — never to hide the game.
  *   --no-headless        Watch it happen, for debugging a drive script.
  */
 
@@ -53,6 +57,8 @@ function parseArgs(argv) {
       case '--height': a.height = Number(next()); break;
       case '--quality': a.quality = Number(next()); break;
       case '--repo': a.repo = next(); break;
+      case '--camera': a.camera = true; break;
+      case '--hide': a.hide = next(); break;
       case '--no-headless': a.headless = false; break;
       default:
         if (flag.startsWith('--')) throw new Error('Unknown option ' + flag);
@@ -81,11 +87,17 @@ async function main() {
   );
   if (!args.out && !repo) throw new Error('No site repo configured; pass --repo or --out');
 
-  const browser = await chromium.launch({ headless: args.headless });
+  // a camera-driven project shows an error screen without a camera, so feed it a
+  // synthetic one and the capture shows the project working instead of complaining
+  const launchArgs = args.camera
+    ? ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream']
+    : [];
+
+  const browser = await chromium.launch({ headless: args.headless, args: launchArgs });
   const context = await browser.newContext({
     viewport: { width: args.width, height: args.height },
     deviceScaleFactor: 2,                    // render at 2x, downsample for crisp edges
-    permissions: [],
+    permissions: args.camera ? ['camera', 'microphone'] : [],
     reducedMotion: 'no-preference'
   });
   const page = await context.newPage();
@@ -106,9 +118,21 @@ async function main() {
     const drive = require(path.resolve(args.drive));
     await drive(page);
   }
+  if (args.hide) {
+    await page.evaluate((sel) => {
+      sel.split(',').forEach((s) => {
+        document.querySelectorAll(s.trim()).forEach((el) => { el.style.display = 'none'; });
+      });
+    }, args.hide);
+    await page.waitForTimeout(300);
+  }
+
   await page.waitForTimeout(args.settle);
 
-  const raw = await page.screenshot({ type: 'png' });
+  // a heavy game keeps repainting; without a longer budget Playwright gives up
+  // waiting for a "stable" frame and the capture fails on exactly the projects
+  // most worth photographing
+  const raw = await page.screenshot({ type: 'png', timeout: 90000, animations: 'allow' });
   await browser.close();
 
   await fs.mkdir(path.dirname(out), { recursive: true });
