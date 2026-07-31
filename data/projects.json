@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-07-30",
+  "updated": "2026-07-31",
   "projects": [
     {
       "slug": "gzowo-builders",
@@ -318,6 +318,45 @@
       "image": "project-images/modular.webp",
       "shots": [
         "project-images/modular.webp"
+      ]
+    },
+    {
+      "slug": "narew",
+      "name": "Narew",
+      "author": "Ryszard Sukiennik",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "pinned": false,
+      "hidden": false,
+      "boost": 0,
+      "url": "https://rysiosukiennik.github.io/backrooms-game/narew.html",
+      "repo": "https://github.com/rysiosukiennik/backrooms-game",
+      "description": "A walk around one real property by the Narew, with a television inside that plays actual YouTube.",
+      "body": [
+        "One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map.",
+        "The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, and a shelf of YouTube links. The YouTube player itself is a real iframe pushed into the plane of the screen with CSS3DRenderer, so the video scales and slides with the set instead of floating over the page, and the camera drives up to the screen when a menu opens. YouTube refuses to embed on pages opened from disk, so the file pings a local server on load and sends itself to whichever address actually works.",
+        "Around that: characters are GLTF models with blended idle, walk and run clips, and multiplayer runs peer to peer over PeerJS with the host relaying positions. Wind is patched into materials that already exist by swapping their shader, so instanced grass and tree crowns bend from the base with a phase taken from world position and nothing sways in unison. There are squirrels low enough on the trunks to pet, a bottle you fill from the river and drink, a bed that fades the screen to morning, a teleport pad, and a man standing in the water who will launch you over the valley.",
+        "The interface is in Polish, the way it was written."
+      ],
+      "stack": [
+        "three.js",
+        "GLTFLoader",
+        "CSS3DRenderer",
+        "PeerJS",
+        "Web Audio API",
+        "Canvas 2D",
+        "open-meteo API",
+        "OpenStreetMap data",
+        "single-file HTML",
+        "PowerShell"
+      ],
+      "image": "project-images/narew.webp",
+      "shots": [
+        "project-images/narew.webp",
+        "project-images/narew-2.webp",
+        "project-images/narew-3.webp",
+        "project-images/narew-4.webp"
       ]
     }
   ]
