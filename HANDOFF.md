@@ -119,13 +119,6 @@ the project hand over control without capturing the mouse?**
 
 ## Open items
 
-**An uncommitted dev toolbar is sitting in the clone.** `assets/agentation-dev.js` plus an
-import map added to `index.html` appeared on 2026-08-03 from outside this work — a visual
-feedback tool that only mounts on localhost. It is *not* committed and *not* live, but
-`publish.sh` would sweep it into the next commit. Decide with Jurek: keep it (commit
-deliberately, note that it ships dead code to visitors) or revert
-`git checkout index.html && rm assets/agentation-dev.js`. Do not just publish over it.
-
 **Gzowo Builders' card shows an empty meadow**, not building — the pointer-lock problem
 above. The clean fix is in the game, not here: give it a `?demo=1` entry that skips the
 gate and stamps a prefab, then `/projects update gzowo-builders` gets a real frame by
@@ -136,9 +129,12 @@ itself. Voxel Demolition would benefit from the same.
 **Galleries are one shot per project.** `capture.js --index 2/3` fills them in; the project
 page already renders whatever exists.
 
-**Ryszard is invited but has not joined.** GitHub `rysiosukiennik`, write invite sent
-2026-07-31, pending acceptance. His instructions are in `skill/START-HERE.md`. Until he
-accepts, his `install.sh` works but pushes fail.
+**Ryszard is in and publishing.** GitHub `rysiosukiennik` accepted the write invite and
+confirmed as a collaborator (`GET /collaborators/rysiosukiennik` → 204). He has already
+shipped his first project end to end from his own machine: `Narew` (commits `33bfc6a`,
+`b22340a`), signed `Ryszard Sukiennik`, four screenshots, updated once already. The whole
+loop — his `install.sh`, his `/projects`, his push — worked with no help from this side.
+His instructions live in `skill/START-HERE.md` if he needs them again.
 
 ## Verifying
 
