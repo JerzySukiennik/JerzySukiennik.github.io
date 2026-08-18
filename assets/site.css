@@ -8,6 +8,7 @@
   --orange: #ed5424;
 
   --line: 3px;
+  --pop: 5px;
   --shadow: 6px 6px 0 var(--ink);
   --gutter: clamp(16px, 2.7vw, 42px);
   --rail-w: clamp(88px, 7vw, 116px);
@@ -212,7 +213,7 @@ img { display: block; max-width: 100%; }
   gap: 34px;
   align-items: center;
   background: var(--orange);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: var(--pop) var(--pop) 0 var(--ink);
   color: var(--ink);
   font-size: .76rem;
   text-decoration: none;
@@ -220,7 +221,7 @@ img { display: block; max-width: 100%; }
   letter-spacing: .06em;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
-.scroll-cue:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0 var(--ink); }
+.scroll-cue:hover { transform: translate(-3px, -3px); box-shadow: calc(var(--pop) + 3px) calc(var(--pop) + 3px) 0 var(--ink); }
 .scroll-cue:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
 
 /* ---- The rail: a launch rail that reports where you are in the feed ---- */
@@ -486,18 +487,20 @@ img { display: block; max-width: 100%; }
   padding: 16px 22px;
   border: var(--line) solid var(--ink);
   background: var(--manila);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: var(--pop) var(--pop) 0 var(--ink);
   font-family: "Fragment Mono", ui-monospace, monospace;
-  font-size: .78rem;
+  font-size: .8rem;
   letter-spacing: .08em;
   text-transform: uppercase;
   text-decoration: none;
   color: var(--ink);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
-.btn:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0 var(--ink); }
+.btn:hover { transform: translate(-3px, -3px); box-shadow: calc(var(--pop) + 3px) calc(var(--pop) + 3px) 0 var(--ink); }
 .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); }
-.btn-play { background: var(--orange); font-size: .95rem; padding: 20px 30px; }
+/* The play button leads on colour and weight, not on a different box size —
+   two buttons of different heights read as a mistake rather than a hierarchy. */
+.btn-play { background: var(--orange); font-size: .9rem; padding: 16px 26px; }
 .btn[aria-disabled="true"] {
   background: var(--kraft);
   color: var(--graphite);
@@ -548,7 +551,7 @@ img { display: block; max-width: 100%; }
 .facts {
   border: var(--line) solid var(--ink);
   background: var(--manila);
-  box-shadow: 5px 5px 0 var(--ink);
+  box-shadow: var(--pop) var(--pop) 0 var(--ink);
   font-size: .68rem;
   text-transform: uppercase;
   letter-spacing: .06em;
@@ -594,7 +597,13 @@ img { display: block; max-width: 100%; }
 }
 
 @media (max-width: 760px) {
-  :root { --line: 2px; --shadow: 4px 4px 0 var(--ink); }
+  :root { --line: 2px; --pop: 3px; --shadow: 4px 4px 0 var(--ink); }
+
+  /* Full width, stacked: the play button is the point of the page and deserves
+     the whole thumb, and equal widths stop the pair looking lopsided. */
+  .actions { flex-direction: column; }
+  .btn { text-align: center; }
+  .btn, .btn-play { font-size: .82rem; padding: 16px 20px; }
   .hero {
     min-height: 88svh;
     grid-template-columns: 1fr;
