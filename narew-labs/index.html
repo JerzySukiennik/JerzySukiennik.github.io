@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d6c39b">
+<meta name="color-scheme" content="light">
+<title>Narew Labs — Gzowo Labs</title>
+<meta name="description" content="Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.">
+<link rel="canonical" href="https://gzowo.fun/narew-labs/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:url" content="https://gzowo.fun/narew-labs/">
+<meta property="og:title" content="Narew Labs — Gzowo Labs">
+<meta property="og:description" content="Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.">
+<meta property="og:image" content="https://gzowo.fun/project-images/narew-labs.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Narew Labs — Gzowo Labs">
+<meta name="twitter:description" content="Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.">
+<meta name="twitter:image" content="https://gzowo.fun/project-images/narew-labs.webp">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>document.documentElement.classList.add("js","is-ready")</script>
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+
+  <div class="page">
+    <main class="project">
+      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+
+      <div>
+        <h1>Narew Labs</h1>
+        <p class="project-lead">Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.</p>
+        <div class="actions">
+          <a class="btn btn-play" href="https://g-micro-web.web.app/" target="_blank" rel="noopener">Play Narew Labs <span aria-hidden="true">↗</span></a>
+          <a class="btn" href="https://github.com/JerzySukiennik/g-micro" target="_blank" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+
+      <figure class="project-shot"><img src="/project-images/narew-labs.webp" alt="Narew Labs" width="1200" height="900"></figure>
+
+      <div class="project-body">
+        <div>
+        <p>G-Micro is a 110-million-parameter language model built from nothing: the tokenizer, the training loop and the Polish corpus are all ours. This is the app you talk to it through.</p>
+        <p>The page itself computes nothing. It writes a task into a database, a MacBook picks it up, runs the model and streams the answer back token by token. Both sides dial out, so no port is ever opened on the Mac — deliberately chosen over a tunnel.</p>
+        <p>The same window also edits photos with G-Images, a second model of ours. Ask for black and white or a blur and it makes the change directly, with no service in the middle.</p>
+        </div>
+        <aside class="facts">
+          <dl>
+            <div><dt>Status</dt><dd>Live</dd></div>
+            <div><dt>Kind</dt><dd>Web app</dd></div>
+            <div><dt>Year</dt><dd>2026</dd></div>
+            <div><dt>Built with</dt><dd>PyTorch, Electron, Firebase, Python</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
+    <nav aria-label="Contact">
+      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
+    </nav>
+  </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+  <script src="/assets/field.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

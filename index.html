@@ -2,93 +2,229 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Gzowo Labs — games and web apps by Jerzy and Ryszard Sukiennik</title>
-<meta name="description" content="Games, web apps and experiments built by two brothers in Gzowo. Everything here is playable.">
-<meta property="og:title" content="Gzowo Labs">
-<meta property="og:description" content="Games, web apps and experiments built by two brothers in Gzowo. Everything here is playable.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d6c39b">
+<meta name="color-scheme" content="light">
+<title>Gzowo Labs</title>
+<meta name="description" content="I build things that fly. And a few that don't crash.">
+<link rel="canonical" href="https://gzowo.fun/">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://jerzysukiennik.github.io/">
-<meta property="og:image" content="https://jerzysukiennik.github.io/assets/og.png">
-<meta name="theme-color" content="#FAFAF8">
-<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:url" content="https://gzowo.fun/">
+<meta property="og:title" content="Gzowo Labs">
+<meta property="og:description" content="I build things that fly. And a few that don't crash.">
+<meta property="og:image" content="https://gzowo.fun/project-images/gzowo-builders.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Gzowo Labs">
+<meta name="twitter:description" content="I build things that fly. And a few that don't crash.">
+<meta name="twitter:image" content="https://gzowo.fun/project-images/gzowo-builders.webp">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>document.documentElement.classList.add("js");setTimeout(function(){document.documentElement.classList.add("is-ready")},2500)</script>
 </head>
 <body>
+  <a class="skip-link" href="#feed">Skip to the shelf</a>
+  <canvas id="field" aria-hidden="true"></canvas>
 
-<canvas id="bg" aria-hidden="true"></canvas>
-<div class="veil" aria-hidden="true"></div>
+  <div class="loader" role="status">
+    <p>Gzowo Labs — assembly</p>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+    <p class="loader-count">000</p>
+  </div>
 
-<a class="skip" href="#work">Skip to the projects</a>
-
-<main class="stage">
-
-  <header class="hero">
-    <div class="hero__type">
-      <h1 class="mark" id="mark">
-        <span class="sr-only">Gzowo Labs</span>
-        <span class="mark__layer mark__base" aria-hidden="true"><span class="w">Gzowo</span><span class="w">Labs</span></span>
-        <span class="mark__layer mark__flood" aria-hidden="true"><span class="w">Gzowo</span><span class="w">Labs</span></span>
-      </h1>
-      <p class="tag">Two brothers. One plot of land in Gzowo. Everything below is playable.</p>
-    </div>
-
-    <div class="lines">
-      <p class="line">
-        <span class="quote">I build things that fly. And a few that don&rsquo;t crash.</span>
-        <span class="who">Jerzy</span>
-      </p>
-      <p class="line">
-        <span class="quote">I build things that stay on the ground. On purpose.</span>
-        <span class="who">Ryszard</span>
-      </p>
-    </div>
-  </header>
-
-  <section class="work" id="work" aria-labelledby="work-title">
-    <div class="bar">
-      <h2 class="bar__title" id="work-title">Work<span class="bar__count" id="count"></span></h2>
-
-      <div class="bar__controls">
-        <div class="seg" role="group" aria-label="Filter by author">
-          <button class="seg__btn" type="button" data-author="" aria-pressed="true">Everyone</button>
-          <button class="seg__btn" type="button" data-author="Jerzy Sukiennik" aria-pressed="false">Jerzy</button>
-          <button class="seg__btn" type="button" data-author="Ryszard Sukiennik" aria-pressed="false">Ryszard</button>
-        </div>
-
-        <div class="search">
-          <label class="sr-only" for="q">Search projects</label>
-          <input id="q" type="search" placeholder="Search" autocomplete="off" spellcheck="false">
-        </div>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow hero-enter">Jerzy Sukiennik — Warsaw</p>
+        <h1>
+          <span class="word"><i>Gzowo</i></span>
+          <span class="word"><i>Labs</i></span>
+        </h1>
+        <p class="tagline hero-enter">I build things that fly. And a few that don't crash.</p>
+        <a class="scroll-cue hero-enter" href="#feed">Open the shelf <span aria-hidden="true">↓</span></a>
       </div>
-    </div>
 
-    <div class="grid" id="grid"></div>
-    <p class="empty" id="empty" hidden>Nothing matches that. Try a shorter word.</p>
-  </section>
+      <aside class="rail hero-enter" aria-hidden="true">
+        <div class="rail-head"><span>Rail</span><span class="rail-count"><span data-rail-index>01</span>/13</span></div>
+        <div class="rail-track"><span class="rail-payload">GL</span></div>
+        <div class="rail-foot"><span>Status</span><span data-rail-status>Live</span></div>
+      </aside>
+    </header>
 
-  <footer class="foot">
-    <div class="foot__col">
-      <p class="foot__label">Gzowo Labs</p>
-      <p class="foot__note">Built in Gzowo and Warsaw. Every project on this page is ours, start to finish.</p>
-    </div>
-    <div class="foot__col foot__col--links">
+    <main class="feed" id="feed">
+      <section class="feed-head">
+        <div>
+          <p class="eyebrow">The shelf — 13 builds</p>
+          <h2>Open anything</h2>
+        </div>
+        <p class="feed-note">Games, web apps and experiments. Every one of them runs in a browser, so there is nothing to install.</p>
+      </section>
+
+      <div class="grid">
+      <a class="card" href="/gzowo-builders/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/gzowo-builders.webp" alt="Gzowo Builders" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Gzowo Builders</h3>
+          <p>Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/narew-labs/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/narew-labs.webp" alt="Narew Labs" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Narew Labs</h3>
+          <p>Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.</p>
+          <span class="card-meta"><span>Web app</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/gsp/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/gsp.webp" alt="GSP" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>GSP</h3>
+          <p>Gzowo Space Program — the site for the model rockets we actually launch.</p>
+          <span class="card-meta"><span>Web app</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/cruise-control/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/cruise-control.webp" alt="Cruise Control" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Cruise Control</h3>
+          <p>A precision driving game with retro pixel post-processing, moving hazards and a shop.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/gzowo-bowling/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/gzowo-bowling.webp" alt="Gzowo Bowling" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Gzowo Bowling</h3>
+          <p>Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/gargantua/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/gargantua.webp" alt="Gargantua" width="800" height="600" loading="eager" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Gargantua</h3>
+          <p>Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/untitled-pogo-game/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/untitled-pogo-game.webp" alt="Untitled Pogo Game" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Untitled Pogo Game</h3>
+          <p>Fifteen levels of pogo-stick parkour, playable together, installable as an app.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/airwave/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/airwave.webp" alt="Airwave" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Airwave</h3>
+          <p>An instrument you play with your hands in the air, in front of a webcam. No hardware.</p>
+          <span class="card-meta"><span>Experiment</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/voxel-demolition/" data-status="Building">
+        <span class="card-shot">
+          <img src="/project-images/voxel-demolition.webp" alt="Voxel Demolition" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="building">Building</span>
+        </span>
+        <span class="card-copy">
+          <h3>Voxel Demolition</h3>
+          <p>A destruction sandbox with twenty-five tools and co-op for four. Runs on a server at home.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/galeria-gzowo/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/galeria-gzowo.webp" alt="Galeria Gzowo" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Galeria Gzowo</h3>
+          <p>A gallery for the place the rest of this site is named after.</p>
+          <span class="card-meta"><span>Web app</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/backrooms/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/backrooms.webp" alt="Backrooms" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Backrooms</h3>
+          <p>Yellow rooms, buzzing lights, and a maze that does not care whether you get out.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/modular/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/modular.webp" alt="Modular" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Modular</h3>
+          <p>Drop sixteen kinds of building on a plot and watch a town assemble itself around them.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      <a class="card" href="/narew/" data-status="Live">
+        <span class="card-shot">
+          <img src="/project-images/narew.webp" alt="Narew" width="800" height="600" loading="lazy" decoding="async">
+          <span class="status" data-status="live">Live</span>
+        </span>
+        <span class="card-copy">
+          <h3>Narew</h3>
+          <p>A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.</p>
+          <span class="card-meta"><span>Game</span><span>2026</span></span>
+        </span>
+      </a>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
+    <nav aria-label="Contact">
       <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
-      <a href="https://github.com/JerzySukiennik" rel="me noopener">GitHub</a>
-      <a href="https://x.com/kalakasanyt" rel="me noopener">X</a>
-      <a href="https://instagram.com/jurek_sukiennik" rel="me noopener">Instagram</a>
-    </div>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
+    </nav>
   </footer>
+  </div>
 
-</main>
-
-<script src="assets/config.js"></script>
-<script src="assets/clicks.js"></script>
-<script src="assets/bg.js"></script>
-<script src="assets/wordmark.js"></script>
-<script src="assets/app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+  <script src="/assets/field.js" defer></script>
+  <script src="/assets/site.js" defer></script>
 </body>
 </html>

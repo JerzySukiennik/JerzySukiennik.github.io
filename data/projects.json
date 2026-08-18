@@ -1,19 +1,15 @@
 {
-  "version": 1,
-  "updated": "2026-08-03",
+  "version": 3,
   "projects": [
     {
       "slug": "gzowo-builders",
       "name": "Gzowo Builders",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": true,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/gzowo-builders/",
       "repo": "https://github.com/JerzySukiennik/gzowo-builders",
-      "description": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
+      "blurb": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
       "body": [
         "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be — the whole game is the workshop.",
         "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted — an overloaded cantilever fails because it is overloaded.",
@@ -27,22 +23,17 @@
         "Firebase"
       ],
       "image": "project-images/gzowo-builders.webp",
-      "shots": [
-        "project-images/gzowo-builders.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "narew-labs",
       "name": "Narew Labs",
-      "author": "Jerzy Sukiennik",
       "category": "Web app",
       "status": "live",
       "year": "2026",
-      "pinned": true,
-      "hidden": false,
       "url": "https://g-micro-web.web.app/",
       "repo": "https://github.com/JerzySukiennik/g-micro",
-      "description": "Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.",
+      "blurb": "Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.",
       "body": [
         "G-Micro is a 110-million-parameter language model built from nothing: the tokenizer, the training loop and the Polish corpus are all ours. This is the app you talk to it through.",
         "The page itself computes nothing. It writes a task into a database, a MacBook picks it up, runs the model and streams the answer back token by token. Both sides dial out, so no port is ever opened on the Mac — deliberately chosen over a tunnel.",
@@ -55,22 +46,17 @@
         "Python"
       ],
       "image": "project-images/narew-labs.webp",
-      "shots": [
-        "project-images/narew-labs.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "gsp",
       "name": "GSP",
-      "author": "Jerzy Sukiennik",
       "category": "Web app",
       "status": "live",
       "year": "2026",
-      "pinned": true,
-      "hidden": false,
       "url": "https://gspaerospace.pl/",
       "repo": "",
-      "description": "Gzowo Space Program — the site for the model rockets we actually launch.",
+      "blurb": "Gzowo Space Program — the site for the model rockets we actually launch.",
       "body": [
         "GSP is the name everything that flies goes out under. The site collects the rockets, the launches and the parts we print, and it is the closest thing the workshop has to a front door.",
         "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo — the same field the background of this page is made of."
@@ -81,22 +67,17 @@
         "JavaScript"
       ],
       "image": "project-images/gsp.webp",
-      "shots": [
-        "project-images/gsp.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "cruise-control",
       "name": "Cruise Control",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/cruise-control/",
       "repo": "https://github.com/JerzySukiennik/cruise-control",
-      "description": "A precision driving game with retro pixel post-processing, moving hazards and a shop.",
+      "blurb": "A precision driving game with retro pixel post-processing, moving hazards and a shop.",
       "body": [
         "Steer through courses where the obstacles move with you rather than sitting still. Version 2 added seven levels, a sensitivity setting, an economy with a shop, and three-player multiplayer.",
         "The look comes from a post-processing pass that resolves the whole frame down to chunky pixels, so the clean vector shapes underneath arrive looking like something from a much older machine."
@@ -107,22 +88,17 @@
         "Firebase"
       ],
       "image": "project-images/cruise-control.webp",
-      "shots": [
-        "project-images/cruise-control.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "gzowo-bowling",
       "name": "Gzowo Bowling",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/gzowo-bowling/",
       "repo": "https://github.com/JerzySukiennik/gzowo-bowling",
-      "description": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
+      "blurb": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
       "body": [
         "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw — the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
         "Under the alley is a proper physics simulation with three.js and Rapier, built without a bundler: modules straight from a CDN, which is the pattern most of the games here still use."
@@ -134,22 +110,17 @@
         "Firebase"
       ],
       "image": "project-images/gzowo-bowling.webp",
-      "shots": [
-        "project-images/gzowo-bowling.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "gargantua",
       "name": "Gargantua",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/Gargantua/",
       "repo": "https://github.com/JerzySukiennik/Gargantua",
-      "description": "Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.",
+      "blurb": "Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.",
       "body": [
         "You move by pushing off surfaces and firing short bursts, which means every mistake keeps travelling. Working together is less about coordination than about not sending your partner spinning.",
         "The black hole is the reason for the whole thing: light bends around it, and the closer you drift the more the view stops behaving the way your eyes expect."
@@ -160,22 +131,17 @@
         "Firebase"
       ],
       "image": "project-images/gargantua.webp",
-      "shots": [
-        "project-images/gargantua.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "untitled-pogo-game",
       "name": "Untitled Pogo Game",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://untitled-pogo-game.web.app/",
       "repo": "",
-      "description": "Fifteen levels of pogo-stick parkour, playable together, installable as an app.",
+      "blurb": "Fifteen levels of pogo-stick parkour, playable together, installable as an app.",
       "body": [
         "One button, one stick, fifteen levels that get mean quickly. The jump is a spring rather than a fixed arc, so timing the compression matters more than timing the press.",
         "It runs as an installable web app and has a co-op mode, which turns the harder levels into a race where both of you are usually wrong."
@@ -187,22 +153,17 @@
         "Firebase"
       ],
       "image": "project-images/untitled-pogo-game.webp",
-      "shots": [
-        "project-images/untitled-pogo-game.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "airwave",
       "name": "Airwave",
-      "author": "Jerzy Sukiennik",
       "category": "Experiment",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/airwave/",
       "repo": "https://github.com/JerzySukiennik/airwave",
-      "description": "An instrument you play with your hands in the air, in front of a webcam. No hardware.",
+      "blurb": "An instrument you play with your hands in the air, in front of a webcam. No hardware.",
       "body": [
         "Your right hand sets the pitch and snaps to a pentatonic scale so it is hard to sound bad; your left hand is the volume. Fingers pick the octave, a fist morphs the timbre, a pinch adds vibrato, and your mouth works as a wah pedal.",
         "Hand tracking runs locally in the browser and the sound is synthesised in the page, so nothing about you leaves the machine. Desktop only — it needs a camera and a real amount of light."
@@ -213,22 +174,17 @@
         "JavaScript"
       ],
       "image": "project-images/airwave.webp",
-      "shots": [
-        "project-images/airwave.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "voxel-demolition",
       "name": "Voxel Demolition",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "building",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "",
       "repo": "https://github.com/JerzySukiennik/voxel-demolition",
-      "description": "A destruction sandbox with twenty-five tools and co-op for four. Runs on a server at home.",
+      "blurb": "A destruction sandbox with twenty-five tools and co-op for four. Runs on a server at home.",
       "body": [
         "Everything in the plaza is made of voxels and everything comes apart: hammers, charges, a shotgun and a launcher, plus builder tools that put material back. Twenty-five of them, grouped so you can cycle by category rather than hunting through a list.",
         "Up to four people share one world through a headless Node server that holds the authoritative state. That is also why there is no link to play here yet — the server runs on a laptop at home, so for now the code is what you can look at."
@@ -239,22 +195,17 @@
         "WebSockets"
       ],
       "image": "project-images/voxel-demolition.webp",
-      "shots": [
-        "project-images/voxel-demolition.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "galeria-gzowo",
       "name": "Galeria Gzowo",
-      "author": "Jerzy Sukiennik",
       "category": "Web app",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://galeria-gzowo.netlify.app/",
       "repo": "",
-      "description": "A gallery for the place the rest of this site is named after.",
+      "blurb": "A gallery for the place the rest of this site is named after.",
       "body": [
         "Photographs from Gzowo, put somewhere they can actually be looked at rather than buried in a phone.",
         "Small, quick and deliberately plain — the pictures are the whole point."
@@ -265,22 +216,17 @@
         "JavaScript"
       ],
       "image": "project-images/galeria-gzowo.webp",
-      "shots": [
-        "project-images/galeria-gzowo.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "backrooms",
       "name": "Backrooms",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/backrooms-labirynth/",
       "repo": "https://github.com/JerzySukiennik/backrooms-labirynth",
-      "description": "Yellow rooms, buzzing lights, and a maze that does not care whether you get out.",
+      "blurb": "Yellow rooms, buzzing lights, and a maze that does not care whether you get out.",
       "body": [
         "A first-person walk through an endless office that never quite repeats. There is no map and no marker; the only thing you build up is a sense of which corridor you have already ruined an hour on.",
         "The tension is carried almost entirely by sound and by light that hums at the wrong frequency — there is very little in the way of enemies, and it does not need them."
@@ -290,22 +236,17 @@
         "JavaScript"
       ],
       "image": "project-images/backrooms.webp",
-      "shots": [
-        "project-images/backrooms.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "modular",
       "name": "Modular",
-      "author": "Jerzy Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
       "url": "https://jerzysukiennik.github.io/modular/",
       "repo": "https://github.com/JerzySukiennik/modular",
-      "description": "Drop sixteen kinds of building on a plot and watch a town assemble itself around them.",
+      "blurb": "Drop sixteen kinds of building on a plot and watch a town assemble itself around them.",
       "body": [
         "A calm builder: you place buildings, they connect, and the place slowly turns into somewhere. Saves persist and you can build alongside someone else.",
         "Most of the work went into the parts you do not notice — shadows that make the models sit on the ground properly, an audio bus so the ambience does not stack into noise, and a pixel ratio that drops itself on weaker machines instead of stuttering."
@@ -316,23 +257,17 @@
         "Firebase"
       ],
       "image": "project-images/modular.webp",
-      "shots": [
-        "project-images/modular.webp"
-      ]
+      "hidden": false
     },
     {
       "slug": "narew",
       "name": "Narew",
-      "author": "Ryszard Sukiennik",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "pinned": false,
-      "hidden": false,
-      "boost": 0,
       "url": "https://rysiosukiennik.github.io/backrooms-game/narew.html",
       "repo": "https://github.com/rysiosukiennik/backrooms-game",
-      "description": "A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.",
+      "blurb": "A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.",
       "body": [
         "One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a shelter, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map. Three kayaks lie on the bank: you climb in, paddle with W and S, steer with A and D, and the hull refuses to leave water deeper than thirty centimetres, so the river keeps you.",
         "The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, a shelf of YouTube links behind an optional password, and NAREBLOX, eleven small games. Nine are drawn on that same canvas. The last two are not drawn at all — they are separate three.js scenes with their own camera and lights, rendered to a texture that the screen then shows, so the set is displaying real 3D from inside a 3D world. One is a veterinary hospital where you decide at the front desk which patients to admit and which are anomalies; the other builds a small country out of houses, factories and barracks.",
@@ -354,11 +289,7 @@
         "single-file HTML"
       ],
       "image": "project-images/narew.webp",
-      "shots": [
-        "project-images/narew.webp",
-        "project-images/narew-2.webp",
-        "project-images/narew-3.webp"
-      ]
+      "hidden": false
     }
   ]
 }

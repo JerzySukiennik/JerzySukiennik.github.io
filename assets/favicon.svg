@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Gzowo Labs">
-  <rect width="64" height="64" fill="#0C0D0B"/>
-  <path d="M42.7 23 A14 14 0 1 0 46 32 H33"
-        fill="none" stroke="#8FC13F" stroke-width="7" stroke-linecap="butt" stroke-linejoin="miter"/>
+  <rect width="64" height="64" fill="#d6c39b"/>
+  <rect x="21" y="6" width="6" height="52" fill="#17130e"/>
+  <rect x="37" y="6" width="6" height="52" fill="#17130e"/>
+  <rect x="12" y="20" width="40" height="24" fill="#ed5424" stroke="#17130e" stroke-width="6"/>
 </svg>
