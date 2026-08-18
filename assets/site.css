@@ -157,8 +157,9 @@ img { display: block; max-width: 100%; }
 .hero h1 span { display: block; }
 /* Each word is one clipping frame, so the reveal reads as a print pass. */
 /* The mask exists only for the reveal. Its height is the line box, which at this
-   leading is shorter than the capitals — so it is released once the words have
-   arrived, otherwise it shaves the tops and bottoms off every letter. */
+   leading is shorter than the capitals — so the fitter pads it (and cancels the
+   padding with negative margin) to keep the letters whole while they move, and
+   it is released entirely once they land. */
 .word { display: block; }
 .js .word { overflow: hidden; }
 .is-done .word { overflow: visible; }
@@ -172,7 +173,7 @@ img { display: block; max-width: 100%; }
    Nothing is hidden until the inline probe confirms scripts are running, so a
    failed script leaves the name on screen instead of an empty page. */
 .js .hero-enter { opacity: 0; }
-.js .word > i { transform: translateY(108%); }
+.js .word > i { transform: translateY(150%); }
 
 .is-ready .hero-enter {
   animation: hero-fade .55s cubic-bezier(.16, 1, .3, 1) forwards;

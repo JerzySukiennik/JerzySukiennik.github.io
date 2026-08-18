@@ -67,6 +67,15 @@ function fitWords() {
       });
       if (worst < 0.005) break;
     }
+
+    // Grow the mask past the capitals and take the same amount back as margin,
+    // so nothing is clipped mid-animation and the layout does not shift.
+    words.forEach((word) => {
+      const pad = parseFloat(getComputedStyle(word).fontSize) * 0.18;
+      const frame = word.parentElement;
+      frame.style.padding = `${pad}px 0`;
+      frame.style.margin = `${-pad}px 0`;
+    });
   }
 
   // Height budget: filling the column can crowd out the rest of the hero, so the
