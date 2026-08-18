@@ -27,8 +27,8 @@ const STATUS_LABEL = { live: "Live", building: "Building", archive: "Archive" };
 // timeout so a failed script can never leave the hero blank.
 const probe = (curtain) =>
   curtain
-    ? `<script>document.documentElement.classList.add("js");setTimeout(function(){document.documentElement.classList.add("is-ready")},2500)</script>`
-    : `<script>document.documentElement.classList.add("js","is-ready")</script>`;
+    ? `<script>document.documentElement.classList.add("js");setTimeout(function(){document.documentElement.classList.add("is-ready")},2500);setTimeout(function(){document.documentElement.classList.add("is-done")},4200)</script>`
+    : `<script>document.documentElement.classList.add("js","is-ready","is-done")</script>`;
 
 const esc = (value = "") =>
   String(value)

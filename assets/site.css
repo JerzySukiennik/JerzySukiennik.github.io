@@ -156,7 +156,12 @@ img { display: block; max-width: 100%; }
 }
 .hero h1 span { display: block; }
 /* Each word is one clipping frame, so the reveal reads as a print pass. */
-.word { display: block; overflow: hidden; }
+/* The mask exists only for the reveal. Its height is the line box, which at this
+   leading is shorter than the capitals — so it is released once the words have
+   arrived, otherwise it shaves the tops and bottoms off every letter. */
+.word { display: block; }
+.js .word { overflow: hidden; }
+.is-done .word { overflow: visible; }
 .word > i {
   display: inline-block;
   font-style: normal;

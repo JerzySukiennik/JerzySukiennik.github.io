@@ -84,7 +84,14 @@ function fitWords() {
 /* ---- Assembly sequence: once per session, then it gets out of the way ---- */
 
 function revealHero() {
-  document.documentElement.classList.add("is-ready");
+  const root = document.documentElement;
+  root.classList.add("is-ready");
+
+  // Release the clipping frame as soon as the last word lands.
+  const words = document.querySelectorAll(".word > i");
+  const last = words[words.length - 1];
+  if (last) last.addEventListener("animationend", () => root.classList.add("is-done"), { once: true });
+  setTimeout(() => root.classList.add("is-done"), 1600);
 }
 
 function initLoader() {
