@@ -230,11 +230,13 @@ img { display: block; max-width: 100%; }
      The hero still reserves its column, so nothing ever slides underneath it. */
   position: fixed;
   z-index: 3;
-  top: 50%;
+  /* Positioned with insets, never a transform: the entrance animation ends on
+     transform: none, which would silently undo any centering done that way. */
+  top: 14svh;
+  bottom: 14svh;
   right: var(--gutter);
   width: var(--rail-w);
-  transform: translateY(-50%);
-  height: min(72svh, 720px);
+  max-height: 720px;
   border: var(--line) solid var(--ink);
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -568,8 +570,9 @@ img { display: block; max-width: 100%; }
   .feed { padding-right: var(--gutter); }
   .rail {
     position: static;
+    inset: auto;
     width: auto;
-    transform: none;
+    max-height: none;
     height: 72px;
     grid-template-rows: 1fr;
     grid-template-columns: auto 1fr auto;

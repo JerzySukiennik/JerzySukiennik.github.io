@@ -100,15 +100,23 @@ function card(project, index) {
   const shot = project.image
     ? `<img src="/${esc(project.image)}" alt="${esc(project.name)}" width="800" height="600" loading="${index < 6 ? "eager" : "lazy"}" decoding="async">`
     : "";
+  // The badge is for the exception. Twelve of thirteen builds being live makes a
+  // "Live" chip on every card pure noise, so status lives in the meta line and
+  // only an unfinished or retired build gets flagged over the image.
+  const flag =
+    project.status === "live"
+      ? ""
+      : `<span class="status" data-status="${esc(project.status)}">${esc(status)}</span>`;
+
   return `      <a class="card" href="/${esc(project.slug)}/" data-status="${esc(status)}">
         <span class="card-shot">
           ${shot}
-          <span class="status" data-status="${esc(project.status)}">${esc(status)}</span>
+          ${flag}
         </span>
         <span class="card-copy">
           <h3>${esc(project.name)}</h3>
           <p>${esc(project.blurb)}</p>
-          <span class="card-meta"><span>${esc(project.category)}</span><span>${esc(project.year)}</span></span>
+          <span class="card-meta"><span>${esc(project.category)} · ${esc(status)}</span><span>${esc(project.year)}</span></span>
         </span>
       </a>`;
 }
