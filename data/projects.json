@@ -2,27 +2,148 @@
   "version": 3,
   "projects": [
     {
-      "slug": "gzowo-builders",
-      "name": "Gzowo Builders",
+      "slug": "voidworks",
+      "name": "Voidworks",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "url": "https://jerzysukiennik.github.io/gzowo-builders/",
-      "repo": "https://github.com/JerzySukiennik/gzowo-builders",
-      "blurb": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
+      "url": "https://voidworks.gzowo.fun/",
+      "repo": "https://github.com/JerzySukiennik/voidworks",
+      "blurb": "A factory hanging in white nothing. Droppers, belts, upgraders, and a hard cap on how much can be moving at once.",
       "body": [
-        "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be — the whole game is the workshop.",
-        "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted — an overloaded cantilever fails because it is overloaded.",
-        "Wheels are raycast rather than physical bodies, which is why a car at 40 km/h through a slalom keeps all four corners instead of shaking itself apart. It runs co-op over the local network, with one machine acting as the authority on physics and running exactly the same code the browser runs."
+        "Build a production line suspended in empty white space — no floor, no horizon, and a camera that can fly underneath it. Droppers feed material onto belts, upgraders raise its value, and a green sell plate turns it into money.",
+        "The whole game is one constraint: only so many items can exist on the belts at once. A dropper adds one, the sell plate removes one, and when you hit the ceiling the droppers visibly stall. That turns every metre of belt into a real cost and makes the question \"what is one slot worth?\" the thing you actually play.",
+        "There are two families of upgrader and the shapes tell you which is which: tall thin posts multiply, low wide ones add. Adders are flat, so they pay off on cheap material; multipliers scale, so they pay off on expensive material. Adding first and multiplying second measures 2.42x better than the reverse."
+      ],
+      "stack": [
+        "three.js",
+        "Firebase",
+        "Blender"
+      ],
+      "image": "project-images/voidworks.webp",
+      "hidden": false
+    },
+    {
+      "slug": "drops",
+      "name": "Drops",
+      "category": "Experiment",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "",
+      "blurb": "A second assistant, this one listening all the time and deciding on its own whether it was spoken to.",
+      "body": [
+        "Where Gzowo AI is the assistant for the whole house, Drops is personal. The design goal is a machine you never have to address by name: it listens continuously and works out from context whether a sentence was meant for it, which is the hard part and the reason the name is one hard syllable that almost never turns up in ordinary Polish speech.",
+        "Scoped in full, not yet built — the interface and the avatar come first, then the code."
+      ],
+      "stack": [
+        "Claude",
+        "Swift"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "ducks",
+      "name": "Ducks",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://ducks.gzowo.fun/",
+      "repo": "https://github.com/JerzySukiennik/ducks",
+      "blurb": "Feed rubber ducks to a hungry pit, then build the machines that do it for you.",
+      "body": [
+        "A physics co-op sandbox for up to four people. You pick up rubber ducks and throw them into a thirty-two-sided pit that has no bottom, and every duck pays. The money buys machines, walls, tunnels and fans, and the arc of a session is the trip from carrying ducks by hand to watching a factory do it without you.",
+        "It looks like a PlayStation game on purpose: flat-shaded low-poly geometry rendered into a small buffer and scaled back up, grey concrete with yellow floor markings, and a black hole in the sky whose shader is lifted straight out of Gargantua.",
+        "Nothing saves. A session runs two to four hours and starts from nothing the next time, which is the point — the fun is in rebuilding the line better, not in inheriting it."
       ],
       "stack": [
         "three.js",
         "Rapier",
-        "Node",
-        "Blender",
-        "Firebase"
+        "WebRTC"
       ],
-      "image": "project-images/gzowo-builders.webp",
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "g-doodle",
+      "name": "G-Doodle",
+      "category": "AI model",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/g-doodle",
+      "blurb": "A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.",
+      "body": [
+        "The third model in the family, after G-Micro and G-Images, trained from scratch over 345 categories of drawing. It does not produce an image in one shot — it emits strokes in order, so you watch the picture being drawn rather than appear.",
+        "It is also the first of the family that needs nothing running at home. G-Micro and G-Images both go quiet when the Mac sleeps; this one is small enough to run in the browser it is displayed in."
+      ],
+      "stack": [
+        "PyTorch",
+        "Python"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "kocia-wyspa",
+      "name": "Kocia Wyspa",
+      "category": "Experiment",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "",
+      "blurb": "A black capsule in the macOS menu bar that morphs between four states. Despite the name, no cats.",
+      "body": [
+        "A native macOS app that puts a Dynamic Island in the menu bar of the built-in display, morphing between compact, expanded, elongated and hidden. The name is only a name — \"no cats\" is an explicit requirement of the specification.",
+        "Written in Swift and installed locally rather than distributed; the repository is private."
+      ],
+      "stack": [
+        "Swift",
+        "SwiftUI"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "narek-mascot",
+      "name": "NAREK",
+      "category": "Experiment",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "",
+      "blurb": "A deliberately goofy 3D mascot for Narew Labs, generated by script in Blender rather than sculpted.",
+      "body": [
+        "A character for the AI lab, built with an inverse-kinematics rig so it can be posed and animated. The model is produced by a script rather than modelled by hand, which means a change to the proportions is a change to a number, not an afternoon of sculpting."
+      ],
+      "stack": [
+        "Blender",
+        "Python"
+      ],
+      "image": "project-images/narek-mascot.webp",
+      "hidden": false
+    },
+    {
+      "slug": "hollowtree",
+      "name": "Hollowtree",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://hollowtree.gzowo.fun/",
+      "repo": "https://github.com/JerzySukiennik/hollowtree",
+      "blurb": "One to three players, each of them a queen bee, sharing one hive inside a hollow tree.",
+      "body": [
+        "You fly as a queen over a meadow, gather pollen, and return to a hive that everyone shares. Workers follow you in a swarm rather than being assigned to flowers, so a bigger swarm simply covers more blossoms at once, and the comb you build is a hex grid of cells with different jobs that reward good neighbours.",
+        "The strategy lives in the calendar. Ten-plus plant species open and close on their own schedules, a season lasts two real days and a year lasts eight, so the map you learned last week is not the map you are flying now.",
+        "There is no combat. Hornets are a real threat, but the answer is structural — narrow the entrance, set traps, post guards. A queen runs; she does not fight."
+      ],
+      "stack": [
+        "three.js",
+        "Firebase",
+        "Blender"
+      ],
+      "image": "project-images/hollowtree.webp",
       "hidden": false
     },
     {
@@ -49,110 +170,109 @@
       "hidden": false
     },
     {
-      "slug": "gsp",
-      "name": "GSP",
-      "category": "Web app",
+      "slug": "ski-together",
+      "name": "SKI Together",
+      "category": "Game",
       "status": "live",
       "year": "2026",
-      "url": "https://gspaerospace.pl/",
+      "url": "https://ski.gzowo.fun/",
+      "repo": "https://github.com/JerzySukiennik/ski-together",
+      "blurb": "A day at a ski resort for two to five people, on snow that remembers every turn you carved.",
+      "body": [
+        "The mountain has three runs, a five-seat chairlift, a drag lift, a rental shop and a cafe, and up to five people ski it together. Difficulty comes from the line rather than the label: the blue traverses across the slope, the black falls straight down it.",
+        "The snow is the real system. A grid of five million cells, one every half metre, remembers both its condition and how deep the ruts are, and the same two arrays feed the physics on the processor and the shader on the graphics card — so the groove you can see is the groove you can feel. After forty runs a popular line drops to fifteen percent condition with ruts nearly thirty centimetres deep, while the snow two metres to the side is untouched. Nothing heals on its own; a groomer has to go out and fix it.",
+        "The skiing physics run on that height field rather than on a rigid body. Straight-lining measures 61 km/h, tucking on race skis 82, full carving 48, powder 11 — and what actually decides a jump is the angle you hit the ramp at, not how tall the ramp is."
+      ],
+      "stack": [
+        "three.js",
+        "WebRTC"
+      ],
+      "image": "project-images/ski-together.webp",
+      "hidden": false
+    },
+    {
+      "slug": "smendilendi",
+      "name": "Smendiłendi",
+      "category": "Hardware",
+      "status": "building",
+      "year": "2026",
+      "url": "",
       "repo": "",
-      "blurb": "Gzowo Space Program — the site for the model rockets we actually launch.",
+      "blurb": "A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.",
       "body": [
-        "GSP is the name everything that flies goes out under. The site collects the rockets, the launches and the parts we print, and it is the closest thing the workshop has to a front door.",
-        "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo — the same field the background of this page is made of."
+        "A small, light quadruped printed on a Bambu Lab X1C in ordinary PLA, driven by four hobby servos and a microcontroller. The scope is poses, touch and simple movement rather than dynamic walking.",
+        "It is the first project here where the feedback loop needs a person. The model can be changed from a keyboard, but measuring whether the printed part actually fits requires somebody standing at the printer with calipers — and that changes how the work is planned."
       ],
       "stack": [
-        "HTML",
-        "CSS",
-        "JavaScript"
+        "OpenSCAD",
+        "ESP32",
+        "Bambu X1C"
       ],
-      "image": "project-images/gsp.webp",
+      "image": "project-images/smendilendi.webp",
       "hidden": false
     },
     {
-      "slug": "cruise-control",
-      "name": "Cruise Control",
+      "slug": "gzowo-builders",
+      "name": "Gzowo Builders",
       "category": "Game",
       "status": "live",
       "year": "2026",
-      "url": "https://jerzysukiennik.github.io/cruise-control/",
-      "repo": "https://github.com/JerzySukiennik/cruise-control",
-      "blurb": "A precision driving game with retro pixel post-processing, moving hazards and a shop.",
+      "url": "https://jerzysukiennik.github.io/gzowo-builders/",
+      "repo": "https://github.com/JerzySukiennik/gzowo-builders",
+      "blurb": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
       "body": [
-        "Steer through courses where the obstacles move with you rather than sitting still. Version 2 added seven levels, a sensitivity setting, an economy with a shop, and three-player multiplayer.",
-        "The look comes from a post-processing pass that resolves the whole frame down to chunky pixels, so the clean vector shapes underneath arrive looking like something from a much older machine."
-      ],
-      "stack": [
-        "JavaScript",
-        "Canvas",
-        "Firebase"
-      ],
-      "image": "project-images/cruise-control.webp",
-      "hidden": false
-    },
-    {
-      "slug": "gzowo-bowling",
-      "name": "Gzowo Bowling",
-      "category": "Game",
-      "status": "live",
-      "year": "2026",
-      "url": "https://jerzysukiennik.github.io/gzowo-bowling/",
-      "repo": "https://github.com/JerzySukiennik/gzowo-bowling",
-      "blurb": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
-      "body": [
-        "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw — the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
-        "Under the alley is a proper physics simulation with three.js and Rapier, built without a bundler: modules straight from a CDN, which is the pattern most of the games here still use."
+        "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be — the whole game is the workshop.",
+        "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted — an overloaded cantilever fails because it is overloaded.",
+        "Wheels are raycast rather than physical bodies, which is why a car at 40 km/h through a slalom keeps all four corners instead of shaking itself apart. It runs co-op over the local network, with one machine acting as the authority on physics and running exactly the same code the browser runs."
       ],
       "stack": [
         "three.js",
         "Rapier",
-        "WebRTC",
+        "Node",
+        "Blender",
         "Firebase"
       ],
-      "image": "project-images/gzowo-bowling.webp",
+      "image": "project-images/gzowo-builders.webp",
       "hidden": false
     },
     {
-      "slug": "gargantua",
-      "name": "Gargantua",
-      "category": "Game",
-      "status": "live",
+      "slug": "g-mini",
+      "name": "G-Mini",
+      "category": "AI model",
+      "status": "building",
       "year": "2026",
-      "url": "https://jerzysukiennik.github.io/Gargantua/",
-      "repo": "https://github.com/JerzySukiennik/Gargantua",
-      "blurb": "Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/g-mini",
+      "blurb": "The second rung of the ladder: 178 million parameters, warm-started from G-Micro, trained in one week of free GPU time.",
       "body": [
-        "You move by pushing off surfaces and firing short bursts, which means every mistake keeps travelling. Working together is less about coordination than about not sending your partner spinning.",
-        "The black hole is the reason for the whole thing: light bends around it, and the closer you drift the more the view stops behaving the way your eyes expect."
+        "The successor to G-Micro, aimed squarely at the things G-Micro gets wrong, with a hard budget: a single week of free Kaggle quota on two T4s. Every choice in the configuration came from a measurement rather than a guess.",
+        "Warm-starting from the smaller model rather than beginning at random is what makes the budget work — the new network inherits what the old one already learned about Polish and spends its week on what it does not know."
       ],
       "stack": [
-        "three.js",
-        "WebGL",
-        "Firebase"
+        "PyTorch",
+        "Python"
       ],
-      "image": "project-images/gargantua.webp",
+      "image": "",
       "hidden": false
     },
     {
-      "slug": "untitled-pogo-game",
-      "name": "Untitled Pogo Game",
-      "category": "Game",
-      "status": "live",
+      "slug": "gzowo-tv",
+      "name": "Gzowo TV",
+      "category": "Experiment",
+      "status": "building",
       "year": "2026",
-      "url": "https://untitled-pogo-game.web.app/",
-      "repo": "",
-      "blurb": "Fifteen levels of pogo-stick parkour, playable together, installable as an app.",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/gzowo-tv",
+      "blurb": "An Apple TV for the family plot — every streaming service in one launcher, on a Mac plugged into the television.",
       "body": [
-        "One button, one stick, fifteen levels that get mean quickly. The jump is a spring rather than a fixed arc, so timing the compression matters more than timing the press.",
-        "It runs as an installable web app and has a co-op mode, which turns the harder levels into a race where both of you are usually wrong."
+        "A video aggregator built for the house in Gzowo: one grid, one remote, and the services behind it opening full-screen in a kiosk browser instead of demanding a different device each.",
+        "Two macOS traps cost real time here and are worth writing down. Renaming the application bundle poisoned its entry in the system launcher — opening it reported success and started nothing, with an empty log and no error anywhere; only a fresh bundle identifier fixed it. And because macOS refuses to let a bundled app overwrite a file another process created under the downloads folder, the server died instantly on every start until its log moved elsewhere."
       ],
       "stack": [
-        "JavaScript",
-        "Canvas",
-        "PWA",
-        "Firebase"
+        "Node",
+        "macOS"
       ],
-      "image": "project-images/untitled-pogo-game.webp",
+      "image": "",
       "hidden": false
     },
     {
@@ -198,24 +318,149 @@
       "hidden": false
     },
     {
-      "slug": "galeria-gzowo",
-      "name": "Galeria Gzowo",
-      "category": "Web app",
-      "status": "live",
+      "slug": "g-images",
+      "name": "G-Images",
+      "category": "AI model",
+      "status": "building",
       "year": "2026",
-      "url": "https://galeria-gzowo.netlify.app/",
-      "repo": "",
-      "blurb": "A gallery for the place the rest of this site is named after.",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/g-images",
+      "blurb": "A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.",
       "body": [
-        "Photographs from Gzowo, put somewhere they can actually be looked at rather than buried in a phone.",
-        "Small, quick and deliberately plain — the pictures are the whole point."
+        "The second model in the family. You point a camera at something, say what you want changed, and it changes the frame locally — no service in the middle, no upload. It answers to the voice assistant, which is where the request usually comes from.",
+        "Like the rest of the family it is trained from nothing rather than adapted from an existing model, which puts a hard ceiling on how good it can be at this size and makes the interesting question how much can be had from seventy million parameters."
       ],
       "stack": [
-        "HTML",
-        "CSS",
-        "JavaScript"
+        "PyTorch",
+        "Python"
       ],
-      "image": "project-images/galeria-gzowo.webp",
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "g-micro",
+      "name": "G-Micro",
+      "category": "AI model",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/g-micro",
+      "blurb": "A 117-million-parameter language model in Polish, trained from scratch — tokenizer, corpus and training loop included.",
+      "body": [
+        "The first model in the family and the first rung of a ladder that runs G-Micro, G-Mini, G-Core, G-Mega. Nothing here is a fine-tune of somebody else's weights: the tokenizer, the Polish corpus and the training loop were all built for it, which was the whole point — the aim was to have a model that works and to understand every layer of why it does.",
+        "It runs offline on a MacBook. Training happens on free cloud GPUs, because the hardware here has neither the memory nor the tensor cores to do it in any reasonable time."
+      ],
+      "stack": [
+        "PyTorch",
+        "Python"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "mjj-archives",
+      "name": "MJJ Archives",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://jerzysukiennik.github.io/mjj-archives/",
+      "repo": "https://github.com/JerzySukiennik/mjj-archives",
+      "blurb": "Watch Billie Jean at Motown 25 rebuilt in 3D, together, with the television cuts replayed shot for shot.",
+      "body": [
+        "Up to four people join a room and spawn as avatars in a theatre. The host starts the show, a 3D Michael Jackson dances the full four minutes and fifty-seven seconds locked to the real audio, and everyone's camera snaps to a director cam that reproduces the 1983 broadcast's thirty-seven cuts in order.",
+        "The motion is captured from the broadcast footage itself rather than animated by hand. That was not the first plan: a fully hand-authored choreography was built, locked to the beat, and thrown away for being ten times worse — the roughness of real capture carries the character. What shipped is the capture with three surgical repairs: the root is anchored only where tracking is confident, gaps are filled from a motion graph of the same performance, and the moonwalk glides on an authored path while the legs stay captured.",
+        "Because video and audio from the source run to the same length, the two stay in step across the whole song, and the animation follows the audio playhead rather than the frame clock — so a slow machine drops frames instead of drifting out of time."
+      ],
+      "stack": [
+        "three.js",
+        "Firestore",
+        "Python"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "untitled-civ-game",
+      "name": "Untitled Civ Game",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/untitled-civ-game",
+      "blurb": "One to three gods share a single city and take down a rival built by the machine.",
+      "body": [
+        "A cooperative real-time strategy game where the players are not opponents. Everyone runs the same city, the enemy is a bot settlement growing on the other side of the map, and a match lands somewhere between twenty and forty minutes with pause available at any point.",
+        "Built in a single pass and complete, but it needs its own server process to run, so there is no public link yet — the source is here and it starts with one command."
+      ],
+      "stack": [
+        "Node",
+        "Canvas"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "gargantua",
+      "name": "Gargantua",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://jerzysukiennik.github.io/Gargantua/",
+      "repo": "https://github.com/JerzySukiennik/Gargantua",
+      "blurb": "Co-op zero-gravity spacewalk next to a black hole. Push off carefully; there is no brake.",
+      "body": [
+        "You move by pushing off surfaces and firing short bursts, which means every mistake keeps travelling. Working together is less about coordination than about not sending your partner spinning.",
+        "The black hole is the reason for the whole thing: light bends around it, and the closer you drift the more the view stops behaving the way your eyes expect."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL",
+        "Firebase"
+      ],
+      "image": "project-images/gargantua.webp",
+      "hidden": false
+    },
+    {
+      "slug": "cruise-control",
+      "name": "Cruise Control",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://jerzysukiennik.github.io/cruise-control/",
+      "repo": "https://github.com/JerzySukiennik/cruise-control",
+      "blurb": "A precision driving game with retro pixel post-processing, moving hazards and a shop.",
+      "body": [
+        "Steer through courses where the obstacles move with you rather than sitting still. Version 2 added seven levels, a sensitivity setting, an economy with a shop, and three-player multiplayer.",
+        "The look comes from a post-processing pass that resolves the whole frame down to chunky pixels, so the clean vector shapes underneath arrive looking like something from a much older machine."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas",
+        "Firebase"
+      ],
+      "image": "project-images/cruise-control.webp",
+      "hidden": false
+    },
+    {
+      "slug": "untitled-pogo-game",
+      "name": "Untitled Pogo Game",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://untitled-pogo-game.web.app/",
+      "repo": "",
+      "blurb": "Fifteen levels of pogo-stick parkour, playable together, installable as an app.",
+      "body": [
+        "One button, one stick, fifteen levels that get mean quickly. The jump is a spring rather than a fixed arc, so timing the compression matters more than timing the press.",
+        "It runs as an installable web app and has a co-op mode, which turns the harder levels into a race where both of you are usually wrong."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas",
+        "PWA",
+        "Firebase"
+      ],
+      "image": "project-images/untitled-pogo-game.webp",
       "hidden": false
     },
     {
@@ -239,6 +484,68 @@
       "hidden": false
     },
     {
+      "slug": "gzowo-ai",
+      "name": "Gzowo AI",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "https://gzowoai.gzowo.fun/",
+      "repo": "https://github.com/JerzySukiennik/gzowo-ai",
+      "blurb": "A voice assistant for the house in Gzowo — speak to it in Polish and it answers in real time.",
+      "body": [
+        "A Jarvis-style assistant with a black and white interface and a sphere for a face that shifts between idle, talking and showing. It listens and replies in Polish through a realtime audio model, remembers across sessions, and reaches into the house and the other projects here rather than being a chat window.",
+        "It runs on a Mac at home and costs nothing to operate. When the Mac sleeps the assistant degrades gently instead of breaking — the parts that need the machine go quiet and the rest keeps answering."
+      ],
+      "stack": [
+        "Gemini Live",
+        "JavaScript"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
+      "slug": "gsp-brand-kit",
+      "name": "GSP Brand Kit",
+      "category": "Experiment",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "",
+      "blurb": "The visual identity behind GSP — logo, colours and type, in one page you can download from.",
+      "body": [
+        "The brand kit for Gzowo Space Program: the mark, the palette, the typefaces and the rules for putting them together, published as a single page with the files attached.",
+        "The look is deliberately severe — black ground, condensed capitals for headlines, a monospace for data, and nothing decorative. It is the identity the rocket site runs on."
+      ],
+      "stack": [
+        "HTML",
+        "CSS"
+      ],
+      "image": "project-images/gsp-brand-kit.webp",
+      "hidden": false
+    },
+    {
+      "slug": "gzowo-bowling",
+      "name": "Gzowo Bowling",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://jerzysukiennik.github.io/gzowo-bowling/",
+      "repo": "https://github.com/JerzySukiennik/gzowo-bowling",
+      "blurb": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
+      "body": [
+        "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw — the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
+        "Under the alley is a proper physics simulation with three.js and Rapier, built without a bundler: modules straight from a CDN, which is the pattern most of the games here still use."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebRTC",
+        "Firebase"
+      ],
+      "image": "project-images/gzowo-bowling.webp",
+      "hidden": false
+    },
+    {
       "slug": "modular",
       "name": "Modular",
       "category": "Game",
@@ -257,6 +564,48 @@
         "Firebase"
       ],
       "image": "project-images/modular.webp",
+      "hidden": false
+    },
+    {
+      "slug": "gsp",
+      "name": "GSP",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "https://gspaerospace.pl/",
+      "repo": "",
+      "blurb": "Gzowo Space Program — the site for the model rockets we actually launch.",
+      "body": [
+        "GSP is the name everything that flies goes out under. The site collects the rockets, the launches and the parts we print, and it is the closest thing the workshop has to a front door.",
+        "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo — the same field the background of this page is made of."
+      ],
+      "stack": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "image": "project-images/gsp.webp",
+      "hidden": false
+    },
+    {
+      "slug": "galeria-gzowo",
+      "name": "Galeria Gzowo",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "https://galeria-gzowo.netlify.app/",
+      "repo": "",
+      "blurb": "A gallery for the place the rest of this site is named after.",
+      "body": [
+        "Photographs from Gzowo, put somewhere they can actually be looked at rather than buried in a phone.",
+        "Small, quick and deliberately plain — the pictures are the whole point."
+      ],
+      "stack": [
+        "HTML",
+        "CSS",
+        "JavaScript"
+      ],
+      "image": "project-images/galeria-gzowo.webp",
       "hidden": false
     },
     {

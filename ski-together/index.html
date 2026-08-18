@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d6c39b">
+<meta name="color-scheme" content="light">
+<title>SKI Together — Gzowo Labs</title>
+<meta name="description" content="A day at a ski resort for two to five people, on snow that remembers every turn you carved.">
+<link rel="canonical" href="https://gzowo.fun/ski-together/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:url" content="https://gzowo.fun/ski-together/">
+<meta property="og:title" content="SKI Together — Gzowo Labs">
+<meta property="og:description" content="A day at a ski resort for two to five people, on snow that remembers every turn you carved.">
+<meta property="og:image" content="https://gzowo.fun/project-images/ski-together.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SKI Together — Gzowo Labs">
+<meta name="twitter:description" content="A day at a ski resort for two to five people, on snow that remembers every turn you carved.">
+<meta name="twitter:image" content="https://gzowo.fun/project-images/ski-together.webp">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>document.documentElement.classList.add("js","is-ready")</script>
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+
+  <div class="page">
+    <main class="project">
+      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+
+      <div>
+        <h1>SKI Together</h1>
+        <p class="project-lead">A day at a ski resort for two to five people, on snow that remembers every turn you carved.</p>
+        <div class="actions">
+          <a class="btn btn-play" href="https://ski.gzowo.fun/" target="_blank" rel="noopener">Play SKI Together <span aria-hidden="true">↗</span></a>
+          <a class="btn" href="https://github.com/JerzySukiennik/ski-together" target="_blank" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+
+      <figure class="project-shot"><img src="/project-images/ski-together.webp" alt="SKI Together" width="1200" height="900"></figure>
+
+      <div class="project-body">
+        <div>
+        <p>The mountain has three runs, a five-seat chairlift, a drag lift, a rental shop and a cafe, and up to five people ski it together. Difficulty comes from the line rather than the label: the blue traverses across the slope, the black falls straight down it.</p>
+        <p>The snow is the real system. A grid of five million cells, one every half metre, remembers both its condition and how deep the ruts are, and the same two arrays feed the physics on the processor and the shader on the graphics card — so the groove you can see is the groove you can feel. After forty runs a popular line drops to fifteen percent condition with ruts nearly thirty centimetres deep, while the snow two metres to the side is untouched. Nothing heals on its own; a groomer has to go out and fix it.</p>
+        <p>The skiing physics run on that height field rather than on a rigid body. Straight-lining measures 61 km/h, tucking on race skis 82, full carving 48, powder 11 — and what actually decides a jump is the angle you hit the ramp at, not how tall the ramp is.</p>
+        </div>
+        <aside class="facts">
+          <dl>
+            <div><dt>Status</dt><dd>Live</dd></div>
+            <div><dt>Kind</dt><dd>Game</dd></div>
+            <div><dt>Year</dt><dd>2026</dd></div>
+            <div><dt>Built with</dt><dd>three.js, WebRTC</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
+    <nav aria-label="Contact">
+      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
+    </nav>
+  </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+  <script src="/assets/field.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

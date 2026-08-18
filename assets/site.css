@@ -369,6 +369,26 @@ img { display: block; max-width: 100%; }
 .card:hover .card-shot img,
 .card:focus-visible .card-shot img { transform: scale(1.03); }
 
+.no-shot {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px;
+  background: var(--kraft);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+  color: var(--graphite);
+  font-family: "Fragment Mono", ui-monospace, monospace;
+  font-size: .62rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-align: center;
+}
+.no-shot span:first-child { color: var(--ink); font-size: .8rem; }
+
 .status {
   position: absolute;
   top: 8px;
@@ -495,6 +515,21 @@ img { display: block; max-width: 100%; }
 .project-shot img {
   width: 100%;
   filter: saturate(.88) contrast(1.04) sepia(.12);
+}
+.project-shot.is-empty {
+  min-height: 240px;
+  display: grid;
+  place-content: center;
+  gap: 8px;
+  background: var(--kraft);
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 1px);
+  background-size: 16px 16px;
+  color: var(--graphite);
+  font-family: "Fragment Mono", ui-monospace, monospace;
+  font-size: .7rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-align: center;
 }
 
 .project-body {

@@ -97,9 +97,11 @@ function scripts() {
 
 function card(project, index) {
   const status = STATUS_LABEL[project.status] || project.status;
+  // A project with no screenshot yet gets a drafting placeholder rather than an
+  // empty grey box — it reads as "not photographed", not as "broken image".
   const shot = project.image
     ? `<img src="/${esc(project.image)}" alt="${esc(project.name)}" width="800" height="600" loading="${index < 6 ? "eager" : "lazy"}" decoding="async">`
-    : "";
+    : `<span class="no-shot"><span>${esc(project.name)}</span><span>no shot yet</span></span>`;
   // The badge is for the exception. Twelve of thirteen builds being live makes a
   // "Live" chip on every card pure noise, so status lives in the meta line and
   // only an unfinished or retired build gets flagged over the image.
@@ -223,7 +225,9 @@ function projectPage(project) {
         </div>
       </div>
 
-      ${project.image ? `<figure class="project-shot"><img src="/${esc(project.image)}" alt="${esc(project.name)}" width="1200" height="900"></figure>` : ""}
+      ${project.image
+        ? `<figure class="project-shot"><img src="/${esc(project.image)}" alt="${esc(project.name)}" width="1200" height="900"></figure>`
+        : `<figure class="project-shot is-empty"><span>${esc(project.name)}</span><span>no shot yet</span></figure>`}
 
       <div class="project-body">
         <div>
