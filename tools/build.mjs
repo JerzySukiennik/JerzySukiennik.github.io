@@ -110,7 +110,7 @@ function card(project, index) {
       ? ""
       : `<span class="status" data-status="${esc(project.status)}">${esc(status)}</span>`;
 
-  return `      <a class="card" href="/${esc(project.slug)}/" data-status="${esc(status)}">
+  return `      <a class="card" href="/p/${esc(project.slug)}/" data-status="${esc(status)}">
         <span class="card-shot">
           ${shot}
           ${flag}
@@ -206,7 +206,7 @@ function projectPage(project) {
   return `${head({
     title: `${project.name} — Gzowo Labs`,
     description: project.blurb,
-    url: `${SITE}/${project.slug}/`,
+    url: `${SITE}/p/${project.slug}/`,
     image: `${SITE}/${project.image}`,
   })}
 <body>
@@ -252,20 +252,16 @@ ${scripts()}
 
 /* ---- write ---- */
 
-// Clear the pages from the previous publish so a deleted project leaves no orphan.
-for (const entry of readdirSync(root, { withFileTypes: true })) {
-  if (!entry.isDirectory()) continue;
-  const kept = ["assets", "data", "project-images", "tools", ".git", "node_modules"];
-  if (kept.includes(entry.name)) continue;
-  if (existsSync(join(root, entry.name, "index.html"))) {
-    rmSync(join(root, entry.name), { recursive: true, force: true });
-  }
-}
+// Project pages live under /p/ and nowhere else. A page at /<slug>/ would be
+// hijacked by GitHub: a repo of the same name with its own Pages site makes the
+// user site 301 away to that repo's domain, which silently ate eleven pages once.
+const pagesDir = join(root, "p");
+rmSync(pagesDir, { recursive: true, force: true });
 
 writeFileSync(join(root, "index.html"), home());
 for (const project of projects) {
-  mkdirSync(join(root, project.slug), { recursive: true });
-  writeFileSync(join(root, project.slug, "index.html"), projectPage(project));
+  mkdirSync(join(pagesDir, project.slug), { recursive: true });
+  writeFileSync(join(pagesDir, project.slug, "index.html"), projectPage(project));
 }
 
 console.log(`Built index.html and ${projects.length} project pages.`);

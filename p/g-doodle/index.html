@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d6c39b">
+<meta name="color-scheme" content="light">
+<title>G-Doodle — Gzowo Labs</title>
+<meta name="description" content="A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.">
+<link rel="canonical" href="https://gzowo.fun/p/g-doodle/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:url" content="https://gzowo.fun/p/g-doodle/">
+<meta property="og:title" content="G-Doodle — Gzowo Labs">
+<meta property="og:description" content="A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.">
+<meta property="og:image" content="https://gzowo.fun/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="G-Doodle — Gzowo Labs">
+<meta name="twitter:description" content="A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.">
+<meta name="twitter:image" content="https://gzowo.fun/">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>document.documentElement.classList.add("js","is-ready")</script>
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+
+  <div class="page">
+    <main class="project">
+      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+
+      <div>
+        <h1>G-Doodle</h1>
+        <p class="project-lead">A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.</p>
+        <div class="actions">
+          <span class="btn btn-play" aria-disabled="true">Not public yet</span>
+          <a class="btn" href="https://github.com/JerzySukiennik/g-doodle" target="_blank" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+        </div>
+      </div>
+
+      <figure class="project-shot is-empty"><span>G-Doodle</span><span>no shot yet</span></figure>
+
+      <div class="project-body">
+        <div>
+        <p>The third model in the family, after G-Micro and G-Images, trained from scratch over 345 categories of drawing. It does not produce an image in one shot — it emits strokes in order, so you watch the picture being drawn rather than appear.</p>
+        <p>It is also the first of the family that needs nothing running at home. G-Micro and G-Images both go quiet when the Mac sleeps; this one is small enough to run in the browser it is displayed in.</p>
+        </div>
+        <aside class="facts">
+          <dl>
+            <div><dt>Status</dt><dd>Building</dd></div>
+            <div><dt>Kind</dt><dd>AI model</dd></div>
+            <div><dt>Year</dt><dd>2026</dd></div>
+            <div><dt>Built with</dt><dd>PyTorch, Python</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
+    <nav aria-label="Contact">
+      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
+    </nav>
+  </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+  <script src="/assets/field.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>

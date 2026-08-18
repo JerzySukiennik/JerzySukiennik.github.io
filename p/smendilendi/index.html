@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#d6c39b">
+<meta name="color-scheme" content="light">
+<title>Smendiłendi — Gzowo Labs</title>
+<meta name="description" content="A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.">
+<link rel="canonical" href="https://gzowo.fun/p/smendilendi/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:url" content="https://gzowo.fun/p/smendilendi/">
+<meta property="og:title" content="Smendiłendi — Gzowo Labs">
+<meta property="og:description" content="A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.">
+<meta property="og:image" content="https://gzowo.fun/project-images/smendilendi.webp">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Smendiłendi — Gzowo Labs">
+<meta name="twitter:description" content="A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.">
+<meta name="twitter:image" content="https://gzowo.fun/project-images/smendilendi.webp">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=3">
+<script>document.documentElement.classList.add("js","is-ready")</script>
+</head>
+<body>
+  <canvas id="field" aria-hidden="true"></canvas>
+
+  <div class="page">
+    <main class="project">
+      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+
+      <div>
+        <h1>Smendiłendi</h1>
+        <p class="project-lead">A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.</p>
+        <div class="actions">
+          <span class="btn btn-play" aria-disabled="true">Not public yet</span>
+          
+        </div>
+      </div>
+
+      <figure class="project-shot"><img src="/project-images/smendilendi.webp" alt="Smendiłendi" width="1200" height="900"></figure>
+
+      <div class="project-body">
+        <div>
+        <p>A small, light quadruped printed on a Bambu Lab X1C in ordinary PLA, driven by four hobby servos and a microcontroller. The scope is poses, touch and simple movement rather than dynamic walking.</p>
+        <p>It is the first project here where the feedback loop needs a person. The model can be changed from a keyboard, but measuring whether the printed part actually fits requires somebody standing at the printer with calipers — and that changes how the work is planned.</p>
+        </div>
+        <aside class="facts">
+          <dl>
+            <div><dt>Status</dt><dd>Building</dd></div>
+            <div><dt>Kind</dt><dd>Hardware</dd></div>
+            <div><dt>Year</dt><dd>2026</dd></div>
+            <div><dt>Built with</dt><dd>OpenSCAD, ESP32, Bambu X1C</dd></div>
+          </dl>
+        </aside>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
+    <nav aria-label="Contact">
+      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
+      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
+      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
+    </nav>
+  </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
+  <script src="/assets/field.js" defer></script>
+  <script src="/assets/site.js" defer></script>
+</body>
+</html>
