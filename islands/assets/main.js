@@ -254,7 +254,7 @@ async function boot() {
   const labelProxies = built.interactables.map((it) => it.label);
 
   const card = new WorldCard(scene);
-  const found = new Set(JSON.parse(localStorage.getItem("wyspy.found." + ISLAND.key) || "[]"));
+  const found = new Set(JSON.parse(localStorage.getItem("islands.found." + ISLAND.key) || "[]"));
   const total = built.interactables.length;
 
   function renderCount() {
@@ -264,7 +264,7 @@ async function boot() {
   function discover(id) {
     if (found.has(id)) return;
     found.add(id);
-    localStorage.setItem("wyspy.found." + ISLAND.key, JSON.stringify([...found]));
+    localStorage.setItem("islands.found." + ISLAND.key, JSON.stringify([...found]));
     renderCount();
   }
   renderCount();

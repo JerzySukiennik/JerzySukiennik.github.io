@@ -1,6 +1,6 @@
 {
   "source": "own",
-  "note": "Each entry is self contained. See wyspy/AGENTS.md before editing.",
+  "note": "Each entry is self contained. See islands/AGENTS.md before editing.",
   "entries": [
     {
       "slug": "narew",

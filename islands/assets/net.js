@@ -35,11 +35,14 @@ export class Net {
         import(SDK + "firebase-auth.js"),
         import(SDK + "firebase-database.js")
       ]);
-      const a = app.initializeApp(CONFIG, "wyspy");
+      const a = app.initializeApp(CONFIG, "islands");
       const authInstance = auth.getAuth(a);
       const cred = await auth.signInAnonymously(authInstance);
       this.uid = cred.user.uid + "-" + tabId();
       this.db = db;
+      // The database branch is still called "wyspy" while the site lives at
+      // /islands. Renaming it would mean redeploying rules on a database shared
+      // with a live game, for a path nobody ever sees.
       this.root = db.ref(db.getDatabase(a), "wyspy/" + this.island);
       this.me = db.child(this.root, this.uid);
       await db.set(this.me, { x: 0, z: 0, r: 0, c: this.color, t: db.serverTimestamp() });
@@ -96,21 +99,21 @@ export class Net {
 }
 
 function tabId() {
-  let id = sessionStorage.getItem("wyspy.tab");
+  let id = sessionStorage.getItem("islands.tab");
   if (!id) {
     id = Math.random().toString(36).slice(2, 8);
-    sessionStorage.setItem("wyspy.tab", id);
+    sessionStorage.setItem("islands.tab", id);
   }
   return id;
 }
 
 export function pickColor() {
-  const saved = localStorage.getItem("wyspy.color");
+  const saved = localStorage.getItem("islands.color");
   if (saved) return parseInt(saved, 10);
   const hues = [0.02, 0.08, 0.13, 0.33, 0.46, 0.55, 0.62, 0.72, 0.85, 0.94];
   const h = hues[Math.floor(Math.random() * hues.length)];
   const c = hslToHex(h, 0.55, 0.55);
-  localStorage.setItem("wyspy.color", String(c));
+  localStorage.setItem("islands.color", String(c));
   return c;
 }
 

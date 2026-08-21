@@ -1,6 +1,6 @@
 # Wyspy — instrukcja dla agenta
 
-Dwie chodzalne wyspy pod `gzowo.fun/wyspy/`. Jedna należy do Jurka, druga do Rysia.
+Dwie chodzalne wyspy pod `gzowo.fun/islands/`. Jedna należy do Jurka, druga do Rysia.
 Ten plik jest po to, żeby dało się dołożyć projekt na wyspę bez czytania całego kodu.
 
 ## Co gdzie leży
@@ -9,15 +9,15 @@ Ten plik jest po to, żeby dało się dołożyć projekt na wyspę bez czytania 
 |---|---|
 | `index.html` | ekran wyboru wyspy (podział na pół) |
 | `island.html` | sama wyspa, wybierana parametrem `?w=jurek` albo `?w=rysio` |
-| `islands/jurek.json` | lista projektów Jurka — **same slugi** |
-| `islands/rysio.json` | projekty Rysia — **pełne wpisy** |
+| `data/jurek.json` | lista projektów Jurka — **same slugi** |
+| `data/rysio.json` | projekty Rysia — **pełne wpisy** |
 | `assets/islands.js` | dzielnice, kategorie, teksty postaci i punktów „about" |
 | `assets/props.glb` | wszystkie bryły z Blendera (źródło: `Projects/Jurek/blender/`) |
 | `island-images/` | zrzuty ekranu dla wpisów, które nie są na półce Gzowo Labs |
 
 ## Dodanie projektu na wyspę Rysia
 
-Dopisz obiekt do `entries` w `islands/rysio.json`. Nic więcej nie trzeba —
+Dopisz obiekt do `entries` w `data/rysio.json`. Nic więcej nie trzeba —
 kiosk, tabliczka, miejsce na mapie i wpis w liczniku powstają same.
 
 ```json
@@ -29,7 +29,7 @@ kiosk, tabliczka, miejsce na mapie i wpis w liczniku powstają same.
   "year": "2026",
   "url": "https://gdzies.gzowo.fun/",
   "repo": "https://github.com/rysiosukiennik/nazwa",
-  "image": "/wyspy/island-images/nazwa.webp",
+  "image": "/islands/island-images/nazwa.webp",
   "blurb": "Jedno zdanie po angielsku. Trafia na kartę kiosku.",
   "body": [
     "Akapit pierwszy. Co to jest i jak w to grać.",
@@ -54,7 +54,7 @@ kiosk, tabliczka, miejsce na mapie i wpis w liczniku powstają same.
 
 ## Wyspa Jurka
 
-`islands/jurek.json` trzyma **wyłącznie slugi**. Cała treść (nazwa, opis, obrazek,
+`data/jurek.json` trzyma **wyłącznie slugi**. Cała treść (nazwa, opis, obrazek,
 adresy) pochodzi z `/data/projects.json`, czyli z półki Gzowo Labs. To jest celowe:
 jedno źródło prawdy, zero przepisywania tego samego dwa razy. Żeby dołożyć projekt
 na wyspę Jurka, najpierw musi być na półce, potem dopisujesz `{"slug": "..."}`.

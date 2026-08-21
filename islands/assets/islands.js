@@ -112,7 +112,7 @@ export const ISLANDS = {
     motto: "I build things that fly. And a few that don't crash.",
     avatar: "JK",
     source: "labs",
-    file: "islands/jurek.json",
+    file: "data/jurek.json",
     landmarks: JUREK_LANDMARKS,
     lines: [
       "Hey. I am Jurek, and this is my island.",
@@ -136,7 +136,7 @@ export const ISLANDS = {
     avatar: "PL",
     avatarColor: 0x2f6fa8,
     source: "own",
-    file: "islands/rysio.json",
+    file: "data/rysio.json",
     landmarks: RYSIO_LANDMARKS,
     lines: [
       "Hi. I am Rysio, and this island is mine.",

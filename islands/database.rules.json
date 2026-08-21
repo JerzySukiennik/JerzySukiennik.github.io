@@ -6,7 +6,10 @@
 // silently rejected every real write: the client sends an 'id' field on players,
 // the host election is a transaction on meta/hostId alone (so 'createdAt' is not
 // present yet), and world writes carry a 'ts'. Every one of those was denied.
-// The 'wyspy' subtree was added for gzowo.fun/wyspy presence. It is additive:
+// The 'wyspy' subtree carries presence for the islands at gzowo.fun/islands.
+// The branch keeps its old name on purpose: renaming it would mean touching this
+// live database again for cosmetics only, and no user ever sees the path.
+// It is additive:
 // payload is coordinates plus a colour, and reads need an authenticated session.
 // Player keys are '<uid>-<tab>' so one browser can open several tabs and each is
 // a separate walker. Writes still require that the key starts with the caller's uid.
