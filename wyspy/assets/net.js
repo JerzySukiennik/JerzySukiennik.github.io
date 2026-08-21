@@ -13,7 +13,6 @@ const CONFIG = {
 
 const SDK = "https://www.gstatic.com/firebasejs/10.12.5/";
 const SEND_HZ = 10;
-const STALE_MS = 20000;
 
 export class Net {
   constructor(island, color) {
@@ -39,7 +38,7 @@ export class Net {
       const a = app.initializeApp(CONFIG, "wyspy");
       const authInstance = auth.getAuth(a);
       const cred = await auth.signInAnonymously(authInstance);
-      this.uid = cred.user.uid;
+      this.uid = cred.user.uid + "-" + tabId();
       this.db = db;
       this.root = db.ref(db.getDatabase(a), "wyspy/" + this.island);
       this.me = db.child(this.root, this.uid);
@@ -94,8 +93,15 @@ export class Net {
   }
 
   get count() { return this.peers.size + (this.ready ? 1 : 0); }
+}
 
-  static stale(seenAt) { return performance.now() - seenAt > STALE_MS; }
+function tabId() {
+  let id = sessionStorage.getItem("wyspy.tab");
+  if (!id) {
+    id = Math.random().toString(36).slice(2, 8);
+    sessionStorage.setItem("wyspy.tab", id);
+  }
+  return id;
 }
 
 export function pickColor() {

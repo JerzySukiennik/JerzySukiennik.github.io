@@ -1,17 +1,16 @@
+// SatisFarm room rules. These enforce exactly three things and deliberately
+// nothing more: (1) you must be authenticated, (2) you may only write your own
+// player entry, (3) only the host recorded at meta/hostId may write world state.
+// An earlier revision also policed the payload schema with '$other': false and
+// hasChildren() checks. That was not security — it was schema policing, and it
+// silently rejected every real write: the client sends an 'id' field on players,
+// the host election is a transaction on meta/hostId alone (so 'createdAt' is not
+// present yet), and world writes carry a 'ts'. Every one of those was denied.
+// The 'wyspy' subtree was added for gzowo.fun/wyspy presence. It is additive:
+// payload is coordinates plus a colour, and reads need an authenticated session.
+// Player keys are '<uid>-<tab>' so one browser can open several tabs and each is
+// a separate walker. Writes still require that the key starts with the caller's uid.
 {
-  "_comment": [
-    "SatisFarm room rules. These enforce exactly three things and deliberately",
-    "nothing more: (1) you must be authenticated, (2) you may only write your own",
-    "player entry, (3) only the host recorded at meta/hostId may write world state.",
-    "An earlier revision also policed the payload schema with '$other': false and",
-    "hasChildren() checks. That was not security \u2014 it was schema policing, and it",
-    "silently rejected every real write: the client sends an 'id' field on players,",
-    "the host election is a transaction on meta/hostId alone (so 'createdAt' is not",
-    "present yet), and world writes carry a 'ts'. Every one of those was denied.",
-    "The 'wyspy' subtree was added for gzowo.fun/wyspy presence. It is additive:",
-    "nothing under 'rooms' changed. Each player may write only their own key, the",
-    "payload is coordinates plus a colour, and reads need an authenticated session."
-  ],
   "rules": {
     "rooms": {
       "$roomId": {
@@ -66,7 +65,7 @@
       "$islandId": {
         ".read": "auth != null",
         "$playerId": {
-          ".write": "auth != null && auth.uid === $playerId",
+          ".write": "auth != null && $playerId.beginsWith(auth.uid + '-')",
           ".validate": "!newData.exists() || (newData.hasChildren(['x','z']) && newData.child('x').isNumber() && newData.child('z').isNumber())",
           "x": {
             ".validate": "newData.isNumber() && newData.val() >= -200 && newData.val() <= 200"
