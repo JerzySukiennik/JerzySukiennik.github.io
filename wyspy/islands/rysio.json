@@ -1,0 +1,24 @@
+{
+  "source": "own",
+  "note": "Each entry is self contained. See wyspy/AGENTS.md before editing.",
+  "entries": [
+    {
+      "slug": "narew",
+      "name": "Narew",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "https://rysiosukiennik.github.io/backrooms-game/narew.html",
+      "repo": "https://github.com/rysiosukiennik/backrooms-game",
+      "image": "/project-images/narew.webp",
+      "blurb": "A walk around one real property by the Narew, paddle the river, or play eleven games on the TV indoors.",
+      "body": [
+        "One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a shelter, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map. Three kayaks lie on the bank: you climb in, paddle with W and S, steer with A and D, and the hull refuses to leave water deeper than thirty centimetres, so the river keeps you.",
+        "The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, a shelf of YouTube links behind an optional password, and NAREBLOX, eleven small games. Nine are drawn on that same canvas. The last two are not drawn at all, they are separate three.js scenes with their own camera and lights, rendered to a texture that the screen then shows, so the set is displaying real 3D from inside a 3D world. One is a veterinary hospital where you decide at the front desk which patients to admit and which are anomalies; the other builds a small country out of houses, factories and barracks.",
+        "The surfaces are photographs now. Grass, bark, leaves, concrete, planks, fabric and sheet metal come from CC0 material libraries, cut down to 512 pixels so the whole set weighs a third of a megabyte. If the folder ever goes missing the materials fall back to the generators that draw them in code, so the world is never left bare. The corrugation on the shelter roof is geometry rather than texture, because the ridges live in a normal map that is not shipped and a flat colour map read as a sheet of glass.",
+        "Around that: characters are GLTF models with blended idle, walk and run clips, and multiplayer runs peer to peer over PeerJS with the host relaying positions. Wind is patched into materials that already exist by swapping their shader, so instanced grass and tree crowns bend from the base with a phase taken from world position and nothing sways in unison. There are squirrels low enough on the trunks to pet, a bottle you fill from the river and drink, a bed that fades the screen to morning, a teleport pad, and a man standing in the water who will launch you over the valley.",
+        "The interface is in Polish, the way it was written."
+      ]
+    }
+  ]
+}

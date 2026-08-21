@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#5c8a4a">
+<title>Island</title>
+<meta name="description" content="A walkable island. Every plot is a real project.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,700;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css?v=5">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+    "gltf-loader": "https://unpkg.com/three@0.169.0/examples/jsm/loaders/GLTFLoader.js",
+    "room-env": "https://unpkg.com/three@0.169.0/examples/jsm/environments/RoomEnvironment.js",
+    "island/islands": "./assets/islands.js?v=5",
+    "island/world": "./assets/world.js?v=5",
+    "island/player": "./assets/player.js?v=5",
+    "island/cards": "./assets/cards.js?v=5",
+    "island/net": "./assets/net.js?v=5"
+  }
+}
+</script>
+</head>
+<body>
+<canvas id="scene"></canvas>
+
+<div id="veil">
+  <div class="veil-inner">
+    <h1 id="veil-name">Island</h1>
+    <p id="veil-note">Building the island</p>
+  </div>
+</div>
+
+<div id="hudbar">
+  <div class="hud-count">
+    <span class="eyebrow">Found</span>
+    <b id="count">00 / 00</b>
+    <div class="bar"><i id="count-bar"></i></div>
+    <span id="peers">only you</span>
+  </div>
+  <canvas id="mini" aria-hidden="true"></canvas>
+</div>
+
+<div id="hint"></div>
+<a id="leave" href="./">Both islands</a>
+<span id="island-name" hidden></span>
+
+<script type="module" src="assets/main.js?v=5"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+{
+  "source": "labs",
+  "note": "Slugs only. Every word of copy comes from /data/projects.json, so nothing is written twice.",
+  "entries": [
+    {
+      "slug": "voidworks"
+    },
+    {
+      "slug": "drops"
+    },
+    {
+      "slug": "ducks"
+    },
+    {
+      "slug": "g-doodle"
+    },
+    {
+      "slug": "kocia-wyspa"
+    },
+    {
+      "slug": "narek-mascot"
+    },
+    {
+      "slug": "hollowtree"
+    },
+    {
+      "slug": "narew-labs"
+    },
+    {
+      "slug": "ski-together"
+    },
+    {
+      "slug": "smendilendi"
+    },
+    {
+      "slug": "gzowo-builders"
+    },
+    {
+      "slug": "g-mini"
+    },
+    {
+      "slug": "gzowo-tv"
+    },
+    {
+      "slug": "airwave"
+    },
+    {
+      "slug": "voxel-demolition"
+    },
+    {
+      "slug": "g-images"
+    },
+    {
+      "slug": "g-micro"
+    },
+    {
+      "slug": "mjj-archives"
+    },
+    {
+      "slug": "untitled-civ-game"
+    },
+    {
+      "slug": "gargantua"
+    },
+    {
+      "slug": "cruise-control"
+    },
+    {
+      "slug": "untitled-pogo-game"
+    },
+    {
+      "slug": "backrooms"
+    },
+    {
+      "slug": "gzowo-ai"
+    },
+    {
+      "slug": "gsp-brand-kit"
+    },
+    {
+      "slug": "gzowo-bowling"
+    },
+    {
+      "slug": "modular"
+    },
+    {
+      "slug": "gsp"
+    },
+    {
+      "slug": "galeria-gzowo"
+    }
+  ]
+}

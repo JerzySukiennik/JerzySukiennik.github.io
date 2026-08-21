@@ -1,0 +1,93 @@
+{
+  "_comment": [
+    "SatisFarm room rules. These enforce exactly three things and deliberately",
+    "nothing more: (1) you must be authenticated, (2) you may only write your own",
+    "player entry, (3) only the host recorded at meta/hostId may write world state.",
+    "An earlier revision also policed the payload schema with '$other': false and",
+    "hasChildren() checks. That was not security \u2014 it was schema policing, and it",
+    "silently rejected every real write: the client sends an 'id' field on players,",
+    "the host election is a transaction on meta/hostId alone (so 'createdAt' is not",
+    "present yet), and world writes carry a 'ts'. Every one of those was denied.",
+    "The 'wyspy' subtree was added for gzowo.fun/wyspy presence. It is additive:",
+    "nothing under 'rooms' changed. Each player may write only their own key, the",
+    "payload is coordinates plus a colour, and reads need an authenticated session."
+  ],
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        ".read": "auth != null",
+        "meta": {
+          ".write": "auth != null",
+          "hostId": {
+            ".validate": "newData.isString() && newData.val().length <= 128"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber()"
+          }
+        },
+        "players": {
+          "$playerId": {
+            ".write": "auth != null && auth.uid === $playerId",
+            ".validate": "!newData.exists() || newData.hasChild('name')",
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 32"
+            },
+            "id": {
+              ".validate": "newData.isString() && newData.val().length <= 128"
+            },
+            "joinedAt": {
+              ".validate": "newData.isNumber()"
+            },
+            "cosmetics": {
+              "hat": {
+                ".validate": "newData.isString() && newData.val().length <= 32"
+              },
+              "skin": {
+                ".validate": "newData.isString() && newData.val().length <= 32"
+              }
+            }
+          }
+        },
+        "signal": {
+          "$peerId": {
+            ".write": "auth != null"
+          }
+        },
+        "world": {
+          ".write": "auth != null && data.parent().child('meta/hostId').val() === auth.uid"
+        }
+      }
+    },
+    "$other": {
+      ".read": false,
+      ".write": false
+    },
+    "wyspy": {
+      "$islandId": {
+        ".read": "auth != null",
+        "$playerId": {
+          ".write": "auth != null && auth.uid === $playerId",
+          ".validate": "!newData.exists() || (newData.hasChildren(['x','z']) && newData.child('x').isNumber() && newData.child('z').isNumber())",
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() >= -200 && newData.val() <= 200"
+          },
+          "z": {
+            ".validate": "newData.isNumber() && newData.val() >= -200 && newData.val() <= 200"
+          },
+          "r": {
+            ".validate": "newData.isNumber()"
+          },
+          "c": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 16777215"
+          },
+          "t": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    }
+  }
+}
