@@ -38,7 +38,7 @@
       <a class="btn90" href="/#feed">MY GAMES</a>
       <a class="btn90" href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">MY CODE</a>
       <a class="btn90" href="https://gspaerospace.pl" target="_blank" rel="noopener">ROCKETS</a>
-      <a class="btn90" href="mailto:kalakasanyt@gmail.com">SIGN MY GUESTBOOK</a>
+      <a class="btn90" href="#reviews" data-rev-open>REVIEWS &#9733;</a>
       <a class="btn90" href="mailto:kalakasanyt@gmail.com">E-MAIL ME!!</a>
     </nav>
 
@@ -146,6 +146,28 @@
           <p style="margin:4px 0 0"><a href="mailto:kalakasanyt@gmail.com?subject=YES">YES</a> &middot;
           <a href="mailto:kalakasanyt@gmail.com?subject=ALSO%20YES">also YES</a></p>
         </div>
+
+        <div class="widget reviews" data-rev id="reviews">
+          <h4>Reviews!!</h4>
+          <button class="rev-close btn90" type="button" data-rev-close>&times; CLOSE</button>
+          <p class="rev-score" data-rev-score>loading...</p>
+
+          <form class="rev-form" data-rev-form>
+            <div class="rev-stars" data-rev-stars role="group" aria-label="Your rating">
+              <button type="button" aria-pressed="false" aria-label="1 star">&#9733;</button>
+              <button type="button" aria-pressed="false" aria-label="2 stars">&#9733;</button>
+              <button type="button" aria-pressed="false" aria-label="3 stars">&#9733;</button>
+              <button type="button" aria-pressed="false" aria-label="4 stars">&#9733;</button>
+              <button type="button" aria-pressed="false" aria-label="5 stars">&#9733;</button>
+            </div>
+            <input type="text" name="n" maxlength="30" placeholder="your name (or stay mysterious)">
+            <textarea name="m" maxlength="400" rows="3" placeholder="Tell the world what you think !!! (my mum reads this)"></textarea>
+            <button class="btn90 rev-post" type="submit">POST IT !!!</button>
+            <p class="rev-note" data-rev-note></p>
+          </form>
+
+          <div class="rev-list" data-rev-list></div>
+        </div>
       </div>
     </div>
 
@@ -164,6 +186,7 @@
 
   <script src="/assets/site.js?v=90" defer></script>
   <script src="/assets/wall.js?v=90" defer></script>
+  <script src="/assets/reviews.js?v=90" defer></script>
   <script type="module" src="/assets/agentation.js"></script>
 </body>
 </html>

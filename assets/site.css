@@ -168,7 +168,7 @@ a:hover{color:#ff0000;background:#ffff00}
   flex:0 0 168px;padding:8px 6px;
   background:linear-gradient(180deg,#000080,#4b0082,#000080);
 }
-.col-right{flex-basis:180px}
+.col-right{flex-basis:216px}
 .middle{flex:1 1 auto;min-width:0;padding:10px 12px;background:#ffffee}
 
 /* sidebar widgets */
@@ -425,3 +425,70 @@ html.wall-on .wall-canvas{cursor:crosshair}
   font-family:var(--comic);color:#800080;cursor:pointer;
 }
 .wall-hint:hover{color:#ff0000;background:#ffff00}
+
+/* ---------- reviews / guestbook ---------- */
+
+.reviews{text-align:left}
+.reviews h4{text-align:center}
+
+.rev-score{
+  margin:0 0 6px;text-align:center;font-size:12px;color:#000080;
+  border-bottom:2px dotted #999;padding-bottom:5px;
+}
+.rev-score b{font-size:17px;color:#ff0000}
+
+.rev-stars{display:flex;justify-content:center;gap:2px;margin:0 0 5px}
+.rev-stars button{
+  font-size:19px;line-height:1;padding:0 1px;
+  border:0;background:none;cursor:pointer;
+  color:#bbb;text-shadow:1px 1px 0 #777;
+}
+.rev-stars button.is-lit{color:#ffcc00;text-shadow:1px 1px 0 #a06a00}
+
+.rev-form input,
+.rev-form textarea{
+  display:block;width:100%;margin:0 0 4px;padding:3px;
+  font-family:var(--courier);font-size:11px;
+  border:2px inset #bbb;background:#fff;
+}
+.rev-form textarea{resize:vertical}
+.rev-post{width:100%;font-size:13px}
+
+.rev-note{margin:4px 0 0;font-size:11px;color:#008000;text-align:center;min-height:1em}
+.rev-note.is-bad{color:#ff0000}
+
+.rev-list{margin-top:8px}
+.rev-item{
+  margin:0 0 6px;padding:5px;
+  border:2px ridge var(--cyan);background:#f0ffff;
+}
+.rev-item:nth-child(even){border-color:var(--pink);background:#fff0ff}
+.rev-stars-out{margin:0;font-size:13px;color:#ffaa00;text-shadow:1px 1px 0 #7a5200;letter-spacing:1px}
+.rev-msg{margin:2px 0;font-size:12px;line-height:1.3;word-wrap:break-word;overflow-wrap:anywhere}
+.rev-sign{margin:0;font-family:var(--courier);font-size:10px;color:#666}
+
+/* The close button belongs to the phone panel only. */
+.rev-close{display:none}
+
+@media (max-width:860px){
+  /* On a phone the widget is a screen of its own: the list can run as long as
+     it likes without adding a hundred reviews to the page's own scroll. */
+  .reviews{
+    display:none;
+    position:fixed;inset:0;z-index:10001;
+    margin:0;border:0;border-top:6px ridge var(--pink);
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:#ffffee;
+    padding:8px 10px 30px;
+  }
+  html.rev-screen .reviews{display:block}
+  html.rev-screen{overflow:hidden}
+  .reviews h4{margin:-8px -10px 8px;padding:8px;font-size:16px}
+  .rev-close{
+    display:block;width:100%;margin:0 0 8px;font-size:14px;
+  }
+  .rev-form input,.rev-form textarea{font-size:16px}  /* 16px stops iOS zooming in */
+  .rev-stars button{font-size:30px;padding:2px 4px}
+  .rev-msg{font-size:14px}
+  .rev-score{font-size:14px}
+}
