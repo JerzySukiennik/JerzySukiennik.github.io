@@ -59,6 +59,16 @@ a:hover{color:#ff0000;background:#ffff00}
 }
 @keyframes slide{to{background-position:-200% 0}}
 
+/* The burning title is a real cooltext.com GIF, so the CSS fire that used to
+   imitate one is gone. The image is sized in em against the h1 so it scales
+   with the same clamp the text headings use. */
+.wordart.is-fire{position:relative;white-space:nowrap;line-height:1}
+.fire-gif{
+  display:inline-block;vertical-align:middle;
+  width:min(88%,660px);height:auto;
+  image-rendering:auto;
+}
+
 .marquee{overflow:hidden;white-space:nowrap}
 .marquee > span{display:inline-block;padding-left:100%;animation:march 18s linear infinite}
 @keyframes march{to{transform:translateX(-100%)}}
@@ -92,8 +102,10 @@ a:hover{color:#ff0000;background:#ffff00}
   position:relative;
   padding:14px 10px 10px;
   text-align:center;
+  /* Night sky rather than day: the burning GIF has almost no dark values of
+     its own, so it needs something dark to burn against. */
   background:
-    radial-gradient(circle at 50% 120%,#ffffff 0%,#99ccff 45%,#0033cc 100%);
+    radial-gradient(circle at 50% 120%,#2a0a5e 0%,#12043a 45%,#05010f 100%);
   border-bottom:5px double #000;
 }
 
@@ -117,7 +129,7 @@ a:hover{color:#ff0000;background:#ffff00}
 
 .tagline{
   margin:14px 0 4px;font-family:var(--comic);font-size:clamp(14px,2.6vw,20px);
-  font-weight:bold;color:#ff0000;text-shadow:1px 1px 0 #fff;
+  font-weight:bold;color:#ffe14d;text-shadow:2px 2px 0 #b30000,0 0 10px rgba(255,120,0,.6);
 }
 .tagline .sig{color:#0000cc;font-size:.8em}
 

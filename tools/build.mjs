@@ -87,7 +87,7 @@ function banner() {
 
     <header class="banner">
       <p class="eyebrow">${OWNER}'s Official Home Page ~ Warsaw, Poland ~ Est. 2026</p>
-      <h1 class="wordart"><span class="spinner" aria-hidden="true"></span><span class="rainbow-text">Gzowo Labs</span><span class="spinner" aria-hidden="true"></span></h1>
+      <h1 class="wordart is-fire"><span class="spinner" aria-hidden="true"></span><img class="fire-gif" src="/assets/gzowo-labs-fire.gif" alt="Gzowo Labs" width="515" height="93"><span class="spinner" aria-hidden="true"></span></h1>
       <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${TAGLINE} <span class="blink">&lt;&lt;&lt;</span></p>
     </header>`;
 }
@@ -181,7 +181,10 @@ function footer() {
 }
 
 function scripts() {
-  return `  <script src="/assets/site.js?v=90" defer></script>`;
+  // The agentation module no-ops off localhost, so shipping it costs the live
+  // site one 304 and nothing else.
+  return `  <script src="/assets/site.js?v=90" defer></script>
+  <script type="module" src="/assets/agentation.js"></script>`;
 }
 
 /* ---- home ---- */
