@@ -4,9 +4,12 @@
    1. The visitor counter. A real, global one: read /hits, and bump it once per
       browser session. The rules only accept +1, so the number cannot be faked
       from the page.
-   2. The graffiti wall. A hidden canvas over the whole site that anyone can
-      draw on in black, and what they draw stays. The rules allow creating a
-      stroke and nothing else — no edits, no deletions, no reading the root.
+   2. The graffiti wall. A hidden canvas anyone can draw on in black, and what
+      they draw stays. The rules allow creating a stroke and nothing else — no
+      edits, no deletions, no reading the root. Drawing is confined to the
+      margins around the page frame: the frame is punched out of both the clip
+      region and the input test, so nobody can scribble over the content and
+      the links underneath keep working while the mode is on.
 
    Strokes are stored as "x,y,x,y,…" normalised against the document WIDTH for
    both axes, so a drawing keeps its proportions on a narrower screen even
@@ -65,6 +68,27 @@
     return document.documentElement.clientWidth;
   }
 
+  // The page frame, in viewport pixels — the one area that stays paint-free.
+  function frame() {
+    var el = document.querySelector(".frame");
+    return el ? el.getBoundingClientRect() : null;
+  }
+
+  // Margins narrower than this are not worth offering; on a phone the frame
+  // fills the window and there is genuinely nowhere to draw.
+  var MIN_MARGIN = 40;
+
+  function margin() {
+    var f = frame();
+    if (!f) return window.innerWidth;
+    return Math.min(f.left, window.innerWidth - f.right);
+  }
+
+  function inFrame(x, y) {
+    var f = frame();
+    return !!f && x >= f.left && x <= f.right && y >= f.top && y <= f.bottom;
+  }
+
   function draw() {
     if (!ctx) return;
     var w = canvas.width / (window.devicePixelRatio || 1);
@@ -77,6 +101,17 @@
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
+    // Punch the frame out of the drawable area with an even-odd clip, so a
+    // stroke that strays over the page is simply not painted there.
+    var f = frame();
+    ctx.save();
+    if (f) {
+      ctx.beginPath();
+      ctx.rect(0, 0, w, canvas.height);
+      ctx.rect(f.left, f.top, f.width, f.height);
+      ctx.clip("evenodd");
+    }
+
     var all = current ? strokes.concat([current]) : strokes;
     all.forEach(function (pts) {
       if (pts.length < 4) return;
@@ -88,6 +123,7 @@
       }
       ctx.stroke();
     });
+    ctx.restore();
   }
 
   function fit() {
@@ -169,13 +205,14 @@
 
   function down(e) {
     if (!on || e.button === 2) return;
+    if (inFrame(e.clientX, e.clientY)) return; // the page itself is off limits
     e.preventDefault();
     current = point(e);
-    canvas.setPointerCapture(e.pointerId);
   }
 
   function move(e) {
     if (!on || !current) return;
+    if (inFrame(e.clientX, e.clientY)) return; // skip, do not break the stroke
     var p = point(e);
     var n = current.length;
     // Skip micro-movements: fewer points, smaller payload, same line.
@@ -195,13 +232,13 @@
     on = state;
     console.info("[wall] graffiti mode " + (on ? "ON — draw anywhere" : "off"));
     document.documentElement.classList.toggle("wall-on", on);
-    canvas.style.pointerEvents = on ? "auto" : "none";
     if (on && !bar) {
       bar = document.createElement("div");
       bar.className = "wall-bar";
       bar.innerHTML =
-        '<b>&#9998; GRAFFITI MODE</b> &mdash; draw anywhere. Whatever you draw stays here <b>forever</b>, ' +
-        'and everyone who visits sees it. <button type="button">DONE</button>';
+        '<b>&#9998; GRAFFITI MODE</b> &mdash; draw in the <b>margins</b> beside the page; the page itself is ' +
+        'off limits. Whatever you draw stays here <b>forever</b>, and everyone who visits sees it. ' +
+        '<button type="button">DONE</button>';
       bar.querySelector("button").addEventListener("click", function () { toggle(false); });
       document.body.appendChild(bar);
     }
@@ -210,9 +247,12 @@
     // A flash at the top, because the toolbar sits at the bottom of a long page
     // and turning the mode on has to be unmissable.
     if (on) {
+      var roomy = margin() >= MIN_MARGIN;
       var flash = document.createElement("div");
       flash.className = "wall-flash";
-      flash.textContent = "GRAFFITI MODE ON — DRAW ANYWHERE";
+      flash.textContent = roomy
+        ? "GRAFFITI MODE ON — DRAW IN THE MARGINS"
+        : "NO ROOM TO DRAW — WIDEN THE WINDOW";
       document.body.appendChild(flash);
       setTimeout(function () { flash.remove(); }, 2600);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -251,10 +291,12 @@
 
   function start() {
     mount();
-    canvas.addEventListener("pointerdown", down);
-    canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("pointerup", up);
-    canvas.addEventListener("pointercancel", up);
+    // On the window rather than the canvas: the canvas never takes pointer
+    // events, so every link and button under it still works in graffiti mode.
+    window.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
     void calm;
   }
 })();
