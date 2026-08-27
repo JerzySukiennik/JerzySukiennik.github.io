@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#d6c39b">
+<meta name="theme-color" content="#ff00ff">
 <meta name="color-scheme" content="light">
 <title>Narew — Gzowo Labs</title>
 <meta name="description" content="A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.">
@@ -21,62 +21,144 @@
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=3">
-<script>document.documentElement.classList.add("js","is-ready","is-done")</script>
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=90">
 </head>
 <body>
-  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="frame">
+    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: NAREW *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
 
-  <div class="page">
-    <main class="project">
-      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+    <header class="banner">
+      <p class="eyebrow">Gzowo Labs presents</p>
+      <h1 class="wordart"><span class="rainbow-text">Narew</span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> Game &middot; Live &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
+    </header>
+    <nav class="navstrip" aria-label="Main">
+      <a class="btn90" href="/">HOME</a>
+      <a class="btn90" href="/#feed">MY GAMES</a>
+      <a class="btn90" href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">MY CODE</a>
+      <a class="btn90" href="https://gspaerospace.pl" target="_blank" rel="noopener">ROCKETS</a>
+      <a class="btn90" href="mailto:kalakasanyt@gmail.com">SIGN MY GUESTBOOK</a>
+      <a class="btn90" href="mailto:kalakasanyt@gmail.com">E-MAIL ME!!</a>
+    </nav>
 
-      <div>
-        <h1>Narew</h1>
+    <div class="layout">
+      <div class="col-left">
+        <div class="widget">
+          <h4>Navigate!!</h4>
+          <ul class="menu">
+            <li><a href="/">Home Page</a></li>
+            <li><a href="/#feed">All My Games</a></li>
+            <li><a href="/#feed">AI Stuff</a></li>
+            <li><a href="https://gspaerospace.pl" target="_blank" rel="noopener">Rockets (GSP)</a></li>
+            <li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">My Code</a></li>
+            <li><a href="mailto:kalakasanyt@gmail.com">Guestbook</a></li>
+            <li><a href="mailto:kalakasanyt@gmail.com">E-Mail Me</a></li>
+          </ul>
+        </div>
+
+        <div class="widget">
+          <h4>Visitors</h4>
+          <div class="counter" data-counter aria-label="visitor counter"></div>
+          <p style="margin:6px 0 0">You are visitor number<br><b>a lot</b>!</p>
+        </div>
+
+        <div class="widget">
+          <h4>Now Playing</h4>
+          <p style="margin:0">gzowo_theme.mid</p>
+          <button class="btn90 midi" type="button" data-midi>&#9834; PLAY MIDI &#9834;</button>
+        </div>
+
+        <div class="widget award">
+          &#9733;&#9733;&#9733;<br>COOL SITE<br>OF THE DAY<br>&#9733;&#9733;&#9733;<br><small>awarded by me</small>
+        </div>
+      </div>
+
+      <div class="middle project">
+        <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
+
         <p class="project-lead">A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.</p>
+
         <div class="actions">
-          <a class="btn btn-play" href="https://rysiosukiennik.github.io/backrooms-game/narew.html" target="_blank" rel="noopener">Play Narew <span aria-hidden="true">↗</span></a>
-          <a class="btn" href="https://github.com/rysiosukiennik/backrooms-game" target="_blank" rel="noopener">Source <span aria-hidden="true">↗</span></a>
+          <a class="btn-play" href="https://rysiosukiennik.github.io/backrooms-game/narew.html" target="_blank" rel="noopener">&#9658; PLAY Narew NOW !!</a>
+          <a class="btn" href="https://github.com/rysiosukiennik/backrooms-game" target="_blank" rel="noopener">Source code &#8599;</a>
+        </div>
+
+        <figure class="project-shot"><img src="/project-images/narew.webp" alt="Narew" width="1200" height="900"></figure>
+
+        <hr class="hr90">
+
+        <div class="project-body">
+          <div>
+            <p>One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a shelter, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map. Three kayaks lie on the bank: you climb in, paddle with W and S, steer with A and D, and the hull refuses to leave water deeper than thirty centimetres, so the river keeps you.</p>
+            <p>The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, a shelf of YouTube links behind an optional password, and NAREBLOX, eleven small games. Nine are drawn on that same canvas. The last two are not drawn at all — they are separate three.js scenes with their own camera and lights, rendered to a texture that the screen then shows, so the set is displaying real 3D from inside a 3D world. One is a veterinary hospital where you decide at the front desk which patients to admit and which are anomalies; the other builds a small country out of houses, factories and barracks.</p>
+            <p>The surfaces are photographs now. Grass, bark, leaves, concrete, planks, fabric and sheet metal come from CC0 material libraries, cut down to 512 pixels so the whole set weighs a third of a megabyte. If the folder ever goes missing the materials fall back to the generators that draw them in code, so the world is never left bare. The corrugation on the shelter roof is geometry rather than texture, because the ridges live in a normal map that is not shipped and a flat colour map read as a sheet of glass.</p>
+            <p>Around that: characters are GLTF models with blended idle, walk and run clips, and multiplayer runs peer to peer over PeerJS with the host relaying positions. Wind is patched into materials that already exist by swapping their shader, so instanced grass and tree crowns bend from the base with a phase taken from world position and nothing sways in unison. There are squirrels low enough on the trunks to pet, a bottle you fill from the river and drink, a bed that fades the screen to morning, a teleport pad, and a man standing in the water who will launch you over the valley.</p>
+            <p>The interface is in Polish, the way it was written.</p>
+          </div>
+          <aside class="facts">
+            <dl>
+              <div><dt>Status</dt><dd>Live</dd></div>
+              <div><dt>Kind</dt><dd>Game</dd></div>
+              <div><dt>Year</dt><dd>2026</dd></div>
+              <div><dt>Built with</dt><dd>three.js, GLTFLoader, CSS3DRenderer, PeerJS, Web Audio API, Canvas 2D, render targets, open-meteo API, OpenStreetMap data, ambientCG CC0 textures, single-file HTML</dd></div>
+            </dl>
+          </aside>
         </div>
       </div>
 
-      <figure class="project-shot"><img src="/project-images/narew.webp" alt="Narew" width="1200" height="900"></figure>
-
-      <div class="project-body">
-        <div>
-        <p>One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a shelter, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map. Three kayaks lie on the bank: you climb in, paddle with W and S, steer with A and D, and the hull refuses to leave water deeper than thirty centimetres, so the river keeps you.</p>
-        <p>The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, a shelf of YouTube links behind an optional password, and NAREBLOX, eleven small games. Nine are drawn on that same canvas. The last two are not drawn at all — they are separate three.js scenes with their own camera and lights, rendered to a texture that the screen then shows, so the set is displaying real 3D from inside a 3D world. One is a veterinary hospital where you decide at the front desk which patients to admit and which are anomalies; the other builds a small country out of houses, factories and barracks.</p>
-        <p>The surfaces are photographs now. Grass, bark, leaves, concrete, planks, fabric and sheet metal come from CC0 material libraries, cut down to 512 pixels so the whole set weighs a third of a megabyte. If the folder ever goes missing the materials fall back to the generators that draw them in code, so the world is never left bare. The corrugation on the shelter roof is geometry rather than texture, because the ridges live in a normal map that is not shipped and a flat colour map read as a sheet of glass.</p>
-        <p>Around that: characters are GLTF models with blended idle, walk and run clips, and multiplayer runs peer to peer over PeerJS with the host relaying positions. Wind is patched into materials that already exist by swapping their shader, so instanced grass and tree crowns bend from the base with a phase taken from world position and nothing sways in unison. There are squirrels low enough on the trunks to pet, a bottle you fill from the river and drink, a bed that fades the screen to morning, a teleport pad, and a man standing in the water who will launch you over the valley.</p>
-        <p>The interface is in Polish, the way it was written.</p>
+      <div class="col-right">
+        <div class="widget">
+          <h4>Today Is</h4>
+          <p style="margin:0" data-today>a very fine day</p>
         </div>
-        <aside class="facts">
-          <dl>
-            <div><dt>Status</dt><dd>Live</dd></div>
-            <div><dt>Kind</dt><dd>Game</dd></div>
-            <div><dt>Year</dt><dd>2026</dd></div>
-            <div><dt>Built with</dt><dd>three.js, GLTFLoader, CSS3DRenderer, PeerJS, Web Audio API, Canvas 2D, render targets, open-meteo API, OpenStreetMap data, ambientCG CC0 textures, single-file HTML</dd></div>
-          </dl>
-        </aside>
-      </div>
-    </main>
 
-  <footer class="footer">
-    <p class="footer-mark">Gzowo Labs — Jerzy Sukiennik</p>
-    <nav aria-label="Contact">
+        <div class="widget">
+          <h4>New!!!</h4>
+          <p style="margin:0"><span class="blink" style="color:#ff0000;font-weight:bold">NEW!</span> Voidworks is up!<br>
+          <a href="/p/voidworks/">click here !!~*</a></p>
+        </div>
+
+        <div class="construction">
+          <span>&#9888; Site under construction since 1998 &#9888;</span>
+        </div>
+
+        <div class="widget webring" style="margin-top:10px">
+          <h4>Web Ring</h4>
+          <p style="margin:0">The Gzowo Web Ring</p>
+          <p style="margin:4px 0 0">
+            <a href="https://gspaerospace.pl" target="_blank" rel="noopener">&laquo; prev</a> |
+            <a href="/">random</a> |
+            <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">next &raquo;</a>
+          </p>
+        </div>
+
+        <div class="widget stamp">
+          BEST VIEWED IN<br><b>NETSCAPE 4.0</b><br>800 &times; 600<br>256 COLORS<br>SOUND ON !!
+        </div>
+
+        <div class="widget">
+          <h4>Vote!!</h4>
+          <p style="margin:0">Do you like my<br>web site ?</p>
+          <p style="margin:4px 0 0"><a href="mailto:kalakasanyt@gmail.com?subject=YES">YES</a> &middot;
+          <a href="mailto:kalakasanyt@gmail.com?subject=ALSO%20YES">also YES</a></p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p class="footer-mark">&#9733; Gzowo Labs &#9733; Jerzy Sukiennik &#9733;</p>
+      <nav aria-label="Contact">
       <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
       <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
       <a href="https://instagram.com/jurek_sukiennik" target="_blank" rel="noopener">Instagram</a>
       <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
-    </nav>
-  </footer>
+      </nav>
+      <p style="margin:6px 0 0">&copy; 1998&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
+      <span class="blink">Thank you for visiting !!!</span> ~*~*~ Please come back soon ~*~*~</p>
+    </footer>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
-  <script src="/assets/field.js" defer></script>
-  <script src="/assets/site.js" defer></script>
+  <script src="/assets/site.js?v=90" defer></script>
 </body>
 </html>

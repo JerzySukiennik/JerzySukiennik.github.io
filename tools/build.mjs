@@ -1,10 +1,13 @@
 /* Publish step: data/projects.json -> index.html + one real page per project.
    Node only, no dependencies, no bundler. The CMS app calls this before it pushes.
 
+   Look: deliberate 1998 GeoCities pastiche. Tables-in-spirit, bevels, blink,
+   marquees, WordArt. All the "GIFs" are CSS, so nothing extra is downloaded.
+
    Usage: node tools/build.mjs
 */
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,14 +25,6 @@ const CONTACT = [
 
 const STATUS_LABEL = { live: "Live", building: "Building", archive: "Archive" };
 
-// Marks the document script-capable before first paint. Pages without a curtain
-// start their entrance immediately; the home page waits for the sequence, with a
-// timeout so a failed script can never leave the hero blank.
-const probe = (curtain) =>
-  curtain
-    ? `<script>document.documentElement.classList.add("js");setTimeout(function(){document.documentElement.classList.add("is-ready")},2500);setTimeout(function(){document.documentElement.classList.add("is-done")},4200)</script>`
-    : `<script>document.documentElement.classList.add("js","is-ready","is-done")</script>`;
-
 const esc = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -42,13 +37,13 @@ const projects = data.projects.filter((p) => !p.hidden);
 
 /* ---- shared chrome ---- */
 
-function head({ title, description, url, image, curtain = false }) {
+function head({ title, description, url, image }) {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#d6c39b">
+<meta name="theme-color" content="#ff00ff">
 <meta name="color-scheme" content="light">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(description)}">
@@ -66,10 +61,108 @@ function head({ title, description, url, image, curtain = false }) {
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@75..125,800;75..125,900&family=Fragment+Mono&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=3">
-${probe(curtain)}
+<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=90">
 </head>`;
+}
+
+/* The strip of bevelled buttons under the banner. On a project page the first
+   button walks home instead of jumping to an anchor that is not there. */
+function navstrip(home = true) {
+  const shelf = home
+    ? `<a class="btn90" href="#feed">MY GAMES</a>`
+    : `<a class="btn90" href="/#feed">MY GAMES</a>`;
+  return `    <nav class="navstrip" aria-label="Main">
+      <a class="btn90" href="/">HOME</a>
+      ${shelf}
+      <a class="btn90" href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">MY CODE</a>
+      <a class="btn90" href="https://gspaerospace.pl" target="_blank" rel="noopener">ROCKETS</a>
+      <a class="btn90" href="mailto:kalakasanyt@gmail.com">SIGN MY GUESTBOOK</a>
+      <a class="btn90" href="mailto:kalakasanyt@gmail.com">E-MAIL ME!!</a>
+    </nav>`;
+}
+
+function banner() {
+  return `    <div class="topbar marquee"><span>*~*~* WELCOME TO GZOWO LABS *~*~* ${projects.length} BROWSER GAMES AND EXPERIMENTS, ALL FREE, NO DOWNLOAD !!! *~*~* BEST VIEWED IN NETSCAPE NAVIGATOR AT 800x600 *~*~* SIGN MY GUESTBOOK !!! *~*~*</span></div>
+
+    <header class="banner">
+      <p class="eyebrow">${OWNER}'s Official Home Page ~ Warsaw, Poland ~ Est. 2026</p>
+      <h1 class="wordart"><span class="spinner" aria-hidden="true"></span><span class="rainbow-text">Gzowo Labs</span><span class="spinner" aria-hidden="true"></span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${TAGLINE} <span class="blink">&lt;&lt;&lt;</span></p>
+    </header>`;
+}
+
+function sidebarLeft() {
+  return `      <div class="col-left">
+        <div class="widget">
+          <h4>Navigate!!</h4>
+          <ul class="menu">
+            <li><a href="/">Home Page</a></li>
+            <li><a href="/#feed">All My Games</a></li>
+            <li><a href="/#feed">AI Stuff</a></li>
+            <li><a href="https://gspaerospace.pl" target="_blank" rel="noopener">Rockets (GSP)</a></li>
+            <li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">My Code</a></li>
+            <li><a href="mailto:kalakasanyt@gmail.com">Guestbook</a></li>
+            <li><a href="mailto:kalakasanyt@gmail.com">E-Mail Me</a></li>
+          </ul>
+        </div>
+
+        <div class="widget">
+          <h4>Visitors</h4>
+          <div class="counter" data-counter aria-label="visitor counter"></div>
+          <p style="margin:6px 0 0">You are visitor number<br><b>a lot</b>!</p>
+        </div>
+
+        <div class="widget">
+          <h4>Now Playing</h4>
+          <p style="margin:0">gzowo_theme.mid</p>
+          <button class="btn90 midi" type="button" data-midi>&#9834; PLAY MIDI &#9834;</button>
+        </div>
+
+        <div class="widget award">
+          &#9733;&#9733;&#9733;<br>COOL SITE<br>OF THE DAY<br>&#9733;&#9733;&#9733;<br><small>awarded by me</small>
+        </div>
+      </div>`;
+}
+
+function sidebarRight() {
+  return `      <div class="col-right">
+        <div class="widget">
+          <h4>Today Is</h4>
+          <p style="margin:0" data-today>a very fine day</p>
+        </div>
+
+        <div class="widget">
+          <h4>New!!!</h4>
+          <p style="margin:0"><span class="blink" style="color:#ff0000;font-weight:bold">NEW!</span> ${esc(projects[0]?.name || "")} is up!<br>
+          <a href="/p/${esc(projects[0]?.slug || "")}/">click here !!~*</a></p>
+        </div>
+
+        <div class="construction">
+          <span>&#9888; Site under construction since 1998 &#9888;</span>
+        </div>
+
+        <div class="widget webring" style="margin-top:10px">
+          <h4>Web Ring</h4>
+          <p style="margin:0">The Gzowo Web Ring</p>
+          <p style="margin:4px 0 0">
+            <a href="https://gspaerospace.pl" target="_blank" rel="noopener">&laquo; prev</a> |
+            <a href="/">random</a> |
+            <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">next &raquo;</a>
+          </p>
+        </div>
+
+        <div class="widget stamp">
+          BEST VIEWED IN<br><b>NETSCAPE 4.0</b><br>800 &times; 600<br>256 COLORS<br>SOUND ON !!
+        </div>
+
+        <div class="widget">
+          <h4>Vote!!</h4>
+          <p style="margin:0">Do you like my<br>web site ?</p>
+          <p style="margin:4px 0 0"><a href="mailto:kalakasanyt@gmail.com?subject=YES">YES</a> &middot;
+          <a href="mailto:kalakasanyt@gmail.com?subject=ALSO%20YES">also YES</a></p>
+        </div>
+      </div>`;
 }
 
 function footer() {
@@ -77,103 +170,93 @@ function footer() {
     ([label, href]) =>
       `<a href="${esc(href)}"${href.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}</a>`
   ).join("\n      ");
-  return `  <footer class="footer">
-    <p class="footer-mark">Gzowo Labs — ${OWNER}</p>
-    <nav aria-label="Contact">
+  return `    <footer class="footer">
+      <p class="footer-mark">&#9733; Gzowo Labs &#9733; ${OWNER} &#9733;</p>
+      <nav aria-label="Contact">
       ${links}
-    </nav>
-  </footer>`;
+      </nav>
+      <p style="margin:6px 0 0">&copy; 1998&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
+      <span class="blink">Thank you for visiting !!!</span> ~*~*~ Please come back soon ~*~*~</p>
+    </footer>`;
 }
 
 function scripts() {
-  return `  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.14/dist/lenis.min.js" defer></script>
-  <script src="/assets/field.js" defer></script>
-  <script src="/assets/site.js" defer></script>`;
+  return `  <script src="/assets/site.js?v=90" defer></script>`;
 }
 
 /* ---- home ---- */
 
 function card(project, index) {
   const status = STATUS_LABEL[project.status] || project.status;
-  // A project with no screenshot yet gets a drafting placeholder rather than an
-  // empty grey box — it reads as "not photographed", not as "broken image".
+  // A project with no screenshot yet gets a grey placeholder plate rather than
+  // an empty box — it reads as "not photographed", not as "broken image".
   const shot = project.image
-    ? `<img src="/${esc(project.image)}" alt="${esc(project.name)}" width="800" height="600" loading="${index < 6 ? "eager" : "lazy"}" decoding="async">`
+    ? `<img src="/${esc(project.image)}" alt="${esc(project.name)}" width="150" height="113" loading="${index < 6 ? "eager" : "lazy"}" decoding="async">`
     : `<span class="no-shot"><span>${esc(project.name)}</span><span>no shot yet</span></span>`;
-  // The badge is for the exception. Twelve of thirteen builds being live makes a
-  // "Live" chip on every card pure noise, so status lives in the meta line and
-  // only an unfinished or retired build gets flagged over the image.
+  // The badge is for the exception. Most builds are live, so a "Live" sticker on
+  // every card would be pure noise; status still shows in the meta line.
   const flag =
     project.status === "live"
       ? ""
       : `<span class="status" data-status="${esc(project.status)}">${esc(status)}</span>`;
 
-  return `      <a class="card" href="/p/${esc(project.slug)}/" data-status="${esc(status)}">
-        <span class="card-shot">
-          ${shot}
-          ${flag}
-        </span>
-        <span class="card-copy">
-          <h3>${esc(project.name)}</h3>
-          <p>${esc(project.blurb)}</p>
-          <span class="card-meta"><span>${esc(project.category)} · ${esc(status)}</span><span>${esc(project.year)}</span></span>
-        </span>
-      </a>`;
+  return `        <a class="card" href="/p/${esc(project.slug)}/" data-status="${esc(status)}">
+          <span class="card-shot">
+            ${shot}
+            ${flag}
+          </span>
+          <span class="card-copy">
+            <h3>${esc(project.name)}</h3>
+            <p>${esc(project.blurb)}</p>
+            <span class="card-meta"><span>${esc(project.category)}</span><span>${esc(status)}</span><span>${esc(project.year)}</span></span>
+            <span class="click-here blink">&gt; CLICK HERE !!! &lt;</span>
+          </span>
+        </a>`;
 }
 
 function home() {
-  const count = String(projects.length).padStart(2, "0");
   return `${head({
-    title: "Gzowo Labs",
+    title: "Gzowo Labs — Jerzy Sukiennik's Home Page!!!",
     description: TAGLINE,
     url: SITE + "/",
     image: `${SITE}/${projects[0]?.image || "assets/og.png"}`,
-    curtain: true,
   })}
 <body>
-  <a class="skip-link" href="#feed">Skip to the shelf</a>
-  <canvas id="field" aria-hidden="true"></canvas>
+  <a class="skip-link" href="#feed">Skip to the games</a>
 
-  <div class="loader" role="status">
-    <p>Gzowo Labs — assembly</p>
-    <div class="loader-bar"><div class="loader-fill"></div></div>
-    <p class="loader-count">000</p>
-  </div>
+  <div class="frame">
+${banner()}
+${navstrip(true)}
 
-  <div class="page">
-    <header class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow hero-enter">${OWNER} — Warsaw</p>
-        <h1>
-          <span class="word"><i>Gzowo</i></span>
-          <span class="word"><i>Labs</i></span>
-        </h1>
-        <p class="tagline hero-enter">${TAGLINE}</p>
-        <a class="scroll-cue hero-enter" href="#feed">Open the shelf <span aria-hidden="true">↓</span></a>
-      </div>
+    <div class="layout">
+${sidebarLeft()}
 
-      <aside class="rail hero-enter" aria-hidden="true">
-        <div class="rail-head"><span>Rail</span><span class="rail-count"><span data-rail-index>01</span>/${count}</span></div>
-        <div class="rail-track"><span class="rail-payload">GL</span></div>
-        <div class="rail-foot"><span>Status</span><span data-rail-status>Live</span></div>
-      </aside>
-    </header>
-
-    <main class="feed" id="feed">
-      <section class="feed-head">
-        <div>
-          <p class="eyebrow">The shelf — ${count} builds</p>
-          <h2>Open anything</h2>
+      <div class="middle">
+        <div class="welcome">
+          <b>Welcome to my web site !!!</b> My name is ${OWNER}, I am from Warsaw and I make
+          games, web apps and AI models. Everything on this page runs in your browser, so there is
+          <b>nothing to install</b> and it is all <b>100&#37; FREE</b>.
+          <span class="new blink">NEW!</span> ${projects.length} projects listed below &mdash;
+          scroll down and click any of them to play. Have fun !!! ~*~*~
         </div>
-        <p class="feed-note">Games, web apps and experiments. Every one of them runs in a browser, so there is nothing to install.</p>
-      </section>
 
-      <div class="grid">
+        <hr class="hr90">
+
+        <h2 class="sect-title rainbow-text" id="feed">My Games &amp; Projects</h2>
+        <p class="feed-note">${projects.length} builds, sorted the way I like them. Click a title to open its page.</p>
+
+        <div class="grid">
 ${projects.map(card).join("\n")}
+        </div>
+
+        <hr class="hr90">
+        <p style="font-family:'Comic Sans MS',cursive;text-align:center;font-size:14px">
+          That is everything for now. <span class="blink" style="color:#ff0000">Come back soon !!!</span>
+        </p>
       </div>
-    </main>
+
+${sidebarRight()}
+    </div>
 
 ${footer()}
   </div>
@@ -188,12 +271,12 @@ ${scripts()}
 
 function projectPage(project) {
   const status = STATUS_LABEL[project.status] || project.status;
-  const body = (project.body || []).map((p) => `        <p>${esc(p)}</p>`).join("\n");
+  const body = (project.body || []).map((p) => `            <p>${esc(p)}</p>`).join("\n");
   const play = project.url
-    ? `<a class="btn btn-play" href="${esc(project.url)}" target="_blank" rel="noopener">Play ${esc(project.name)} <span aria-hidden="true">↗</span></a>`
-    : `<span class="btn btn-play" aria-disabled="true">Not public yet</span>`;
+    ? `<a class="btn-play" href="${esc(project.url)}" target="_blank" rel="noopener">&#9658; PLAY ${esc(project.name)} NOW !!</a>`
+    : `<span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>`;
   const repo = project.repo
-    ? `<a class="btn" href="${esc(project.repo)}" target="_blank" rel="noopener">Source <span aria-hidden="true">↗</span></a>`
+    ? `<a class="btn" href="${esc(project.repo)}" target="_blank" rel="noopener">Source code &#8599;</a>`
     : "";
 
   const facts = [
@@ -210,36 +293,49 @@ function projectPage(project) {
     image: `${SITE}/${project.image}`,
   })}
 <body>
-  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="frame">
+    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: ${esc(project.name.toUpperCase())} *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
 
-  <div class="page">
-    <main class="project">
-      <a class="back" href="/"><span aria-hidden="true">←</span> Gzowo Labs</a>
+    <header class="banner">
+      <p class="eyebrow">Gzowo Labs presents</p>
+      <h1 class="wordart"><span class="rainbow-text">${esc(project.name)}</span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${esc(project.category)} &middot; ${esc(status)} &middot; ${esc(project.year)} <span class="blink">&lt;&lt;&lt;</span></p>
+    </header>
+${navstrip(false)}
 
-      <div>
-        <h1>${esc(project.name)}</h1>
+    <div class="layout">
+${sidebarLeft()}
+
+      <div class="middle project">
+        <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
+
         <p class="project-lead">${esc(project.blurb)}</p>
+
         <div class="actions">
           ${play}
           ${repo}
         </div>
-      </div>
 
-      ${project.image
-        ? `<figure class="project-shot"><img src="/${esc(project.image)}" alt="${esc(project.name)}" width="1200" height="900"></figure>`
-        : `<figure class="project-shot is-empty"><span>${esc(project.name)}</span><span>no shot yet</span></figure>`}
+        ${project.image
+          ? `<figure class="project-shot"><img src="/${esc(project.image)}" alt="${esc(project.name)}" width="1200" height="900"></figure>`
+          : `<figure class="project-shot is-empty"><span>${esc(project.name)}</span><span>no shot yet</span></figure>`}
 
-      <div class="project-body">
-        <div>
+        <hr class="hr90">
+
+        <div class="project-body">
+          <div>
 ${body}
+          </div>
+          <aside class="facts">
+            <dl>
+${facts.map(([k, v]) => `              <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("\n")}
+            </dl>
+          </aside>
         </div>
-        <aside class="facts">
-          <dl>
-${facts.map(([k, v]) => `            <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("\n")}
-          </dl>
-        </aside>
       </div>
-    </main>
+
+${sidebarRight()}
+    </div>
 
 ${footer()}
   </div>
