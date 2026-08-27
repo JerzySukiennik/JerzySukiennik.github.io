@@ -6,17 +6,17 @@
 <meta name="theme-color" content="#ff00ff">
 <meta name="color-scheme" content="light">
 <title>Narew — Gzowo Labs</title>
-<meta name="description" content="A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.">
+<meta name="description" content="One real property by the Narew: paddle it, dig it, ride a jet ski through it, or watch TV indoors.">
 <link rel="canonical" href="https://gzowo.fun/p/narew/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Gzowo Labs">
 <meta property="og:url" content="https://gzowo.fun/p/narew/">
 <meta property="og:title" content="Narew — Gzowo Labs">
-<meta property="og:description" content="A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.">
+<meta property="og:description" content="One real property by the Narew: paddle it, dig it, ride a jet ski through it, or watch TV indoors.">
 <meta property="og:image" content="https://gzowo.fun/project-images/narew.webp">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Narew — Gzowo Labs">
-<meta name="twitter:description" content="A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.">
+<meta name="twitter:description" content="One real property by the Narew: paddle it, dig it, ride a jet ski through it, or watch TV indoors.">
 <meta name="twitter:image" content="https://gzowo.fun/project-images/narew.webp">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,7 +80,7 @@
       <div class="middle project">
         <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
 
-        <p class="project-lead">A walk around one real property by the Narew — paddle the river, or play eleven games on the TV indoors.</p>
+        <p class="project-lead">One real property by the Narew: paddle it, dig it, ride a jet ski through it, or watch TV indoors.</p>
 
         <div class="actions">
           <a class="btn-play" href="https://rysiosukiennik.github.io/backrooms-game/narew.html" target="_blank" rel="noopener">&#9658; PLAY Narew NOW !!</a>
@@ -93,18 +93,18 @@
 
         <div class="project-body">
           <div>
-            <p>One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a shelter, the meadow, the wall and the river below. The terrain is not invented. The river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place and the minimap matches a paper map. Three kayaks lie on the bank: you climb in, paddle with W and S, steer with A and D, and the hull refuses to leave water deeper than thirty centimetres, so the river keeps you.</p>
-            <p>The part that took the longest is the television in the glass house. Its screen is a canvas texture redrawn in place: live weather for Gzowo pulled from open-meteo, a catalogue of short films drawn frame by frame in 2D, a shelf of YouTube links behind an optional password, and NAREBLOX, eleven small games. Nine are drawn on that same canvas. The last two are not drawn at all — they are separate three.js scenes with their own camera and lights, rendered to a texture that the screen then shows, so the set is displaying real 3D from inside a 3D world. One is a veterinary hospital where you decide at the front desk which patients to admit and which are anomalies; the other builds a small country out of houses, factories and barracks.</p>
-            <p>The surfaces are photographs now. Grass, bark, leaves, concrete, planks, fabric and sheet metal come from CC0 material libraries, cut down to 512 pixels so the whole set weighs a third of a megabyte. If the folder ever goes missing the materials fall back to the generators that draw them in code, so the world is never left bare. The corrugation on the shelter roof is geometry rather than texture, because the ridges live in a normal map that is not shipped and a flat colour map read as a sheet of glass.</p>
-            <p>Around that: characters are GLTF models with blended idle, walk and run clips, and multiplayer runs peer to peer over PeerJS with the host relaying positions. Wind is patched into materials that already exist by swapping their shader, so instanced grass and tree crowns bend from the base with a phase taken from world position and nothing sways in unison. There are squirrels low enough on the trunks to pet, a bottle you fill from the river and drink, a bed that fades the screen to morning, a teleport pad, and a man standing in the water who will launch you over the valley.</p>
-            <p>The interface is in Polish, the way it was written.</p>
+            <p>One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a carport, the meadow and the river below. The terrain is not invented. Elevations come from a Copernicus digital elevation model, and the river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place. The ground is also editable: an excavator and a shovel cut real holes into a one-metre mesh, with flat bottoms you can climb down into, and the coarse grid underneath is pushed out of the way so the two never fight.</p>
+            <p>The water carries traffic. Three kayaks lie on the bank and a jet ski is moored in the channel; the jet ski leaves expanding rings behind it, and those rings are not decoration — they are read back by the kayaks, which lift and pitch when a wake reaches them. Kayak hulls refuse to leave water deeper than thirty centimetres, so the river keeps you in it.</p>
+            <p>The television in the glass house is a canvas texture redrawn in place: live weather for Gzowo from open-meteo, short films drawn frame by frame, a shelf of YouTube links behind a password, and NAREBLOX, eleven small games. Nine are drawn on that canvas; two are separate three.js scenes rendered to a texture, so the set displays real 3D from inside a 3D world. Every one of the eleven is multiplayer. Facing the set there is now a sofa with a man in swimming trunks sitting on it, dripping, phone in hand — sit down and the view cuts to his screen, which plays a vertical feed of one person's videos and nothing else.</p>
+            <p>The place is populated. A neighbour walks a fixed round of the property and stops to talk when you stand near him; a sounder of ten wild boar roots through the meadow and bolts as a group when you get within eleven metres; five raccoons dance in a ring around the campfire and speed up when it is lit. A keypad by the door takes a two-digit code, and the right one brings a man on horseback across the meadow with a cigarette in his mouth. Their clothes are photographs of linen, cloth and leather from CC0 libraries, cut to 512 pixels, with code-drawn weave as the fallback if the folder is missing.</p>
+            <p>Around that: characters are GLTF models with blended idle, walk and run clips, multiplayer runs peer to peer over PeerJS with the host relaying positions, and wind is patched into existing materials by swapping their shader, so grass and tree crowns bend from the base with a phase taken from world position. The interface is in Polish, the way it was written.</p>
           </div>
           <aside class="facts">
             <dl>
               <div><dt>Status</dt><dd>Live</dd></div>
               <div><dt>Kind</dt><dd>Game</dd></div>
               <div><dt>Year</dt><dd>2026</dd></div>
-              <div><dt>Built with</dt><dd>three.js, GLTFLoader, CSS3DRenderer, PeerJS, Web Audio API, Canvas 2D, render targets, open-meteo API, OpenStreetMap data, ambientCG CC0 textures, single-file HTML</dd></div>
+              <div><dt>Built with</dt><dd>three.js, GLTFLoader, CSS3DRenderer, PeerJS, Web Audio API, Canvas 2D, render targets, open-meteo API, Copernicus DEM, OpenStreetMap data, ambientCG CC0 textures, single-file HTML</dd></div>
             </dl>
           </aside>
         </div>
