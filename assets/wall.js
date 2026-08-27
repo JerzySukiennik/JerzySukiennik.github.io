@@ -193,6 +193,7 @@
 
   function toggle(state) {
     on = state;
+    console.info("[wall] graffiti mode " + (on ? "ON — draw anywhere" : "off"));
     document.documentElement.classList.toggle("wall-on", on);
     canvas.style.pointerEvents = on ? "auto" : "none";
     if (on && !bar) {
@@ -205,13 +206,37 @@
       document.body.appendChild(bar);
     }
     if (bar) bar.style.display = on ? "" : "none";
+
+    // A flash at the top, because the toolbar sits at the bottom of a long page
+    // and turning the mode on has to be unmissable.
+    if (on) {
+      var flash = document.createElement("div");
+      flash.className = "wall-flash";
+      flash.textContent = "GRAFFITI MODE ON — DRAW ANYWHERE";
+      document.body.appendChild(flash);
+      setTimeout(function () { flash.remove(); }, 2600);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+
+  /* Two ways in: the Konami code for the people who try it, and the "secret"
+     hint in the sidebar for everyone else — a keyboard-only trigger is
+     unreachable on a phone and needs the page to already hold focus. */
+  var hint = document.querySelector("[data-wall-hint]");
+  if (hint) {
+    hint.addEventListener("click", function (e) {
+      e.preventDefault();
+      toggle(!on);
+    });
   }
 
   /* The way in: the Konami code, because of course it is. */
   var KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
   var progress = 0;
 
-  addEventListener("keydown", function (e) {
+  document.addEventListener("keydown", function (e) {
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable)) return;
     var key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
     progress = key === KONAMI[progress] ? progress + 1 : (key === KONAMI[0] ? 1 : 0);
     if (progress === KONAMI.length) { progress = 0; toggle(!on); }

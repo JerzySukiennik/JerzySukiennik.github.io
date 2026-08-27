@@ -410,3 +410,18 @@ html.wall-on .wall-canvas{cursor:crosshair}
   padding:3px 12px;border:3px outset #eee;background:linear-gradient(#fff,#c8c8c8);
   color:#000080;cursor:pointer;
 }
+
+.wall-flash{
+  position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:10000;
+  padding:10px 18px;
+  font-family:var(--impact);font-size:20px;letter-spacing:1px;
+  color:#000;background:var(--yellow);border:4px ridge var(--red);
+  box-shadow:5px 5px 0 rgba(0,0,0,.6);
+  animation:blink 1s steps(1,end) 2;
+}
+
+.wall-hint{
+  display:block;margin-top:6px;font-size:11px;
+  font-family:var(--comic);color:#800080;cursor:pointer;
+}
+.wall-hint:hover{color:#ff0000;background:#ffff00}
