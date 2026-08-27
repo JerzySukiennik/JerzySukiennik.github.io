@@ -386,3 +386,27 @@ a:hover{color:#ff0000;background:#ffff00}
   .card-shot,.card-shot img,.no-shot{width:100%;flex:none}
   .card-shot img,.no-shot{height:auto;aspect-ratio:4/3}
 }
+
+/* ---------- graffiti wall (Konami code) ---------- */
+
+.wall-canvas{
+  position:fixed;inset:0;z-index:9998;
+  pointer-events:none;
+  touch-action:none;
+}
+html.wall-on{cursor:crosshair}
+html.wall-on .wall-canvas{cursor:crosshair}
+
+.wall-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:9999;
+  padding:8px 12px;text-align:center;
+  font-family:var(--comic);font-size:14px;color:#fff;
+  background:repeating-linear-gradient(45deg,#000 0 14px,#7a0000 14px 28px);
+  border-top:4px ridge var(--yellow);
+}
+.wall-bar b{color:#ffe14d}
+.wall-bar button{
+  margin-left:10px;font-family:var(--comic);font-weight:bold;
+  padding:3px 12px;border:3px outset #eee;background:linear-gradient(#fff,#c8c8c8);
+  color:#000080;cursor:pointer;
+}

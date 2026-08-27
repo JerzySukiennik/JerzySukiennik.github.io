@@ -86,7 +86,7 @@ function banner() {
   return `    <div class="topbar marquee"><span>*~*~* WELCOME TO GZOWO LABS *~*~* ${projects.length} BROWSER GAMES AND EXPERIMENTS, ALL FREE, NO DOWNLOAD !!! *~*~* BEST VIEWED IN NETSCAPE NAVIGATOR AT 800x600 *~*~* SIGN MY GUESTBOOK !!! *~*~*</span></div>
 
     <header class="banner">
-      <p class="eyebrow">${OWNER}'s Official Home Page ~ Warsaw, Poland ~ Est. 2026</p>
+      <p class="eyebrow">${OWNER}'s Official Home Page ~ Gzowo 34, Poland ~ Est. 2026</p>
       <h1 class="wordart is-fire"><span class="spinner" aria-hidden="true"></span><img class="fire-gif" src="/assets/gzowo-labs-fire.gif" alt="Gzowo Labs" width="515" height="93"><span class="spinner" aria-hidden="true"></span></h1>
       <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${TAGLINE} <span class="blink">&lt;&lt;&lt;</span></p>
     </header>`;
@@ -100,7 +100,7 @@ function sidebarLeft() {
             <li><a href="/">Home Page</a></li>
             <li><a href="/#feed">All My Games</a></li>
             <li><a href="/#feed">AI Stuff</a></li>
-            <li><a href="https://gspaerospace.pl" target="_blank" rel="noopener">Rockets (GSP)</a></li>
+            <li><a href="https://gspaerospace.pl" target="_blank" rel="noopener">Rockets</a></li>
             <li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">My Code</a></li>
             <li><a href="mailto:kalakasanyt@gmail.com">Guestbook</a></li>
             <li><a href="mailto:kalakasanyt@gmail.com">E-Mail Me</a></li>
@@ -110,7 +110,10 @@ function sidebarLeft() {
         <div class="widget">
           <h4>Visitors</h4>
           <div class="counter" data-counter aria-label="visitor counter"></div>
-          <p style="margin:6px 0 0">You are visitor number<br><b>a lot</b>!</p>
+          <p style="margin:6px 0 0">You are visitor number<br><b>that many</b>!</p>
+          <p style="margin:6px 0 0;font-size:11px;color:#666" title="up up down down left right left right B A">
+            <i>psst &mdash; this page has a secret.<br>Old gamers know the code.</i>
+          </p>
         </div>
 
         <div class="widget">
@@ -139,7 +142,7 @@ function sidebarRight() {
         </div>
 
         <div class="construction">
-          <span>&#9888; Site under construction since 1998 &#9888;</span>
+          <span>&#9888; Site under construction since 2025 &#9888;</span>
         </div>
 
         <div class="widget webring" style="margin-top:10px">
@@ -175,7 +178,7 @@ function footer() {
       <nav aria-label="Contact">
       ${links}
       </nav>
-      <p style="margin:6px 0 0">&copy; 1998&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
+      <p style="margin:6px 0 0">&copy; 2025&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
       <span class="blink">Thank you for visiting !!!</span> ~*~*~ Please come back soon ~*~*~</p>
     </footer>`;
 }
@@ -184,6 +187,7 @@ function scripts() {
   // The agentation module no-ops off localhost, so shipping it costs the live
   // site one 304 and nothing else.
   return `  <script src="/assets/site.js?v=90" defer></script>
+  <script src="/assets/wall.js?v=90" defer></script>
   <script type="module" src="/assets/agentation.js"></script>`;
 }
 

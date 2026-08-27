@@ -1,6 +1,7 @@
 /* Gzowo Labs 1998 — the tiny pile of scripts every homepage of that era had.
-   No libraries: a sparkle trail, a hit counter, today's date, and a MIDI-ish
-   theme you have to press play on. Everything bails out under reduced motion. */
+   No libraries: a sparkle trail, today's date, and a MIDI-ish theme you have to
+   press play on. The visitor counter is real and lives in wall.js. Everything
+   bails out under reduced motion. */
 
 (function () {
   var calm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -10,23 +11,6 @@
   if (stamp) {
     stamp.textContent = new Date().toLocaleDateString("en-US", {
       weekday: "long", year: "numeric", month: "long", day: "numeric"
-    });
-  }
-
-  /* ---- hit counter. It only counts this browser, which is exactly as
-     honest as the CGI counters it imitates. ---- */
-  var counter = document.querySelector("[data-counter]");
-  if (counter) {
-    var hits = 4233851;
-    try {
-      hits = parseInt(localStorage.getItem("gl-hits") || "0", 10) || 4233851;
-      hits += 1;
-      localStorage.setItem("gl-hits", String(hits));
-    } catch (e) { /* private mode: show the seed */ }
-    String(hits).padStart(8, "0").split("").forEach(function (d) {
-      var cell = document.createElement("span");
-      cell.textContent = d;
-      counter.appendChild(cell);
     });
   }
 
