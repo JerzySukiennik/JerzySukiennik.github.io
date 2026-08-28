@@ -13,7 +13,11 @@
       "body": [
         "Gra 3D o prowadzeniu biura architektonicznego dla 1-3 graczy — projektujesz budynek w edytorze na retro pececie, dostajesz mailem uwagi, a po akceptacji zwiedzasz go \"30 lat później\"."
       ],
-      "stack": [],
+      "stack": [
+        "Claude",
+        "Three.js",
+        "Firebase"
+      ],
       "image": "project-images/smendilendi-bureau.webp",
       "hidden": false
     },
