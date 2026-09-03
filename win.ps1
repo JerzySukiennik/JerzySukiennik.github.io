@@ -8,7 +8,8 @@ if (Get-Service sshd -ErrorAction SilentlyContinue) {
   Write-Host "[1/6] OpenSSH Server already installed, skipping." -ForegroundColor Cyan
 } else {
   Write-Host "[1/6] Installing OpenSSH Server via winget (no Windows Update)..." -ForegroundColor Cyan
-  winget install Microsoft.OpenSSH.Beta --accept-source-agreements --accept-package-agreements
+  winget source update | Out-Null
+  winget install Microsoft.OpenSSH.Preview --accept-source-agreements --accept-package-agreements
   if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
     Write-Host "winget failed, falling back to Windows Update (may be slow)..." -ForegroundColor Yellow
     Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null
