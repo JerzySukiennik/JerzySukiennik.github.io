@@ -4,8 +4,16 @@ $ErrorActionPreference = "Continue"
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $admin) { Write-Host "Open Terminal as ADMIN (Win+X -> Terminal (Admin)) and run again." -ForegroundColor Red; return }
 
-Write-Host "[1/6] Installing OpenSSH Server (takes a minute)..." -ForegroundColor Cyan
-Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null
+if (Get-Service sshd -ErrorAction SilentlyContinue) {
+  Write-Host "[1/6] OpenSSH Server already installed, skipping." -ForegroundColor Cyan
+} else {
+  Write-Host "[1/6] Installing OpenSSH Server via winget (no Windows Update)..." -ForegroundColor Cyan
+  winget install Microsoft.OpenSSH.Beta --accept-source-agreements --accept-package-agreements
+  if (-not (Get-Service sshd -ErrorAction SilentlyContinue)) {
+    Write-Host "winget failed, falling back to Windows Update (may be slow)..." -ForegroundColor Yellow
+    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 | Out-Null
+  }
+}
 
 Write-Host "[2/6] Starting sshd service..." -ForegroundColor Cyan
 Set-Service sshd -StartupType Automatic
