@@ -2,6 +2,20 @@
   "version": 3,
   "projects": [
     {
+      "slug": "noclip",
+      "name": "Noclip",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "noclip.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/noclip",
+      "blurb": "A found-footage Backrooms experience — you fall in, something tall follows, and the tape keeps rolling.",
+      "body": [],
+      "stack": [],
+      "image": "",
+      "hidden": false
+    },
+    {
       "slug": "smendilendi-bureau",
       "name": "Smendilendi Bureau",
       "category": "Game",
