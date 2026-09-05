@@ -2,6 +2,20 @@
   "version": 3,
   "projects": [
     {
+      "slug": "smendilendi-bureau",
+      "name": "Smendilendi Bureau",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "bureau.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/smendilendi-bureau",
+      "blurb": "Run a tiny architecture practice with your friends — draw the walls, take the client's notes, then walk the finished building thirty years later.",
+      "body": [],
+      "stack": [],
+      "image": "",
+      "hidden": false
+    },
+    {
       "slug": "mark-zero",
       "name": "Mark Zero",
       "category": "Game",
