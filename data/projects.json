@@ -2,6 +2,28 @@
   "version": 3,
   "projects": [
     {
+      "slug": "mark-zero",
+      "name": "Mark Zero",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "markzero.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/mark-zero",
+      "blurb": "Fly a powered armor suit at the speed of sound — six degrees of freedom, no rails, no limits.",
+      "body": [
+        "Mark Zero is a browser flight sandbox built around one question: what would a powered\narmor suit actually feel like to fly? You start as a person on foot. You step onto a\nplatform, the suit assembles itself around you plate by plate, and then the sky is yours\nup to the edge of the stratosphere.",
+        "The flight model is six degrees of freedom with thrust in body-local axes, which sounds\ntechnical but produces something simple and satisfying: spin around mid-flight while\nstill travelling forward, hit the throttle, and your own engines slam you to a stop.\nThat hard brake is not a scripted move — it falls out of the physics. Hands and leg\nthrusters animate automatically to match the thrust vector, so it looks like you are\nsteering with your palms while you are really flying a full 6DOF craft.",
+        "The suit is a separate entity from the player, not a costume. Leave it standing in a\nfield and walk away. Call it and it flies to you across the map and closes around you\nmid-stride. Eject at three hundred metres per second and you fall as a person while the\narmor chases you down and catches you before the ground does."
+      ],
+      "stack": [
+        "Claude",
+        "Fable 5.1",
+        "Firebase"
+      ],
+      "image": "",
+      "hidden": false
+    },
+    {
       "slug": "noclip",
       "name": "Noclip",
       "category": "Game",
