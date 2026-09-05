@@ -38,26 +38,6 @@
       "hidden": false
     },
     {
-      "slug": "smendilendi-bureau",
-      "name": "Smendilendi Bureau",
-      "category": "Game",
-      "status": "building",
-      "year": "2026",
-      "url": "bureau.gzowo.fun",
-      "repo": "bureau.gzowo.fun",
-      "blurb": "Run a tiny architecture practice with your friends — draw the walls, take the client's notes, then walk the finished building thirty years later.",
-      "body": [
-        "Gra 3D o prowadzeniu biura architektonicznego dla 1-3 graczy — projektujesz budynek w edytorze na retro pececie, dostajesz mailem uwagi, a po akceptacji zwiedzasz go \"30 lat później\"."
-      ],
-      "stack": [
-        "Claude",
-        "Three.js",
-        "Firebase"
-      ],
-      "image": "project-images/smendilendi-bureau.webp",
-      "hidden": false
-    },
-    {
       "slug": "voidworks",
       "name": "Voidworks",
       "category": "Game",
