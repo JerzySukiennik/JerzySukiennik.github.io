@@ -25,6 +25,17 @@ const CONTACT = [
 
 const STATUS_LABEL = { live: "Live", building: "Building", archive: "Archive" };
 
+/* A link typed as "bureau.gzowo.fun" is a RELATIVE path to a browser, so it
+   resolves against the project page and lands on /p/<slug>/bureau.gzowo.fun.
+   Anything that is not already absolute, root-relative or a known scheme gets
+   https:// put in front of it. */
+const extern = (value = "") => {
+  const v = String(value).trim();
+  if (!v) return "";
+  if (/^(https?:|mailto:|\/\/|\/|#)/i.test(v)) return v;
+  return "https://" + v;
+};
+
 const esc = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -303,10 +314,10 @@ function projectPage(project) {
   const status = STATUS_LABEL[project.status] || project.status;
   const body = (project.body || []).map((p) => `            <p>${esc(p)}</p>`).join("\n");
   const play = project.url
-    ? `<a class="btn-play" href="${esc(project.url)}" target="_blank" rel="noopener">&#9658; PLAY ${esc(project.name)} NOW !!</a>`
+    ? `<a class="btn-play" href="${esc(extern(project.url))}" target="_blank" rel="noopener">&#9658; PLAY ${esc(project.name)} NOW !!</a>`
     : `<span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>`;
   const repo = project.repo
-    ? `<a class="btn" href="${esc(project.repo)}" target="_blank" rel="noopener">Source code &#8599;</a>`
+    ? `<a class="btn" href="${esc(extern(project.repo))}" target="_blank" rel="noopener">Source code &#8599;</a>`
     : "";
 
   const facts = [
