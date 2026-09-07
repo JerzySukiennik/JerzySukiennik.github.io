@@ -2,6 +2,24 @@
   "version": 3,
   "projects": [
     {
+      "slug": "doodlerun",
+      "name": "Doodlerun",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/doodlerun",
+      "blurb": "A 2D runner where you draw every single thing in it first — then rig your scribbles so they walk, flap and chase you.",
+      "body": [
+        "DoodleRun is a 2D runner where nothing exists until you draw it. Before anyone\nruns, the room splits a list of thirteen slots between the players — ground\ntiles, six kinds of creature, coins, three layers of background — and each of you\nclaims a slot and paints it. Everyone also draws their own character. Then the\ngame builds an endless track out of your scribbles and you run it together, on\nshared fate: if one player dies, everybody restarts.",
+        "The interesting part is the rig. A drawing is just a flat picture, so to make a\nmonster walk you drop a few labelled points on it — left leg, right leg, head —\nand the engine treats the drawing as a rubber sheet stretched over a mesh. Each\npoint pulls the pixels around it, so the legs swing and the body wobbles without\nanything ever being cut apart. Your monster stays exactly the drawing you made;\nit just starts moving.",
+        "Everything runs on plain Canvas 2D with hand-written physics and no build step,\nand drawings travel between players as small PNGs — about three kilobytes each,\nwhich is why a whole hand-drawn world fits through a realtime database meant for\npositions and scores."
+      ],
+      "stack": [],
+      "image": "project-images/doodlerun.webp",
+      "hidden": false
+    },
+    {
       "slug": "gzowo-os",
       "name": "Gzowo OS",
       "category": "Game",
