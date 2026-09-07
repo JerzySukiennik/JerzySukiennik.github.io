@@ -2,6 +2,23 @@
   "version": 3,
   "projects": [
     {
+      "slug": "gzowo-os",
+      "name": "Gzowo OS",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/gzowo-os",
+      "blurb": "A from-scratch x86_64 kernel with a macOS-flavoured animated desktop that boots from a USB stick on real hardware.",
+      "body": [
+        "Gzowo OS is an operating system written from scratch: no Linux underneath, no borrowed\ndesktop. You plug in a USB stick, turn on a laptop, and the first pixel you see is ours —\nan animated boot splash, a lock screen with a clock, then a desktop with a menu bar,\na battery indicator and a dock.",
+        "The interesting part is how much has to exist before a single rounded rectangle can\nappear. The kernel sets up memory, interrupts and timers, talks to the keyboard\ncontroller and the ACPI tables directly, and draws everything into a raw framebuffer\nhanded over by the bootloader — anti-aliasing, alpha blending and spring animations\nincluded, with no GPU driver and no graphics library."
+      ],
+      "stack": [],
+      "image": "",
+      "hidden": false
+    },
+    {
       "slug": "smendilendi-bureau",
       "name": "Smendilendi Bureau",
       "category": "Game",

@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ff00ff">
 <meta name="color-scheme" content="light">
-<title>Drops — Gzowo Labs</title>
-<meta name="description" content="A second assistant, this one listening all the time and deciding on its own whether it was spoken to.">
-<link rel="canonical" href="https://gzowo.fun/p/drops/">
+<title>Gzowo OS — Gzowo Labs</title>
+<meta name="description" content="A from-scratch x86_64 kernel with a macOS-flavoured animated desktop that boots from a USB stick on real hardware.">
+<link rel="canonical" href="https://gzowo.fun/p/gzowo-os/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Gzowo Labs">
-<meta property="og:url" content="https://gzowo.fun/p/drops/">
-<meta property="og:title" content="Drops — Gzowo Labs">
-<meta property="og:description" content="A second assistant, this one listening all the time and deciding on its own whether it was spoken to.">
+<meta property="og:url" content="https://gzowo.fun/p/gzowo-os/">
+<meta property="og:title" content="Gzowo OS — Gzowo Labs">
+<meta property="og:description" content="A from-scratch x86_64 kernel with a macOS-flavoured animated desktop that boots from a USB stick on real hardware.">
 <meta property="og:image" content="https://gzowo.fun/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Drops — Gzowo Labs">
-<meta name="twitter:description" content="A second assistant, this one listening all the time and deciding on its own whether it was spoken to.">
+<meta name="twitter:title" content="Gzowo OS — Gzowo Labs">
+<meta name="twitter:description" content="A from-scratch x86_64 kernel with a macOS-flavoured animated desktop that boots from a USB stick on real hardware.">
 <meta name="twitter:image" content="https://gzowo.fun/">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,12 +26,12 @@
 </head>
 <body>
   <div class="frame">
-    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: DROPS *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
+    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: GZOWO OS *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
 
     <header class="banner">
       <p class="eyebrow">Gzowo Labs presents</p>
-      <h1 class="wordart"><span class="rainbow-text">Drops</span></h1>
-      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> Experiment &middot; Building &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
+      <h1 class="wordart"><span class="rainbow-text">Gzowo OS</span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> Game &middot; Building &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
     </header>
     <nav class="navstrip" aria-label="Main">
       <a class="btn90" href="/">HOME</a>
@@ -80,28 +80,34 @@
       <div class="middle project">
         <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
 
-        <p class="project-lead">A second assistant, this one listening all the time and deciding on its own whether it was spoken to.</p>
+        <p class="project-lead">A from-scratch x86_64 kernel with a macOS-flavoured animated desktop that boots from a USB stick on real hardware.</p>
 
         <div class="actions">
           <span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>
-          
+          <a class="btn" href="https://github.com/JerzySukiennik/gzowo-os" target="_blank" rel="noopener">Source code &#8599;</a>
         </div>
 
-        <figure class="project-shot is-empty"><span>Drops</span><span>no shot yet</span></figure>
+        <figure class="project-shot is-empty"><span>Gzowo OS</span><span>no shot yet</span></figure>
 
         <hr class="hr90">
 
         <div class="project-body">
           <div>
-            <p>Where Gzowo AI is the assistant for the whole house, Drops is personal. The design goal is a machine you never have to address by name: it listens continuously and works out from context whether a sentence was meant for it, which is the hard part and the reason the name is one hard syllable that almost never turns up in ordinary Polish speech.</p>
-            <p>Scoped in full, not yet built — the interface and the avatar come first, then the code.</p>
+            <p>Gzowo OS is an operating system written from scratch: no Linux underneath, no borrowed
+desktop. You plug in a USB stick, turn on a laptop, and the first pixel you see is ours —
+an animated boot splash, a lock screen with a clock, then a desktop with a menu bar,
+a battery indicator and a dock.</p>
+            <p>The interesting part is how much has to exist before a single rounded rectangle can
+appear. The kernel sets up memory, interrupts and timers, talks to the keyboard
+controller and the ACPI tables directly, and draws everything into a raw framebuffer
+handed over by the bootloader — anti-aliasing, alpha blending and spring animations
+included, with no GPU driver and no graphics library.</p>
           </div>
           <aside class="facts">
             <dl>
               <div><dt>Status</dt><dd>Building</dd></div>
-              <div><dt>Kind</dt><dd>Experiment</dd></div>
+              <div><dt>Kind</dt><dd>Game</dd></div>
               <div><dt>Year</dt><dd>2026</dd></div>
-              <div><dt>Built with</dt><dd>Claude, Swift</dd></div>
             </dl>
           </aside>
         </div>
