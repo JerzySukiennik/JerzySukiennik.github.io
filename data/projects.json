@@ -109,26 +109,6 @@
       "hidden": false
     },
     {
-      "slug": "drops",
-      "name": "Drops",
-      "category": "Experiment",
-      "status": "building",
-      "year": "2026",
-      "url": "",
-      "repo": "",
-      "blurb": "A second assistant, this one listening all the time and deciding on its own whether it was spoken to.",
-      "body": [
-        "Where Gzowo AI is the assistant for the whole house, Drops is personal. The design goal is a machine you never have to address by name: it listens continuously and works out from context whether a sentence was meant for it, which is the hard part and the reason the name is one hard syllable that almost never turns up in ordinary Polish speech.",
-        "Scoped in full, not yet built — the interface and the avatar come first, then the code."
-      ],
-      "stack": [
-        "Claude",
-        "Swift"
-      ],
-      "image": "",
-      "hidden": false
-    },
-    {
       "slug": "ducks",
       "name": "Ducks",
       "category": "Game",
