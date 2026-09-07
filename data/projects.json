@@ -151,26 +151,6 @@
       "hidden": false
     },
     {
-      "slug": "kocia-wyspa",
-      "name": "Kocia Wyspa",
-      "category": "Experiment",
-      "status": "building",
-      "year": "2026",
-      "url": "",
-      "repo": "",
-      "blurb": "A black capsule in the macOS menu bar that morphs between four states. Despite the name, no cats.",
-      "body": [
-        "A native macOS app that puts a Dynamic Island in the menu bar of the built-in display, morphing between compact, expanded, elongated and hidden. The name is only a name — \"no cats\" is an explicit requirement of the specification.",
-        "Written in Swift and installed locally rather than distributed; the repository is private."
-      ],
-      "stack": [
-        "Swift",
-        "SwiftUI"
-      ],
-      "image": "",
-      "hidden": false
-    },
-    {
       "slug": "narek-mascot",
       "name": "NAREK",
       "category": "Experiment",
