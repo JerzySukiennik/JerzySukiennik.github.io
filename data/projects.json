@@ -3,11 +3,11 @@
   "projects": [
     {
       "slug": "doodlerun",
-      "name": "Doodlerun",
+      "name": "Doodle Run",
       "category": "Game",
       "status": "building",
       "year": "2026",
-      "url": "",
+      "url": "doodlerun.gzowo.fun",
       "repo": "https://github.com/JerzySukiennik/doodlerun",
       "blurb": "A 2D runner where you draw every single thing in it first — then rig your scribbles so they walk, flap and chase you.",
       "body": [
