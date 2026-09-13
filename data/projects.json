@@ -2,6 +2,28 @@
   "version": 3,
   "projects": [
     {
+      "slug": "squish",
+      "name": "Squish",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "squish.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/squish",
+      "blurb": "A silent paper-white void full of squishies and fidget toys you can actually squeeze, crack and stretch.",
+      "body": [
+        "Squish is a silent, paper-white 3D void with a single row of fidget toys and\nsquishies. There is no interface beyond two faint chevrons at the bottom that fly\nthe camera to the next toy. Once you are there, you press, grab, stretch and crack\nwhatever is in front of you with the cursor and hear it respond.",
+        "Every toy is a real soft body: a volumetric mesh of particles and springs solved\neach frame, so squeezing a gel cube pushes material out to the sides and lets it\nslowly recover, while a wax shell breaks along stressed springs into pieces that\nfall off. Nothing is a pre-baked animation.",
+        "The ASMR is generated live. Instead of looping recordings, the audio engine\nlistens to the physics and turns deformation speed, stretch and spring breakage\ninto granular noise, crackles and pops, so no two squeezes sound the same.",
+        "Powiązane: [[gzowo-bowling]], [[gzowo-labs]], [[design]], [[game-assets]], [[pytania]]."
+      ],
+      "stack": [
+        "Claude Code",
+        "Fable 5.1"
+      ],
+      "image": "project-images/squish.webp",
+      "hidden": false
+    },
+    {
       "slug": "doodlerun",
       "name": "Doodle Run",
       "category": "Game",
