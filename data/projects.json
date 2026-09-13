@@ -2,6 +2,28 @@
   "version": 3,
   "projects": [
     {
+      "slug": "hello-miner",
+      "name": "Hello Miner",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "hello-miner.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/hello-miner",
+      "blurb": "Program mining drones in a tiny Python-like language and automate a floating quarry together with friends in real time.",
+      "body": [
+        "print(\"Hello, Miner\") is a co-op game about not doing the work yourself. You get one floating tile of rock and one drone, and the only way to mine is to write a program: `mine()`, then `move(right)`, then a loop, then a function. Ore pays for a research tree that unlocks a bigger quarry, faster drones, richer ore and new language features, and the fun is watching your code run tile by tile in a bright low-poly world.",
+        "The language is deliberately not Python. It looks like it — parentheses, colons, indentation — but the editor indents for you, the parser forgives sloppy whitespace, and every error is a short sentence a nine-year-old can act on. The whole interpreter is custom, which is what lets a drone visibly pause on the exact line it is executing.",
+        "Multiplayer is the twist. Everyone in a room shares one mine, one wallet and one research tree, but each player has their own drone and their own code window in their own colour. Any player can type into any window, and you see everyone's cursors live, so an older sibling can fix a bug in a younger one's program without taking over.",
+        "Powiązane: [[modular]], [[gzowos-games]], [[stack]], [[agent-workflow]], [[gauntlet-skill]], [[design]]."
+      ],
+      "stack": [
+        "Claude Code",
+        "Python"
+      ],
+      "image": "project-images/hello-miner.webp",
+      "hidden": false
+    },
+    {
       "slug": "gzowo-glass",
       "name": "Gzowo Glass",
       "category": "Game",
