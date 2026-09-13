@@ -2,6 +2,28 @@
   "version": 3,
   "projects": [
     {
+      "slug": "gzowo-glass",
+      "name": "Gzowo Glass",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/gzowo-glass",
+      "blurb": "Home-built smart glasses with a see-through HUD and a voice assistant that talks back in Polish.",
+      "body": [
+        "Gzowo Glass is a pair of home-built smart glasses with a see-through heads-up\ndisplay in front of the right eye and a voice assistant called G.L.A.S.S. — Gzowo\nLike A Smart Sass. You press a button on the temple, ask\nsomething in Polish, and the answer comes back both as speech in a tiny speaker by\nyour ear and as a few lines of text floating over the world.",
+        "The optics are the Google Glass trick, not a Hollywood waveguide: a small OLED\nscreen, a lens that lets your eye focus on something two centimetres away, and a\nhalf-silvered mirror at 45 degrees. Because an OLED's black is truly black, whatever\nis black on the screen is simply transparent in front of your eye.",
+        "The whole thing runs on a coin-sized ESP32-S3 board with a camera and a microphone.\nThe glasses draw their own little operating system — boot screen, clock, menus,\ntimers — and stream your voice and camera frames to a server at home that talks to\na realtime AI model. The frame is 3D-printed to fit one specific face."
+      ],
+      "stack": [
+        "Claude Code",
+        "Blender MCP",
+        "Fable 5.1"
+      ],
+      "image": "project-images/gzowo-glass.webp",
+      "hidden": false
+    },
+    {
       "slug": "squish",
       "name": "Squish",
       "category": "Game",
