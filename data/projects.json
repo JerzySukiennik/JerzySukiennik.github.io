@@ -2,6 +2,37 @@
   "version": 3,
   "projects": [
     {
+      "slug": "timberline-express",
+      "name": "Timberline Express",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/timberline-express",
+      "blurb": "Survive an endless mountain forest by turning a hand-pumped rail cart into a steam-powered, house-sized train.",
+      "body": [
+        "Timberline Express is a first-person survival game on rails. You start on a hand-pumped rail cart in an endless mountain forest with a few berries in your pocket. You chop trees and crack boulders into stone, forage for mushrooms and hunt deer, then craft your way up from stone tools to a workbench, a furnace, a steam engine and finally an electric locomotive. Every piece of the train is built by hand, right on the moving deck.",
+        "The world never ends. Terrain, forests, ponds and a whole branching rail network are generated around you as you travel, with junctions you throw by hand, fallen trees across the tracks and valleys that climb into snowy passes. A day lasts twenty minutes, nights bring wolves, and the weather can turn into a thunderstorm while you are still out collecting wood.",
+        "Everything you hold is animated by real two-bone inverse kinematics: your right hand grips high on the pickaxe handle and your left low, a knife spins in your fingers when you draw it, and every swing lands on the exact frame of impact. All sounds are real recordings, and the steam engine is simulated down to its firebox, boiler pressure, safety valve and water tank.",
+        "It is a Windows download and runs on a gaming laptop. Co-op for up to four players is being built right now."
+      ],
+      "stack": [
+        "Godot 4.6",
+        "GDScript",
+        "Jolt Physics",
+        "Blender",
+        "Claude Code"
+      ],
+      "image": "project-images/timberline-express.webp",
+      "download": {
+        "url": "https://github.com/JerzySukiennik/timberline-express/releases/latest/download/TimberlineExpress.exe",
+        "platform": "Windows",
+        "version": "v1.7",
+        "size": "400 MB",
+        "note": "no install, just run it"
+      }
+    },
+    {
       "slug": "haystack-inc-coop",
       "name": "Haystack Inc.",
       "category": "Game",
