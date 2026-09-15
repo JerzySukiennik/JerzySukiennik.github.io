@@ -492,3 +492,5 @@ html.wall-on .wall-canvas{cursor:crosshair}
   .rev-msg{font-size:14px}
   .rev-score{font-size:14px}
 }
+
+.dl-note{display:inline-block;font-family:'Courier New',monospace;font-size:13px;background:#ffff99;border:2px solid #000;padding:2px 6px;margin-left:6px;vertical-align:middle}

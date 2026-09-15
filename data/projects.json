@@ -2,6 +2,36 @@
   "version": 3,
   "projects": [
     {
+      "slug": "haystack-inc-coop",
+      "name": "Haystack Inc.",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "",
+      "repo": "https://github.com/JerzySukiennik/haystack-inc-coop",
+      "blurb": "Somewhere in a stack of a million straws there is one needle. Dig by hand, then build the machines that dig for you.",
+      "body": [
+        "Haystack Inc. is a first-person game about the most literal search problem there is. Somewhere inside a stack of a million straws sits exactly one needle, and the only way to find it is to take the stack apart. Every straw you see on the stack is a real one: you hold the mouse, it slides out, and it is yours to carry, throw or sell.",
+        "A straw sells for a dollar in the machine in the corner, and that dollar buys the first tool. Then a pitchfork that rips out eight at once, a basket, a leaf blower, a hay vacuum, conveyor belts you draw across the yard with a remote, splitters and merges, and finally auto pullers that reach into the stack by themselves while hoppers and sell bins keep the line moving.",
+        "The needle is not marked anywhere. It sits at one physical spot under the surface straws, and you only see it once enough hay around it is gone. Sell it and the game is won, then you get to keep running the farm.",
+        "Haystack Inc. is a Windows download, not a browser game: it is built in Godot, and the stack alone is 150,000 individual straws."
+      ],
+      "stack": [
+        "Godot 4.6",
+        "GDScript",
+        "Jolt Physics",
+        "Claude Code"
+      ],
+      "image": "project-images/haystack-inc-coop.webp",
+      "download": {
+        "url": "https://github.com/JerzySukiennik/haystack-inc-coop/releases/latest/download/HaystackInc.exe",
+        "platform": "Windows",
+        "version": "v2",
+        "size": "107 MB",
+        "note": "no install, just run it"
+      }
+    },
+    {
       "slug": "hello-miner",
       "name": "Hello Miner",
       "category": "Game",

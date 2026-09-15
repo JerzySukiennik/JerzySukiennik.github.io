@@ -275,8 +275,8 @@ ${sidebarLeft()}
       <div class="middle">
         <div class="welcome">
           <b>Welcome to my web site !!!</b> My name is ${OWNER}, I am from Warsaw and I make
-          games, web apps and AI models. Everything on this page runs in your browser, so there is
-          <b>nothing to install</b> and it is all <b>100&#37; FREE</b>.
+          games, web apps and AI models. Almost everything on this page runs in your browser, so there is
+          <b>nothing to install</b>, the few big games are a <b>free download</b>, and it is all <b>100&#37; FREE</b>.
           <span class="new blink">NEW!</span> ${projects.length} projects listed below &mdash;
           scroll down and click any of them to play. Have fun !!! ~*~*~
         </div>
@@ -313,7 +313,12 @@ ${scripts()}
 function projectPage(project) {
   const status = STATUS_LABEL[project.status] || project.status;
   const body = (project.body || []).map((p) => `            <p>${esc(p)}</p>`).join("\n");
-  const play = project.url
+  // A downloadable game swaps the browser PLAY link for a direct file download.
+  const dl = project.download;
+  const play = dl
+    ? `<a class="btn-play" href="${esc(dl.url)}" download>&#11015; DOWNLOAD ${esc(project.name)} FOR ${esc((dl.platform || "Windows").toUpperCase())} !!</a>
+          <span class="dl-note">${esc([dl.version, dl.size, dl.note].filter(Boolean).join(" \u00b7 "))}</span>`
+    : project.url
     ? `<a class="btn-play" href="${esc(extern(project.url))}" target="_blank" rel="noopener">&#9658; PLAY ${esc(project.name)} NOW !!</a>`
     : `<span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>`;
   const repo = project.repo
@@ -335,7 +340,7 @@ function projectPage(project) {
   })}
 <body>
   <div class="frame">
-    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: ${esc(project.name.toUpperCase())} *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
+    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: ${esc(project.name.toUpperCase())} *~*~* ${project.download ? "IT IS FREE, DOWNLOAD IT AND PLAY" : "IT IS FREE AND IT RUNS IN YOUR BROWSER"} *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
 
     <header class="banner">
       <p class="eyebrow">Gzowo Labs presents</p>
