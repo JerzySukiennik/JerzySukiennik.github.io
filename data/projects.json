@@ -55,11 +55,11 @@
       ],
       "image": "project-images/haystack-inc-coop.webp",
       "download": {
-        "url": "https://github.com/JerzySukiennik/haystack-inc-coop/releases/latest/download/HaystackInc.exe",
+        "url": "https://github.com/JerzySukiennik/haystack-inc-coop/releases/latest/download/HaystackInc-Windows.zip",
         "platform": "Windows",
-        "version": "v2",
-        "size": "107 MB",
-        "note": "no install, just run it"
+        "version": "v2.1",
+        "size": "43 MB",
+        "note": "Windows 10/11 · unzip and run HaystackInc.exe · online co-op with room codes"
       }
     },
     {
