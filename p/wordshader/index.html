@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#ff00ff">
 <meta name="color-scheme" content="light">
-<title>G-Images — Gzowo Labs</title>
-<meta name="description" content="A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.">
-<link rel="canonical" href="https://gzowo.fun/p/g-images/">
+<title>Wordshader — Gzowo Labs</title>
+<meta name="description" content="Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter — then export the loop as a video.">
+<link rel="canonical" href="https://gzowo.fun/p/wordshader/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Gzowo Labs">
-<meta property="og:url" content="https://gzowo.fun/p/g-images/">
-<meta property="og:title" content="G-Images — Gzowo Labs">
-<meta property="og:description" content="A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.">
+<meta property="og:url" content="https://gzowo.fun/p/wordshader/">
+<meta property="og:title" content="Wordshader — Gzowo Labs">
+<meta property="og:description" content="Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter — then export the loop as a video.">
 <meta property="og:image" content="https://gzowo.fun/">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="G-Images — Gzowo Labs">
-<meta name="twitter:description" content="A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.">
+<meta name="twitter:title" content="Wordshader — Gzowo Labs">
+<meta name="twitter:description" content="Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter — then export the loop as a video.">
 <meta name="twitter:image" content="https://gzowo.fun/">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,12 +26,12 @@
 </head>
 <body>
   <div class="frame">
-    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: G-IMAGES *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
+    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: WORDSHADER *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
 
     <header class="banner">
       <p class="eyebrow">Gzowo Labs presents</p>
-      <h1 class="wordart"><span class="rainbow-text">G-Images</span></h1>
-      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> AI model &middot; Building &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
+      <h1 class="wordart"><span class="rainbow-text">Wordshader</span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> Game &middot; Building &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
     </header>
     <nav class="navstrip" aria-label="Main">
       <a class="btn90" href="/">HOME</a>
@@ -80,28 +80,39 @@
       <div class="middle project">
         <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
 
-        <p class="project-lead">A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.</p>
+        <p class="project-lead">Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter — then export the loop as a video.</p>
 
         <div class="actions">
-          <span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>
-          <a class="btn" href="https://github.com/JerzySukiennik/g-images" target="_blank" rel="noopener">Source code &#8599;</a>
+          <a class="btn-play" href="https://wordshader.gzowo.fun" target="_blank" rel="noopener">&#9658; PLAY Wordshader NOW !!</a>
+          <a class="btn" href="https://github.com/JerzySukiennik/wordshader" target="_blank" rel="noopener">Source code &#8599;</a>
         </div>
 
-        <figure class="project-shot is-empty"><span>G-Images</span><span>no shot yet</span></figure>
+        <figure class="project-shot is-empty"><span>Wordshader</span><span>no shot yet</span></figure>
 
         <hr class="hr90">
 
         <div class="project-body">
           <div>
-            <p>The second model in the family. You point a camera at something, say what you want changed, and it changes the frame locally — no service in the middle, no upload. It answers to the voice assistant, which is where the request usually comes from.</p>
-            <p>Like the rest of the family it is trained from nothing rather than adapted from an existing model, which puts a hard ceiling on how good it can be at this size and makes the interesting question how much can be had from seventy million parameters.</p>
+            <p>Wordshader is a toy for making short video loops out of words. You type a line —
+`yellow spinny torus`, `blobby shiny metallic`, `loop(3) … loopend` — and a glowing
+three-dimensional shape rebuilds itself with every keystroke, on a gradient
+background, with a soundtrack written the same way. When you like what you see, you
+export the loop as a video.</p>
+            <p>Nothing in it is a model file. The shape is a distance field: a short piece of maths
+that, for any point in space, answers how far that point is from the surface. Every
+word you type edits that equation, and the picture is drawn by shooting a ray from
+each pixel and stepping along it until it hits the surface. That is why the shape can
+change on the fly with no loading, no meshes and no waiting — there is nothing to
+rebuild, only an equation to re-solve, sixty times a second.</p>
+            <p>The soundtrack shares the shape's clock. A pulse in the geometry and a beat in the
+music are the same number, so the animation lands exactly where the loop restarts and
+the exported clip repeats seamlessly instead of stuttering back to the start.</p>
           </div>
           <aside class="facts">
             <dl>
               <div><dt>Status</dt><dd>Building</dd></div>
-              <div><dt>Kind</dt><dd>AI model</dd></div>
+              <div><dt>Kind</dt><dd>Game</dd></div>
               <div><dt>Year</dt><dd>2026</dd></div>
-              <div><dt>Built with</dt><dd>PyTorch, Python</dd></div>
             </dl>
           </aside>
         </div>
