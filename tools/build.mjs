@@ -19,7 +19,7 @@ const TAGLINE = "I build things that fly. And a few that don't crash.";
 const CONTACT = [
   ["kalakasanyt@gmail.com", "mailto:kalakasanyt@gmail.com"],
   ["GitHub", "https://github.com/JerzySukiennik"],
-  ["Instagram", "https://instagram.com/jurek_sukiennik"],
+  ["Instagram", "https://instagram.com/gzowo_labs"],
   ["X", "https://x.com/kalakasanyt"],
 ];
 
