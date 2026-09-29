@@ -22,7 +22,7 @@
       "slug": "wordshader",
       "name": "Wordshader",
       "category": "Game",
-      "status": "building",
+      "status": "live",
       "year": "2026",
       "url": "wordshader.gzowo.fun",
       "repo": "https://github.com/JerzySukiennik/wordshader",
@@ -32,7 +32,10 @@
         "Nothing in it is a model file. The shape is a distance field: a short piece of maths\nthat, for any point in space, answers how far that point is from the surface. Every\nword you type edits that equation, and the picture is drawn by shooting a ray from\neach pixel and stepping along it until it hits the surface. That is why the shape can\nchange on the fly with no loading, no meshes and no waiting — there is nothing to\nrebuild, only an equation to re-solve, sixty times a second.",
         "The soundtrack shares the shape's clock. A pulse in the geometry and a beat in the\nmusic are the same number, so the animation lands exactly where the loop restarts and\nthe exported clip repeats seamlessly instead of stuttering back to the start."
       ],
-      "stack": [],
+      "stack": [
+        "Opus 5.5",
+        "Claude"
+      ],
       "image": "project-images/wordshader.webp",
       "hidden": false
     },
