@@ -2,6 +2,23 @@
   "version": 3,
   "projects": [
     {
+      "slug": "iphone-duo",
+      "name": "iPhone Duo",
+      "category": "Experiment",
+      "status": "archive",
+      "year": "2026",
+      "url": "iphone-duo.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/iphone-duo",
+      "blurb": "A semi-realistic virtual clone of the iPhone Duo",
+      "body": [],
+      "stack": [
+        "Claude",
+        "Sonnet 5.5"
+      ],
+      "image": "project-images/iphone-duo.webp",
+      "hidden": false
+    },
+    {
       "slug": "wordshader",
       "name": "Wordshader",
       "category": "Game",
