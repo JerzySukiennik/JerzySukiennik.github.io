@@ -1,4 +1,4 @@
-/* Agentation — click an element on the page, leave a note, and the agent picks
+/* Agentation - click an element on the page, leave a note, and the agent picks
    it up through the MCP server on :4747.
 
    Dev only, on purpose. Agentation is a React component and this site ships no
@@ -25,9 +25,9 @@ if (LOCAL.includes(location.hostname)) {
       host.id = "agentation-root";
       document.body.appendChild(host);
       createRoot(host).render(React.createElement(Agentation, { endpoint: ENDPOINT }));
-      console.info("[agentation] toolbar mounted — annotations go to " + ENDPOINT);
+      console.info("[agentation] toolbar mounted, annotations go to " + ENDPOINT);
     })
     .catch(() => {
-      console.info("[agentation] server not reachable on " + ENDPOINT + " — run: npx agentation-mcp server");
+      console.info("[agentation] server not reachable on " + ENDPOINT + ", run: npx agentation-mcp server");
     });
 }

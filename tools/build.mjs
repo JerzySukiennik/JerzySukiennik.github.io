@@ -1,34 +1,38 @@
-/* Publish step: data/projects.json -> index.html + one real page per project.
-   Node only, no dependencies, no bundler. The CMS app calls this before it pushes.
+/* Build step: data/projects.json + data/site.json -> index.html and one page per project.
+   Node only, no dependencies, no bundler. Run through tools/publish.sh, never by hand
+   before a push, because the build ends with the em-dash lint and refuses to finish
+   when a dash is anywhere on the site.
 
-   Look: deliberate 1998 GeoCities pastiche. Tables-in-spirit, bevels, blink,
-   marquees, WordArt. All the "GIFs" are CSS, so nothing extra is downloaded.
+   Look: deliberate 1998 GeoCities pastiche. Bevels, blink, marquees, WordArt. Every
+   "GIF" except the fire title is CSS, so the page downloads almost nothing.
 
    Usage: node tools/build.mjs
 */
 
-import { readFileSync, writeFileSync, mkdirSync, rmSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFileSync, mkdirSync, rmSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { root, site as loadSite, loadProjects, checkProject, lintRepo } from "./lib.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const SITE = "https://gzowo.fun";
-const OWNER = "Jerzy Sukiennik";
-const TAGLINE = "I build things that fly. And a few that don't crash.";
-
-const CONTACT = [
-  ["kalakasanyt@gmail.com", "mailto:kalakasanyt@gmail.com"],
-  ["GitHub", "https://github.com/JerzySukiennik"],
-  ["Instagram", "https://instagram.com/gzowo_labs"],
-  ["X", "https://x.com/kalakasanyt"],
-];
-
+const S = loadSite();
+const SITE = S.url;
 const STATUS_LABEL = { live: "Live", building: "Building", archive: "Archive" };
 
-/* A link typed as "bureau.gzowo.fun" is a RELATIVE path to a browser, so it
-   resolves against the project page and lands on /p/<slug>/bureau.gzowo.fun.
-   Anything that is not already absolute, root-relative or a known scheme gets
-   https:// put in front of it. */
+const all = loadProjects().projects;
+const projects = all.filter((p) => !p.hidden);
+
+/* Broken entries stop the build. Gaps in copy only warn, so an old entry never blocks a
+   publish, but `tools/site.mjs add` will not create a new entry with gaps. */
+let broken = 0;
+for (const p of projects) {
+  const r = checkProject(p);
+  if (r.errors.length) { broken++; console.error(`BAD ENTRY ${p.slug}: ${r.errors.join("; ")}`); }
+  if (r.need.length) console.warn(`gap in ${p.slug}: missing ${r.need.join("; ")}`);
+}
+if (broken) process.exit(1);
+
+/* A link typed as "bureau.gzowo.fun" is a RELATIVE path to a browser, so it would
+   resolve against the project page. Anything not already absolute gets https://. */
 const extern = (value = "") => {
   const v = String(value).trim();
   if (!v) return "";
@@ -37,14 +41,15 @@ const extern = (value = "") => {
 };
 
 const esc = (value = "") =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
-const data = JSON.parse(readFileSync(join(root, "data/projects.json"), "utf8"));
-const projects = data.projects.filter((p) => !p.hidden);
+/* Copy from site.json: {token} placeholders, markup allowed where the field says so. */
+const fill = (text, vars = {}) =>
+  String(text).replace(/\{(\w+)\}/g, (_, k) => (k in vars ? vars[k] : `{${k}}`));
+const base = { owner: S.owner, count: projects.length };
+
+/* Cache-buster derived from the file itself, so nobody edits a version by hand. */
+const ver = (file) => createHash("md5").update(readFileSync(join(root, file))).digest("hex").slice(0, 8);
 
 /* ---- shared chrome ---- */
 
@@ -60,7 +65,7 @@ function head({ title, description, url, image }) {
 <meta name="description" content="${esc(description)}">
 <link rel="canonical" href="${esc(url)}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Gzowo Labs">
+<meta property="og:site_name" content="${esc(S.titleSuffix)}">
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
@@ -73,12 +78,11 @@ function head({ title, description, url, image }) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=90">
+<link rel="stylesheet" href="/assets/site.css?v=${ver("assets/site.css")}">
 </head>`;
 }
 
-/* The strip of bevelled buttons under the banner. On a project page the first
-   button walks home instead of jumping to an anchor that is not there. */
+/* On a project page the first button walks home instead of jumping to an anchor that is not there. */
 function navstrip(home = true) {
   const shelf = home
     ? `<a class="btn90" href="#feed">MY GAMES</a>`
@@ -86,20 +90,20 @@ function navstrip(home = true) {
   return `    <nav class="navstrip" aria-label="Main">
       <a class="btn90" href="/">HOME</a>
       ${shelf}
-      <a class="btn90" href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">MY CODE</a>
-      <a class="btn90" href="https://gspaerospace.pl" target="_blank" rel="noopener">ROCKETS</a>
+      <a class="btn90" href="${esc(S.github)}" target="_blank" rel="noopener">MY CODE</a>
+      <a class="btn90" href="${esc(S.rockets)}" target="_blank" rel="noopener">ROCKETS</a>
       <a class="btn90" href="#reviews" data-rev-open>REVIEWS &#9733;</a>
-      <a class="btn90" href="mailto:kalakasanyt@gmail.com">E-MAIL ME!!</a>
+      <a class="btn90" href="mailto:${esc(S.email)}">E-MAIL ME!!</a>
     </nav>`;
 }
 
 function banner() {
-  return `    <div class="topbar marquee"><span>*~*~* WELCOME TO GZOWO LABS *~*~* ${projects.length} BROWSER GAMES AND EXPERIMENTS, ALL FREE, NO DOWNLOAD !!! *~*~* BEST VIEWED IN NETSCAPE NAVIGATOR AT 800x600 *~*~* SIGN MY GUESTBOOK !!! *~*~*</span></div>
+  return `    <div class="topbar marquee"><span>${esc(fill(S.marqueeHome, base))}</span></div>
 
     <header class="banner">
-      <p class="eyebrow">${OWNER}'s Official Home Page ~ Gzowo 34, Poland ~ Est. 2026</p>
+      <p class="eyebrow">${esc(fill(S.eyebrow, base))}</p>
       <h1 class="wordart is-fire"><span class="spinner" aria-hidden="true"></span><img class="fire-gif" src="/assets/gzowo-labs-fire.gif" alt="Gzowo Labs" width="515" height="93"><span class="spinner" aria-hidden="true"></span></h1>
-      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${TAGLINE} <span class="blink">&lt;&lt;&lt;</span></p>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${esc(S.tagline)} <span class="blink">&lt;&lt;&lt;</span></p>
     </header>`;
 }
 
@@ -111,10 +115,10 @@ function sidebarLeft() {
             <li><a href="/">Home Page</a></li>
             <li><a href="/#feed">All My Games</a></li>
             <li><a href="/#feed">AI Stuff</a></li>
-            <li><a href="https://gspaerospace.pl" target="_blank" rel="noopener">Rockets</a></li>
-            <li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">My Code</a></li>
-            <li><a href="mailto:kalakasanyt@gmail.com">Guestbook</a></li>
-            <li><a href="mailto:kalakasanyt@gmail.com">E-Mail Me</a></li>
+            <li><a href="${esc(S.rockets)}" target="_blank" rel="noopener">Rockets</a></li>
+            <li><a href="${esc(S.github)}" target="_blank" rel="noopener">My Code</a></li>
+            <li><a href="mailto:${esc(S.email)}">Guestbook</a></li>
+            <li><a href="mailto:${esc(S.email)}">E-Mail Me</a></li>
           </ul>
         </div>
 
@@ -123,23 +127,24 @@ function sidebarLeft() {
           <div class="counter" data-counter aria-label="visitor counter"></div>
           <p style="margin:6px 0 0">You are visitor number<br><b>that many</b>!</p>
           <a class="wall-hint" href="#" data-wall-hint title="up up down down left right left right B A">
-            <i>psst &mdash; this page has a secret.<br>Old gamers know the code &mdash;<br>everyone else can click here.</i>
+            <i>${S.wallHint}</i>
           </a>
         </div>
 
         <div class="widget">
           <h4>Now Playing</h4>
-          <p style="margin:0">gzowo_theme.mid</p>
+          <p style="margin:0">${esc(S.nowPlaying)}</p>
           <button class="btn90 midi" type="button" data-midi>&#9834; PLAY MIDI &#9834;</button>
         </div>
 
         <div class="widget award">
-          &#9733;&#9733;&#9733;<br>COOL SITE<br>OF THE DAY<br>&#9733;&#9733;&#9733;<br><small>awarded by me</small>
+          &#9733;&#9733;&#9733;<br>${S.award}<br>&#9733;&#9733;&#9733;<br><small>${esc(S.awardSmall)}</small>
         </div>
       </div>`;
 }
 
 function sidebarRight() {
+  const newest = projects[0];
   return `      <div class="col-right">
         <div class="widget">
           <h4>Today Is</h4>
@@ -148,33 +153,33 @@ function sidebarRight() {
 
         <div class="widget">
           <h4>New!!!</h4>
-          <p style="margin:0"><span class="blink" style="color:#ff0000;font-weight:bold">NEW!</span> ${esc(projects[0]?.name || "")} is up!<br>
-          <a href="/p/${esc(projects[0]?.slug || "")}/">click here !!~*</a></p>
+          <p style="margin:0"><span class="blink" style="color:#ff0000;font-weight:bold">NEW!</span> ${esc(newest?.name || "")} is up!<br>
+          <a href="/p/${esc(newest?.slug || "")}/">click here !!~*</a></p>
         </div>
 
         <div class="construction">
-          <span>&#9888; Site under construction since 2025 &#9888;</span>
+          <span>&#9888; ${esc(S.construction)} &#9888;</span>
         </div>
 
         <div class="widget webring" style="margin-top:10px">
           <h4>Web Ring</h4>
-          <p style="margin:0">The Gzowo Web Ring</p>
+          <p style="margin:0">${esc(S.webring)}</p>
           <p style="margin:4px 0 0">
-            <a href="https://gspaerospace.pl" target="_blank" rel="noopener">&laquo; prev</a> |
+            <a href="${esc(S.rockets)}" target="_blank" rel="noopener">&laquo; prev</a> |
             <a href="/">random</a> |
-            <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">next &raquo;</a>
+            <a href="${esc(S.github)}" target="_blank" rel="noopener">next &raquo;</a>
           </p>
         </div>
 
         <div class="widget stamp">
-          BEST VIEWED IN<br><b>NETSCAPE 4.0</b><br>800 &times; 600<br>256 COLORS<br>SOUND ON !!
+          ${S.stamp}
         </div>
 
         <div class="widget">
           <h4>Vote!!</h4>
-          <p style="margin:0">Do you like my<br>web site ?</p>
-          <p style="margin:4px 0 0"><a href="mailto:kalakasanyt@gmail.com?subject=YES">YES</a> &middot;
-          <a href="mailto:kalakasanyt@gmail.com?subject=ALSO%20YES">also YES</a></p>
+          <p style="margin:0">${S.vote}</p>
+          <p style="margin:4px 0 0"><a href="mailto:${esc(S.email)}?subject=YES">YES</a> &middot;
+          <a href="mailto:${esc(S.email)}?subject=ALSO%20YES">also YES</a></p>
         </div>
 
         <div class="widget reviews" data-rev id="reviews">
@@ -202,26 +207,24 @@ function sidebarRight() {
 }
 
 function footer() {
-  const links = CONTACT.map(
-    ([label, href]) =>
-      `<a href="${esc(href)}"${href.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}</a>`
-  ).join("\n      ");
+  const links = S.contact
+    .map(([label, href]) => `<a href="${esc(href)}"${href.startsWith("http") ? ' target="_blank" rel="noopener"' : ""}>${esc(label)}</a>`)
+    .join("\n      ");
   return `    <footer class="footer">
-      <p class="footer-mark">&#9733; Gzowo Labs &#9733; ${OWNER} &#9733;</p>
+      <p class="footer-mark">&#9733; Gzowo Labs &#9733; ${esc(S.owner)} &#9733;</p>
       <nav aria-label="Contact">
       ${links}
       </nav>
-      <p style="margin:6px 0 0">&copy; 2025&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
-      <span class="blink">Thank you for visiting !!!</span> ~*~*~ Please come back soon ~*~*~</p>
+      <p style="margin:6px 0 0">&copy; ${S.copyrightYears} Gzowo Labs. ${esc(S.footerLine)}<br>
+      <span class="blink">${esc(S.footerBlink)}</span> ${esc(S.footerTail)}</p>
     </footer>`;
 }
 
 function scripts() {
-  // The agentation module no-ops off localhost, so shipping it costs the live
-  // site one 304 and nothing else.
-  return `  <script src="/assets/site.js?v=90" defer></script>
-  <script src="/assets/wall.js?v=90" defer></script>
-  <script src="/assets/reviews.js?v=90" defer></script>
+  // The agentation module no-ops off localhost, so shipping it costs the live site one 304.
+  return `  <script src="/assets/site.js?v=${ver("assets/site.js")}" defer></script>
+  <script src="/assets/wall.js?v=${ver("assets/wall.js")}" defer></script>
+  <script src="/assets/reviews.js?v=${ver("assets/reviews.js")}" defer></script>
   <script type="module" src="/assets/agentation.js"></script>`;
 }
 
@@ -229,17 +232,13 @@ function scripts() {
 
 function card(project, index) {
   const status = STATUS_LABEL[project.status] || project.status;
-  // A project with no screenshot yet gets a grey placeholder plate rather than
-  // an empty box — it reads as "not photographed", not as "broken image".
+  // No screenshot yet: a plate that reads as "not photographed", not as a broken image.
   const shot = project.image
     ? `<img src="/${esc(project.image)}" alt="${esc(project.name)}" width="150" height="113" loading="${index < 6 ? "eager" : "lazy"}" decoding="async">`
     : `<span class="no-shot"><span>${esc(project.name)}</span><span>no shot yet</span></span>`;
-  // The badge is for the exception. Most builds are live, so a "Live" sticker on
-  // every card would be pure noise; status still shows in the meta line.
+  // The badge is for the exception. A "Live" sticker on every card would be noise.
   const flag =
-    project.status === "live"
-      ? ""
-      : `<span class="status" data-status="${esc(project.status)}">${esc(status)}</span>`;
+    project.status === "live" ? "" : `<span class="status" data-status="${esc(project.status)}">${esc(status)}</span>`;
 
   return `        <a class="card" href="/p/${esc(project.slug)}/" data-status="${esc(status)}">
           <span class="card-shot">
@@ -257,8 +256,8 @@ function card(project, index) {
 
 function home() {
   return `${head({
-    title: "Gzowo Labs — Jerzy Sukiennik's Home Page!!!",
-    description: TAGLINE,
+    title: S.homeTitle,
+    description: S.tagline,
     url: SITE + "/",
     image: `${SITE}/${projects[0]?.image || "assets/og.png"}`,
   })}
@@ -274,17 +273,13 @@ ${sidebarLeft()}
 
       <div class="middle">
         <div class="welcome">
-          <b>Welcome to my web site !!!</b> My name is ${OWNER}, I am from Warsaw and I make
-          games, web apps and AI models. Almost everything on this page runs in your browser, so there is
-          <b>nothing to install</b>, the few big games are a <b>free download</b>, and it is all <b>100&#37; FREE</b>.
-          <span class="new blink">NEW!</span> ${projects.length} projects listed below &mdash;
-          scroll down and click any of them to play. Have fun !!! ~*~*~
+          ${fill(S.welcome, base)}
         </div>
 
         <hr class="hr90">
 
-        <h2 class="sect-title rainbow-text" id="feed">My Games &amp; Projects</h2>
-        <p class="feed-note">${projects.length} builds, sorted the way I like them. Click a title to open its page.</p>
+        <h2 class="sect-title rainbow-text" id="feed">${esc(S.feedTitle)}</h2>
+        <p class="feed-note">${esc(fill(S.feedNote, base))}</p>
 
         <div class="grid">
 ${projects.map(card).join("\n")}
@@ -292,7 +287,7 @@ ${projects.map(card).join("\n")}
 
         <hr class="hr90">
         <p style="font-family:'Comic Sans MS',cursive;text-align:center;font-size:14px">
-          That is everything for now. <span class="blink" style="color:#ff0000">Come back soon !!!</span>
+          ${esc(S.feedEnd)} <span class="blink" style="color:#ff0000">${esc(S.feedEndBlink)}</span>
         </p>
       </div>
 
@@ -317,7 +312,7 @@ function projectPage(project) {
   const dl = project.download;
   const play = dl
     ? `<a class="btn-play" href="${esc(dl.url)}" download>&#11015; DOWNLOAD ${esc(project.name)} FOR ${esc((dl.platform || "Windows").toUpperCase())} !!</a>
-          <span class="dl-note">${esc([dl.version, dl.size, dl.note].filter(Boolean).join(" \u00b7 "))}</span>`
+          <span class="dl-note">${esc([dl.version, dl.size, dl.note].filter(Boolean).join(" · "))}</span>`
     : project.url
     ? `<a class="btn-play" href="${esc(extern(project.url))}" target="_blank" rel="noopener">&#9658; PLAY ${esc(project.name)} NOW !!</a>`
     : `<span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>`;
@@ -332,15 +327,17 @@ function projectPage(project) {
     ["Built with", (project.stack || []).join(", ")],
   ].filter(([, value]) => value);
 
+  const how = project.download ? S.marqueeHowDownload : S.marqueeHowBrowser;
+
   return `${head({
-    title: `${project.name} — Gzowo Labs`,
+    title: `${project.name} | ${S.titleSuffix}`,
     description: project.blurb,
     url: `${SITE}/p/${project.slug}/`,
-    image: `${SITE}/${project.image}`,
+    image: `${SITE}/${project.image || "assets/og.png"}`,
   })}
 <body>
   <div class="frame">
-    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: ${esc(project.name.toUpperCase())} *~*~* ${project.download ? "IT IS FREE, DOWNLOAD IT AND PLAY" : "IT IS FREE AND IT RUNS IN YOUR BROWSER"} *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
+    <div class="topbar marquee"><span>${esc(fill(S.marqueeProject, { name: project.name.toUpperCase(), how }))}</span></div>
 
     <header class="banner">
       <p class="eyebrow">Gzowo Labs presents</p>
@@ -394,9 +391,9 @@ ${scripts()}
 
 /* ---- write ---- */
 
-// Project pages live under /p/ and nowhere else. A page at /<slug>/ would be
-// hijacked by GitHub: a repo of the same name with its own Pages site makes the
-// user site 301 away to that repo's domain, which silently ate eleven pages once.
+// Project pages live under /p/ and nowhere else. A page at /<slug>/ would be hijacked
+// by GitHub: a repo of the same name with its own Pages site makes the user site 301
+// away to that repo's domain, which silently ate eleven pages once.
 const pagesDir = join(root, "p");
 rmSync(pagesDir, { recursive: true, force: true });
 
@@ -407,3 +404,11 @@ for (const project of projects) {
 }
 
 console.log(`Built index.html and ${projects.length} project pages.`);
+
+const dashes = lintRepo();
+if (dashes.length) {
+  console.error(`\nLINT FAILED: ${dashes.length} em dash(es) on the site. Fix the text, then build again:`);
+  console.error(dashes.slice(0, 40).join("\n"));
+  process.exit(1);
+}
+console.log("Lint ok: no em dashes.");

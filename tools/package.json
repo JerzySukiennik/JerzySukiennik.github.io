@@ -1,0 +1,7 @@
+{
+  "name": "gzowo-labs-tools",
+  "private": true,
+  "type": "module",
+  "description": "Pinned to the playwright-core whose Chromium build is already in ~/Library/Caches/ms-playwright.",
+  "dependencies": { "playwright-core": "1.62.1" }
+}

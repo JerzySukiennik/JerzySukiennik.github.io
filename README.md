@@ -1,58 +1,29 @@
 # Gzowo Labs
 
-Games, web apps and experiments built by **Jerzy Sukiennik** and **Ryszard Sukiennik**.
-Live at [jerzysukiennik.github.io](https://jerzysukiennik.github.io/).
+Source of https://gzowo.fun, a deliberately ugly 1998 GeoCities-style home page. Plain HTML, CSS and JS
+served by GitHub Pages from `main`. The only build step is `tools/build.mjs`, and the tools run it for you.
 
-Nothing on this site is edited by hand. Every project is added, updated and removed by
-the `/projects` skill running inside Claude Code on one of our machines.
-
-## How it is put together
-
-- **Zero build.** Plain HTML, CSS and JavaScript, served straight from this repo by
-  GitHub Pages. There is nothing to compile before publishing, which is what makes the
-  automatic path possible.
-- **The content is a file.** `data/projects.json` is the whole site's data. Adding a
-  project is a commit, so every change has an author and can be reverted.
-- **One live piece.** A Firebase Realtime Database holds a click counter and nothing
-  else. Its rules allow reading the counts and adding exactly one — no other write is
-  possible, which is why the counter can be public with no login.
-- **Sorted by what people open.** Pinned projects first, then a manual nudge for
-  anything too new to have clicks, then the counter.
-- **The background** is a single fragment shader: five layers of grass with the wind
-  running through them, one draw call a frame. It is the meadow in Gzowo.
-- **The wordmark** lights one whole letter at a time under the cursor, in the colours of
-  the plot. The blend happens in time, through a spring, not in a soft radius — colour
-  at half opacity over a black letter is mud.
+Everything is driven by the `/gzowo-labs` Claude Code skill ("wrzuć na gzowo labs"). Nobody edits the
+generated pages by hand.
 
 ## Layout
 
-```
-index.html            the shelf
-project.html          one project, rendered from projects.json
-assets/               styles, background shader, wordmark, click counter
-data/projects.json    every project — written by the skill, never by hand
-project-images/       one WebP per project, plus numbered gallery shots
-skill/                the /projects skill itself, so both machines share one copy
-```
+| Path | What |
+| --- | --- |
+| `data/projects.json` | The shelf. Array order is the display order, newest first. |
+| `data/site.json` | Every piece of site copy outside a project: taglines, marquees, widgets, footer. |
+| `tools/build.mjs` | Builds `index.html` and `p/<slug>/index.html`, then lints for em dashes. |
+| `tools/site.mjs` | Data CLI: add, set, move, hide, delete, check. |
+| `tools/shot.mjs` | Screenshot frames and the 4:3 WebP conversion. `tools/recipes/` holds per-project recipes. |
+| `tools/publish.sh` | Build, lint, commit, push, poll the live URL. |
+| `assets/` | CSS, scripts, the fire GIF, favicon. |
+| `project-images/` | One 1200x900 WebP per project. |
+| `islands/`, `win/` | Separate pages that live under the same domain. |
 
-## Installing the skill
+## Rules that hold the site together
 
-On a machine with Claude Code, Node and Git:
-
-```bash
-git clone https://github.com/JerzySukiennik/JerzySukiennik.github.io.git
-cd JerzySukiennik.github.io
-bash skill/install.sh "Your Name"
-```
-
-The name you pass is the signature every project published from that machine gets. It
-is the only thing that differs between the two installs. Updates arrive with `git pull`.
-
-## Working on the site locally
-
-```bash
-cd <this repo> && python3 -m http.server 8123
-```
-
-Then open `http://localhost:8123`. The click counter talks to the live database either
-way, so avoid clicking through to projects while testing.
+- **No em dashes anywhere.** `build.mjs` fails on the em dash character and its HTML entities.
+- **Project pages live under `/p/<slug>/`**, never `/<slug>/`: GitHub redirects a path that matches a repo
+  name with its own Pages site.
+- **The slug never changes** after creation (URL and image name).
+- The build has no dependencies. `tools/package.json` only pins `playwright-core` for screenshots.

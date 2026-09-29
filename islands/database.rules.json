@@ -2,7 +2,7 @@
 // nothing more: (1) you must be authenticated, (2) you may only write your own
 // player entry, (3) only the host recorded at meta/hostId may write world state.
 // An earlier revision also policed the payload schema with '$other': false and
-// hasChildren() checks. That was not security — it was schema policing, and it
+// hasChildren() checks. That was not security - it was schema policing, and it
 // silently rejected every real write: the client sends an 'id' field on players,
 // the host election is a transaction on meta/hostId alone (so 'createdAt' is not
 // present yet), and world writes carry a 'ts'. Every one of those was denied.

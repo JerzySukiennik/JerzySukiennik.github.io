@@ -77,7 +77,7 @@ const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 
 function clean(t) {
-  return String(t == null ? "" : t).replace(/\s*—\s*/g, ", ").replace(/\s*–\s*/g, ", ");
+  return String(t == null ? "" : t).replace(/\s*, \s*/g, ", ").replace(/\s*–\s*/g, ", ");
 }
 
 async function loadEntries() {

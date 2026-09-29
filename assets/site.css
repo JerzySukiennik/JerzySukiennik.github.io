@@ -1,5 +1,5 @@
 /* ============================================================
-   GZOWO LABS — "1998 edition"
+   GZOWO LABS, "1998 edition"
    Deliberate GeoCities pastiche: tiled rainbow, bevels, blink,
    marquees, WordArt. Every "GIF" here is CSS or an inline SVG,
    so the whole look ships with zero image requests.
@@ -211,7 +211,7 @@ a:hover{color:#ff0000;background:#ffff00}
   color:#00ff00;background:#111;padding:1px 4px;
 }
 
-/* Hazard stripes above and below, the words on flat black — the striped
+/* Hazard stripes above and below, the words on flat black - the striped
    version was authentically illegible, which is one step too far. */
 .construction{
   font-family:var(--impact);font-size:12px;color:#ffcc00;
@@ -260,7 +260,7 @@ a:hover{color:#ff0000;background:#ffff00}
 
 .feed-note{font-family:var(--comic);font-size:13px;margin:0 0 10px;color:#000080}
 
-/* project rows — one per line, table-flavoured, colours cycled loudly */
+/* project rows - one per line, table-flavoured, colours cycled loudly */
 .grid{display:block;margin:0;padding:0}
 
 .card{

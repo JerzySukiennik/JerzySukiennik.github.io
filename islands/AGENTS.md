@@ -1,4 +1,4 @@
-# Wyspy — instrukcja dla agenta
+# Wyspy - instrukcja dla agenta
 
 Dwie chodzalne wyspy pod `gzowo.fun/islands/`. Jedna należy do Jurka, druga do Rysia.
 Ten plik jest po to, żeby dało się dołożyć projekt na wyspę bez czytania całego kodu.
@@ -9,15 +9,15 @@ Ten plik jest po to, żeby dało się dołożyć projekt na wyspę bez czytania 
 |---|---|
 | `index.html` | ekran wyboru wyspy (podział na pół) |
 | `island.html` | sama wyspa, wybierana parametrem `?w=jurek` albo `?w=rysio` |
-| `data/jurek.json` | lista projektów Jurka — **same slugi** |
-| `data/rysio.json` | projekty Rysia — **pełne wpisy** |
+| `data/jurek.json` | lista projektów Jurka, **same slugi** |
+| `data/rysio.json` | projekty Rysia, **pełne wpisy** |
 | `assets/islands.js` | dzielnice, kategorie, teksty postaci i punktów „about" |
 | `assets/props.glb` | wszystkie bryły z Blendera (źródło: `Projects/Jurek/blender/`) |
 | `island-images/` | zrzuty ekranu dla wpisów, które nie są na półce Gzowo Labs |
 
 ## Dodanie projektu na wyspę Rysia
 
-Dopisz obiekt do `entries` w `data/rysio.json`. Nic więcej nie trzeba —
+Dopisz obiekt do `entries` w `data/rysio.json`. Nic więcej nie trzeba, 
 kiosk, tabliczka, miejsce na mapie i wpis w liczniku powstają same.
 
 ```json
@@ -45,12 +45,12 @@ kiosk, tabliczka, miejsce na mapie i wpis w liczniku powstają same.
   a rozstawienie kiosków w niej liczy się samo. Zła kategoria = projekt ląduje
   w złej dzielnicy, nic się nie wywala.
 - **Teksty po angielsku**, tak jak cała strona.
-- **Bez myślników em (—) i en (–).** Kod i tak je zamienia na przecinki, ale
+- **Bez myślników em (, ) i en (–).** Kod i tak je zamienia na przecinki, ale
   lepiej ich nie pisać.
 - **`image` jest opcjonalny.** Bez niego kiosk dostaje tabliczkę „no shot yet”,
   a nie szarą dziurę. Obrazek: webp, około 1200×900, do `island-images/`.
 - **`url` i `repo` są opcjonalne.** Brakujący adres po prostu chowa przycisk.
-- `slug` musi być unikalny w obrębie pliku — na nim stoi licznik odkryć.
+- `slug` musi być unikalny w obrębie pliku, na nim stoi licznik odkryć.
 
 ## Wyspa Jurka
 
@@ -66,16 +66,16 @@ Możesz nadpisać kategorię (czyli dzielnicę) na samej wyspie:
 
 Siedzą w `assets/islands.js` w `ISLANDS.<klucz>.lines` (monolog postaci stojącej
 na polanie) oraz w liście `landmarks` (punkty o autorze: warsztat, pianino, i tak dalej).
-Każdy element `lines` to jeden ekran dialogu. Nie wymyślaj faktów o człowieku —
+Każdy element `lines` to jeden ekran dialogu. Nie wymyślaj faktów o człowieku, 
 jeśli czegoś nie wiesz, nie dopisuj.
 
 ## Rzeczy, których lepiej nie ruszać bez powodu
 
-- `assets/props.glb` jest eksportowany z Blendera. Nie edytuj go w kodzie —
+- `assets/props.glb` jest eksportowany z Blendera. Nie edytuj go w kodzie, 
   zmiana bryły idzie przez `Projects/Jurek/blender/props.blend`.
 - Bryły są autorskie, nie z paczek Kenneya. Zachowaj proporcje miniaturek,
   jeśli coś dokładasz.
 - Kiosk jest klonowany z węzła GLB w całości. Nie odtwarzaj jego transformacji
-  ręcznie — dwa razy się na tym przejechaliśmy.
+  ręcznie, dwa razy się na tym przejechaliśmy.
 - Tekstury zrzutów wymagają obrotu o 180° (`orient()` w `world.js`), bo tak
   wychodzą z konwersji Y-up.

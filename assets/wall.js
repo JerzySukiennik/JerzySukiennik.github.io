@@ -1,11 +1,11 @@
 /* Two things that need a server, both on one Realtime Database and both spoken
-   to over plain REST — no Firebase SDK, so the page stays dependency-free:
+   to over plain REST, no Firebase SDK, so the page stays dependency-free:
 
    1. The visitor counter. A real, global one: read /hits, and bump it once per
       browser session. The rules only accept +1, so the number cannot be faked
       from the page.
    2. The graffiti wall. A hidden canvas anyone can draw on in black, and what
-      they draw stays. The rules allow creating a stroke and nothing else — no
+      they draw stays. The rules allow creating a stroke and nothing else, no
       edits, no deletions, no reading the root. Drawing is confined to the
       margins around the page frame: the frame is punched out of both the clip
       region and the input test, so nobody can scribble over the content and
@@ -68,7 +68,7 @@
     return document.documentElement.clientWidth;
   }
 
-  // The page frame, in viewport pixels — the one area that stays paint-free.
+  // The page frame, in viewport pixels - the one area that stays paint-free.
   function frame() {
     var el = document.querySelector(".frame");
     return el ? el.getBoundingClientRect() : null;
@@ -230,13 +230,13 @@
 
   function toggle(state) {
     on = state;
-    console.info("[wall] graffiti mode " + (on ? "ON — draw anywhere" : "off"));
+    console.info("[wall] graffiti mode " + (on ? "ON, draw anywhere" : "off"));
     document.documentElement.classList.toggle("wall-on", on);
     if (on && !bar) {
       bar = document.createElement("div");
       bar.className = "wall-bar";
       bar.innerHTML =
-        '<b>&#9998; GRAFFITI MODE</b> &mdash; draw in the <b>margins</b> beside the page; the page itself is ' +
+        '<b>&#9998; GRAFFITI MODE</b>, draw in the <b>margins</b> beside the page; the page itself is ' +
         'off limits. Whatever you draw stays here <b>forever</b>, and everyone who visits sees it. ' +
         '<button type="button">DONE</button>';
       bar.querySelector("button").addEventListener("click", function () { toggle(false); });
@@ -251,8 +251,8 @@
       var flash = document.createElement("div");
       flash.className = "wall-flash";
       flash.textContent = roomy
-        ? "GRAFFITI MODE ON — DRAW IN THE MARGINS"
-        : "NO ROOM TO DRAW — WIDEN THE WINDOW";
+        ? "GRAFFITI MODE ON, DRAW IN THE MARGINS"
+        : "NO ROOM TO DRAW, WIDEN THE WINDOW";
       document.body.appendChild(flash);
       setTimeout(function () { flash.remove(); }, 2600);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -260,7 +260,7 @@
   }
 
   /* Two ways in: the Konami code for the people who try it, and the "secret"
-     hint in the sidebar for everyone else — a keyboard-only trigger is
+     hint in the sidebar for everyone else, a keyboard-only trigger is
      unreachable on a phone and needs the page to already hold focus. */
   var hint = document.querySelector("[data-wall-hint]");
   if (hint) {

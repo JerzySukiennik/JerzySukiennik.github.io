@@ -1,4 +1,4 @@
-/* Gzowo Labs 1998 — the tiny pile of scripts every homepage of that era had.
+/* Gzowo Labs 1998 - the tiny pile of scripts every homepage of that era had.
    No libraries: a sparkle trail, today's date, and a MIDI-ish theme you have to
    press play on. The visitor counter is real and lives in wall.js. Everything
    bails out under reduced motion. */
@@ -31,7 +31,7 @@
   }
 
   /* ---- the background music button. Square waves, no audio file, and it
-     never autoplays — the one 1998 habit worth dropping. ---- */
+     never autoplays, the one 1998 habit worth dropping. ---- */
   var midi = document.querySelector("[data-midi]");
   if (midi) {
     var ctx = null, timer = null, step = 0;

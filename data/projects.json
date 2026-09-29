@@ -26,10 +26,10 @@
       "year": "2026",
       "url": "wordshader.gzowo.fun",
       "repo": "https://github.com/JerzySukiennik/wordshader",
-      "blurb": "Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter — then export the loop as a video.",
+      "blurb": "Type a line of words and watch a glowing 3D blob and its soundtrack appear letter by letter, then export the loop as a video.",
       "body": [
-        "Wordshader is a toy for making short video loops out of words. You type a line —\n`yellow spinny torus`, `blobby shiny metallic`, `loop(3) … loopend` — and a glowing\nthree-dimensional shape rebuilds itself with every keystroke, on a gradient\nbackground, with a soundtrack written the same way. When you like what you see, you\nexport the loop as a video.",
-        "Nothing in it is a model file. The shape is a distance field: a short piece of maths\nthat, for any point in space, answers how far that point is from the surface. Every\nword you type edits that equation, and the picture is drawn by shooting a ray from\neach pixel and stepping along it until it hits the surface. That is why the shape can\nchange on the fly with no loading, no meshes and no waiting — there is nothing to\nrebuild, only an equation to re-solve, sixty times a second.",
+        "Wordshader is a toy for making short video loops out of words. You type a line,\n`yellow spinny torus`, `blobby shiny metallic`, `loop(3) … loopend`, and a glowing\nthree-dimensional shape rebuilds itself with every keystroke, on a gradient\nbackground, with a soundtrack written the same way. When you like what you see, you\nexport the loop as a video.",
+        "Nothing in it is a model file. The shape is a distance field: a short piece of maths\nthat, for any point in space, answers how far that point is from the surface. Every\nword you type edits that equation, and the picture is drawn by shooting a ray from\neach pixel and stepping along it until it hits the surface. That is why the shape can\nchange on the fly with no loading, no meshes and no waiting, there is nothing to\nrebuild, only an equation to re-solve, sixty times a second.",
         "The soundtrack shares the shape's clock. A pulse in the geometry and a beat in the\nmusic are the same number, so the animation lands exactly where the loop restarts and\nthe exported clip repeats seamlessly instead of stuttering back to the start."
       ],
       "stack": [
@@ -111,7 +111,7 @@
       "blurb": "Program mining drones in a tiny Python-like language and automate a floating quarry together with friends in real time.",
       "body": [
         "print(\"Hello, Miner\") is a co-op game about not doing the work yourself. You get one floating tile of rock and one drone, and the only way to mine is to write a program: `mine()`, then `move(right)`, then a loop, then a function. Ore pays for a research tree that unlocks a bigger quarry, faster drones, richer ore and new language features, and the fun is watching your code run tile by tile in a bright low-poly world.",
-        "The language is deliberately not Python. It looks like it — parentheses, colons, indentation — but the editor indents for you, the parser forgives sloppy whitespace, and every error is a short sentence a nine-year-old can act on. The whole interpreter is custom, which is what lets a drone visibly pause on the exact line it is executing.",
+        "The language is deliberately not Python. It looks like it, parentheses, colons, indentation, but the editor indents for you, the parser forgives sloppy whitespace, and every error is a short sentence a nine-year-old can act on. The whole interpreter is custom, which is what lets a drone visibly pause on the exact line it is executing.",
         "Multiplayer is the twist. Everyone in a room shares one mine, one wallet and one research tree, but each player has their own drone and their own code window in their own colour. Any player can type into any window, and you see everyone's cursors live, so an older sibling can fix a bug in a younger one's program without taking over.",
         "Powiązane: [[modular]], [[gzowos-games]], [[stack]], [[agent-workflow]], [[gauntlet-skill]], [[design]]."
       ],
@@ -132,9 +132,9 @@
       "repo": "https://github.com/JerzySukiennik/gzowo-glass",
       "blurb": "Home-built smart glasses with a see-through HUD and a voice assistant that talks back in Polish.",
       "body": [
-        "Gzowo Glass is a pair of home-built smart glasses with a see-through heads-up\ndisplay in front of the right eye and a voice assistant called G.L.A.S.S. — Gzowo\nLike A Smart Sass. You press a button on the temple, ask\nsomething in Polish, and the answer comes back both as speech in a tiny speaker by\nyour ear and as a few lines of text floating over the world.",
+        "Gzowo Glass is a pair of home-built smart glasses with a see-through heads-up\ndisplay in front of the right eye and a voice assistant called G.L.A.S.S. (Gzowo\nLike A Smart Sass). You press a button on the temple, ask\nsomething in Polish, and the answer comes back both as speech in a tiny speaker by\nyour ear and as a few lines of text floating over the world.",
         "The optics are the Google Glass trick, not a Hollywood waveguide: a small OLED\nscreen, a lens that lets your eye focus on something two centimetres away, and a\nhalf-silvered mirror at 45 degrees. Because an OLED's black is truly black, whatever\nis black on the screen is simply transparent in front of your eye.",
-        "The whole thing runs on a coin-sized ESP32-S3 board with a camera and a microphone.\nThe glasses draw their own little operating system — boot screen, clock, menus,\ntimers — and stream your voice and camera frames to a server at home that talks to\na realtime AI model. The frame is 3D-printed to fit one specific face."
+        "The whole thing runs on a coin-sized ESP32-S3 board with a camera and a microphone.\nThe glasses draw their own little operating system, boot screen, clock, menus,\ntimers, and stream your voice and camera frames to a server at home that talks to\na realtime AI model. The frame is 3D-printed to fit one specific face."
       ],
       "stack": [
         "Claude Code",
@@ -174,11 +174,11 @@
       "year": "2026",
       "url": "doodlerun.gzowo.fun",
       "repo": "https://github.com/JerzySukiennik/doodlerun",
-      "blurb": "A 2D runner where you draw every single thing in it first — then rig your scribbles so they walk, flap and chase you.",
+      "blurb": "A 2D runner where you draw every single thing in it first, then rig your scribbles so they walk, flap and chase you.",
       "body": [
-        "DoodleRun is a 2D runner where nothing exists until you draw it. Before anyone\nruns, the room splits a list of thirteen slots between the players — ground\ntiles, six kinds of creature, coins, three layers of background — and each of you\nclaims a slot and paints it. Everyone also draws their own character. Then the\ngame builds an endless track out of your scribbles and you run it together, on\nshared fate: if one player dies, everybody restarts.",
-        "The interesting part is the rig. A drawing is just a flat picture, so to make a\nmonster walk you drop a few labelled points on it — left leg, right leg, head —\nand the engine treats the drawing as a rubber sheet stretched over a mesh. Each\npoint pulls the pixels around it, so the legs swing and the body wobbles without\nanything ever being cut apart. Your monster stays exactly the drawing you made;\nit just starts moving.",
-        "Everything runs on plain Canvas 2D with hand-written physics and no build step,\nand drawings travel between players as small PNGs — about three kilobytes each,\nwhich is why a whole hand-drawn world fits through a realtime database meant for\npositions and scores."
+        "DoodleRun is a 2D runner where nothing exists until you draw it. Before anyone\nruns, the room splits a list of thirteen slots between the players, ground\ntiles, six kinds of creature, coins, three layers of background, and each of you\nclaims a slot and paints it. Everyone also draws their own character. Then the\ngame builds an endless track out of your scribbles and you run it together, on\nshared fate: if one player dies, everybody restarts.",
+        "The interesting part is the rig. A drawing is just a flat picture, so to make a\nmonster walk you drop a few labelled points on it, left leg, right leg, head,\nand the engine treats the drawing as a rubber sheet stretched over a mesh. Each\npoint pulls the pixels around it, so the legs swing and the body wobbles without\nanything ever being cut apart. Your monster stays exactly the drawing you made;\nit just starts moving.",
+        "Everything runs on plain Canvas 2D with hand-written physics and no build step,\nand drawings travel between players as small PNGs, about three kilobytes each,\nwhich is why a whole hand-drawn world fits through a realtime database meant for\npositions and scores."
       ],
       "stack": [],
       "image": "project-images/doodlerun.webp",
@@ -192,7 +192,7 @@
       "year": "2026",
       "url": "https://bureau.gzowo.fun/",
       "repo": "https://github.com/JerzySukiennik/smendilendi-bureau",
-      "blurb": "Run a tiny architecture practice with your friends — draw the walls, take the client's notes, then walk the finished building thirty years later.",
+      "blurb": "Run a tiny architecture practice with your friends, draw the walls, take the client's notes, then walk the finished building thirty years later.",
       "body": [],
       "stack": [],
       "image": "project-images/smendilendi-bureau.webp",
@@ -206,10 +206,10 @@
       "year": "2026",
       "url": "https://markzero.gzowo.fun/",
       "repo": "https://github.com/JerzySukiennik/mark-zero",
-      "blurb": "Fly a powered armor suit at the speed of sound — six degrees of freedom, no rails, no limits.",
+      "blurb": "Fly a powered armor suit at the speed of sound, six degrees of freedom, no rails, no limits.",
       "body": [
         "Mark Zero is a browser flight sandbox built around one question: what would a powered\narmor suit actually feel like to fly? You start as a person on foot. You step onto a\nplatform, the suit assembles itself around you plate by plate, and then the sky is yours\nup to the edge of the stratosphere.",
-        "The flight model is six degrees of freedom with thrust in body-local axes, which sounds\ntechnical but produces something simple and satisfying: spin around mid-flight while\nstill travelling forward, hit the throttle, and your own engines slam you to a stop.\nThat hard brake is not a scripted move — it falls out of the physics. Hands and leg\nthrusters animate automatically to match the thrust vector, so it looks like you are\nsteering with your palms while you are really flying a full 6DOF craft.",
+        "The flight model is six degrees of freedom with thrust in body-local axes, which sounds\ntechnical but produces something simple and satisfying: spin around mid-flight while\nstill travelling forward, hit the throttle, and your own engines slam you to a stop.\nThat hard brake is not a scripted move, it falls out of the physics. Hands and leg\nthrusters animate automatically to match the thrust vector, so it looks like you are\nsteering with your palms while you are really flying a full 6DOF craft.",
         "The suit is a separate entity from the player, not a costume. Leave it standing in a\nfield and walk away. Call it and it flies to you across the map and closes around you\nmid-stride. Eject at three hundred metres per second and you fall as a person while the\narmor chases you down and catches you before the ground does."
       ],
       "stack": [
@@ -228,7 +228,7 @@
       "year": "2026",
       "url": "https://noclip.gzowo.fun/",
       "repo": "https://github.com/JerzySukiennik/noclip",
-      "blurb": "A found-footage Backrooms experience — you fall in, something tall follows, and the tape keeps rolling.",
+      "blurb": "A found-footage Backrooms experience, you fall in, something tall follows, and the tape keeps rolling.",
       "body": [],
       "stack": [],
       "image": "project-images/noclip.webp",
@@ -244,7 +244,7 @@
       "repo": "https://github.com/JerzySukiennik/voidworks",
       "blurb": "A factory hanging in white nothing. Droppers, belts, upgraders, and a hard cap on how much can be moving at once.",
       "body": [
-        "Build a production line suspended in empty white space — no floor, no horizon, and a camera that can fly underneath it. Droppers feed material onto belts, upgraders raise its value, and a green sell plate turns it into money.",
+        "Build a production line suspended in empty white space, no floor, no horizon, and a camera that can fly underneath it. Droppers feed material onto belts, upgraders raise its value, and a green sell plate turns it into money.",
         "The whole game is one constraint: only so many items can exist on the belts at once. A dropper adds one, the sell plate removes one, and when you hit the ceiling the droppers visibly stall. That turns every metre of belt into a real cost and makes the question \"what is one slot worth?\" the thing you actually play.",
         "There are two families of upgrader and the shapes tell you which is which: tall thin posts multiply, low wide ones add. Adders are flat, so they pay off on cheap material; multipliers scale, so they pay off on expensive material. Adding first and multiplying second measures 2.42x better than the reverse."
       ],
@@ -268,7 +268,7 @@
       "body": [
         "A physics co-op sandbox for up to four people. You pick up rubber ducks and throw them into a thirty-two-sided pit that has no bottom, and every duck pays. The money buys machines, walls, tunnels and fans, and the arc of a session is the trip from carrying ducks by hand to watching a factory do it without you.",
         "It looks like a PlayStation game on purpose: flat-shaded low-poly geometry rendered into a small buffer and scaled back up, grey concrete with yellow floor markings, and a black hole in the sky whose shader is lifted straight out of Gargantua.",
-        "Nothing saves. A session runs two to four hours and starts from nothing the next time, which is the point — the fun is in rebuilding the line better, not in inheriting it."
+        "Nothing saves. A session runs two to four hours and starts from nothing the next time, which is the point, the fun is in rebuilding the line better, not in inheriting it."
       ],
       "stack": [
         "three.js",
@@ -288,7 +288,7 @@
       "repo": "https://github.com/JerzySukiennik/g-doodle",
       "blurb": "A transformer that draws. Type what you want in Polish and it sketches it stroke by stroke.",
       "body": [
-        "The third model in the family, after G-Micro and G-Images, trained from scratch over 345 categories of drawing. It does not produce an image in one shot — it emits strokes in order, so you watch the picture being drawn rather than appear.",
+        "The third model in the family, after G-Micro and G-Images, trained from scratch over 345 categories of drawing. It does not produce an image in one shot, it emits strokes in order, so you watch the picture being drawn rather than appear.",
         "It is also the first of the family that needs nothing running at home. G-Micro and G-Images both go quiet when the Mac sleeps; this one is small enough to run in the browser it is displayed in."
       ],
       "stack": [
@@ -310,7 +310,7 @@
       "body": [
         "You fly as a queen over a meadow, gather pollen, and return to a hive that everyone shares. Workers follow you in a swarm rather than being assigned to flowers, so a bigger swarm simply covers more blossoms at once, and the comb you build is a hex grid of cells with different jobs that reward good neighbours.",
         "The strategy lives in the calendar. Ten-plus plant species open and close on their own schedules, a season lasts two real days and a year lasts eight, so the map you learned last week is not the map you are flying now.",
-        "There is no combat. Hornets are a real threat, but the answer is structural — narrow the entrance, set traps, post guards. A queen runs; she does not fight."
+        "There is no combat. Hornets are a real threat, but the answer is structural, narrow the entrance, set traps, post guards. A queen runs; she does not fight."
       ],
       "stack": [
         "three.js",
@@ -328,10 +328,10 @@
       "year": "2026",
       "url": "https://g-micro-web.web.app/",
       "repo": "https://github.com/JerzySukiennik/g-micro",
-      "blurb": "Chat with a language model trained from scratch — running on a MacBook, reached from anywhere.",
+      "blurb": "Chat with a language model trained from scratch, running on a MacBook, reached from anywhere.",
       "body": [
         "G-Micro is a 110-million-parameter language model built from nothing: the tokenizer, the training loop and the Polish corpus are all ours. This is the app you talk to it through.",
-        "The page itself computes nothing. It writes a task into a database, a MacBook picks it up, runs the model and streams the answer back token by token. Both sides dial out, so no port is ever opened on the Mac — deliberately chosen over a tunnel.",
+        "The page itself computes nothing. It writes a task into a database, a MacBook picks it up, runs the model and streams the answer back token by token. Both sides dial out, so no port is ever opened on the Mac, deliberately chosen over a tunnel.",
         "The same window also edits photos with G-Images, a second model of ours. Ask for black and white or a blur and it makes the change directly, with no service in the middle."
       ],
       "stack": [
@@ -354,8 +354,8 @@
       "blurb": "A day at a ski resort for two to five people, on snow that remembers every turn you carved.",
       "body": [
         "The mountain has three runs, a five-seat chairlift, a drag lift, a rental shop and a cafe, and up to five people ski it together. Difficulty comes from the line rather than the label: the blue traverses across the slope, the black falls straight down it.",
-        "The snow is the real system. A grid of five million cells, one every half metre, remembers both its condition and how deep the ruts are, and the same two arrays feed the physics on the processor and the shader on the graphics card — so the groove you can see is the groove you can feel. After forty runs a popular line drops to fifteen percent condition with ruts nearly thirty centimetres deep, while the snow two metres to the side is untouched. Nothing heals on its own; a groomer has to go out and fix it.",
-        "The skiing physics run on that height field rather than on a rigid body. Straight-lining measures 61 km/h, tucking on race skis 82, full carving 48, powder 11 — and what actually decides a jump is the angle you hit the ramp at, not how tall the ramp is."
+        "The snow is the real system. A grid of five million cells, one every half metre, remembers both its condition and how deep the ruts are, and the same two arrays feed the physics on the processor and the shader on the graphics card, so the groove you can see is the groove you can feel. After forty runs a popular line drops to fifteen percent condition with ruts nearly thirty centimetres deep, while the snow two metres to the side is untouched. Nothing heals on its own; a groomer has to go out and fix it.",
+        "The skiing physics run on that height field rather than on a rigid body. Straight-lining measures 61 km/h, tucking on race skis 82, full carving 48, powder 11, and what actually decides a jump is the angle you hit the ramp at, not how tall the ramp is."
       ],
       "stack": [
         "three.js",
@@ -372,10 +372,10 @@
       "year": "2026",
       "url": "",
       "repo": "",
-      "blurb": "A printed robot dog on four servos and an ESP32 — the first project here whose output is a physical object.",
+      "blurb": "A printed robot dog on four servos and an ESP32, the first project here whose output is a physical object.",
       "body": [
         "A small, light quadruped printed on a Bambu Lab X1C in ordinary PLA, driven by four hobby servos and a microcontroller. The scope is poses, touch and simple movement rather than dynamic walking.",
-        "It is the first project here where the feedback loop needs a person. The model can be changed from a keyboard, but measuring whether the printed part actually fits requires somebody standing at the printer with calipers — and that changes how the work is planned."
+        "It is the first project here where the feedback loop needs a person. The model can be changed from a keyboard, but measuring whether the printed part actually fits requires somebody standing at the printer with calipers, and that changes how the work is planned."
       ],
       "stack": [
         "OpenSCAD",
@@ -395,8 +395,8 @@
       "repo": "https://github.com/JerzySukiennik/gzowo-builders",
       "blurb": "Build a vehicle out of blocks, wheels and pistons, then drive it until something snaps off.",
       "body": [
-        "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be — the whole game is the workshop.",
-        "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted — an overloaded cantilever fails because it is overloaded.",
+        "A creative sandbox with real physics: you place parts on a quarter-metre grid, wire pistons and hinges to buttons and timers, and drive whatever you came up with. There is no survival mode and there never will be, the whole game is the workshop.",
+        "The interesting part is what holds a build together. Every construction is one rigid body, and the joints between parts are a graph; when a bridge in that graph carries more force than it can hold, that piece tears off on its own. Nothing is scripted, an overloaded cantilever fails because it is overloaded.",
         "Wheels are raycast rather than physical bodies, which is why a car at 40 km/h through a slalom keeps all four corners instead of shaking itself apart. It runs co-op over the local network, with one machine acting as the authority on physics and running exactly the same code the browser runs."
       ],
       "stack": [
@@ -420,7 +420,7 @@
       "blurb": "The second rung of the ladder: 178 million parameters, warm-started from G-Micro, trained in one week of free GPU time.",
       "body": [
         "The successor to G-Micro, aimed squarely at the things G-Micro gets wrong, with a hard budget: a single week of free Kaggle quota on two T4s. Every choice in the configuration came from a measurement rather than a guess.",
-        "Warm-starting from the smaller model rather than beginning at random is what makes the budget work — the new network inherits what the old one already learned about Polish and spends its week on what it does not know."
+        "Warm-starting from the smaller model rather than beginning at random is what makes the budget work, the new network inherits what the old one already learned about Polish and spends its week on what it does not know."
       ],
       "stack": [
         "PyTorch",
@@ -437,10 +437,10 @@
       "year": "2026",
       "url": "",
       "repo": "https://github.com/JerzySukiennik/gzowo-tv",
-      "blurb": "An Apple TV for the family plot — every streaming service in one launcher, on a Mac plugged into the television.",
+      "blurb": "An Apple TV for the family plot, every streaming service in one launcher, on a Mac plugged into the television.",
       "body": [
         "A video aggregator built for the house in Gzowo: one grid, one remote, and the services behind it opening full-screen in a kiosk browser instead of demanding a different device each.",
-        "Two macOS traps cost real time here and are worth writing down. Renaming the application bundle poisoned its entry in the system launcher — opening it reported success and started nothing, with an empty log and no error anywhere; only a fresh bundle identifier fixed it. And because macOS refuses to let a bundled app overwrite a file another process created under the downloads folder, the server died instantly on every start until its log moved elsewhere."
+        "Two macOS traps cost real time here and are worth writing down. Renaming the application bundle poisoned its entry in the system launcher, opening it reported success and started nothing, with an empty log and no error anywhere; only a fresh bundle identifier fixed it. And because macOS refuses to let a bundled app overwrite a file another process created under the downloads folder, the server died instantly on every start until its log moved elsewhere."
       ],
       "stack": [
         "Node",
@@ -460,7 +460,7 @@
       "blurb": "An instrument you play with your hands in the air, in front of a webcam. No hardware.",
       "body": [
         "Your right hand sets the pitch and snaps to a pentatonic scale so it is hard to sound bad; your left hand is the volume. Fingers pick the octave, a fist morphs the timbre, a pinch adds vibrato, and your mouth works as a wah pedal.",
-        "Hand tracking runs locally in the browser and the sound is synthesised in the page, so nothing about you leaves the machine. Desktop only — it needs a camera and a real amount of light."
+        "Hand tracking runs locally in the browser and the sound is synthesised in the page, so nothing about you leaves the machine. Desktop only, it needs a camera and a real amount of light."
       ],
       "stack": [
         "MediaPipe",
@@ -481,7 +481,7 @@
       "blurb": "A destruction sandbox with twenty-five tools and co-op for four. Runs on a server at home.",
       "body": [
         "Everything in the plaza is made of voxels and everything comes apart: hammers, charges, a shotgun and a launcher, plus builder tools that put material back. Twenty-five of them, grouped so you can cycle by category rather than hunting through a list.",
-        "Up to four people share one world through a headless Node server that holds the authoritative state. That is also why there is no link to play here yet — the server runs on a laptop at home, so for now the code is what you can look at."
+        "Up to four people share one world through a headless Node server that holds the authoritative state. That is also why there is no link to play here yet, the server runs on a laptop at home, so for now the code is what you can look at."
       ],
       "stack": [
         "three.js",
@@ -501,7 +501,7 @@
       "repo": "https://github.com/JerzySukiennik/g-images",
       "blurb": "A diffusion model for editing photos, trained from scratch, small enough to run on a laptop.",
       "body": [
-        "The second model in the family. You point a camera at something, say what you want changed, and it changes the frame locally — no service in the middle, no upload. It answers to the voice assistant, which is where the request usually comes from.",
+        "The second model in the family. You point a camera at something, say what you want changed, and it changes the frame locally, no service in the middle, no upload. It answers to the voice assistant, which is where the request usually comes from.",
         "Like the rest of the family it is trained from nothing rather than adapted from an existing model, which puts a hard ceiling on how good it can be at this size and makes the interesting question how much can be had from seventy million parameters."
       ],
       "stack": [
@@ -519,9 +519,9 @@
       "year": "2026",
       "url": "",
       "repo": "https://github.com/JerzySukiennik/g-micro",
-      "blurb": "A 117-million-parameter language model in Polish, trained from scratch — tokenizer, corpus and training loop included.",
+      "blurb": "A 117-million-parameter language model in Polish, trained from scratch, tokenizer, corpus and training loop included.",
       "body": [
-        "The first model in the family and the first rung of a ladder that runs G-Micro, G-Mini, G-Core, G-Mega. Nothing here is a fine-tune of somebody else's weights: the tokenizer, the Polish corpus and the training loop were all built for it, which was the whole point — the aim was to have a model that works and to understand every layer of why it does.",
+        "The first model in the family and the first rung of a ladder that runs G-Micro, G-Mini, G-Core, G-Mega. Nothing here is a fine-tune of somebody else's weights: the tokenizer, the Polish corpus and the training loop were all built for it, which was the whole point, the aim was to have a model that works and to understand every layer of why it does.",
         "It runs offline on a MacBook. Training happens on free cloud GPUs, because the hardware here has neither the memory nor the tensor cores to do it in any reasonable time."
       ],
       "stack": [
@@ -542,8 +542,8 @@
       "blurb": "Watch Billie Jean at Motown 25 rebuilt in 3D, together, with the television cuts replayed shot for shot.",
       "body": [
         "Up to four people join a room and spawn as avatars in a theatre. The host starts the show, a 3D Michael Jackson dances the full four minutes and fifty-seven seconds locked to the real audio, and everyone's camera snaps to a director cam that reproduces the 1983 broadcast's thirty-seven cuts in order.",
-        "The motion is captured from the broadcast footage itself rather than animated by hand. That was not the first plan: a fully hand-authored choreography was built, locked to the beat, and thrown away for being ten times worse — the roughness of real capture carries the character. What shipped is the capture with three surgical repairs: the root is anchored only where tracking is confident, gaps are filled from a motion graph of the same performance, and the moonwalk glides on an authored path while the legs stay captured.",
-        "Because video and audio from the source run to the same length, the two stay in step across the whole song, and the animation follows the audio playhead rather than the frame clock — so a slow machine drops frames instead of drifting out of time."
+        "The motion is captured from the broadcast footage itself rather than animated by hand. That was not the first plan: a fully hand-authored choreography was built, locked to the beat, and thrown away for being ten times worse, the roughness of real capture carries the character. What shipped is the capture with three surgical repairs: the root is anchored only where tracking is confident, gaps are filled from a motion graph of the same performance, and the moonwalk glides on an authored path while the legs stay captured.",
+        "Because video and audio from the source run to the same length, the two stay in step across the whole song, and the animation follows the audio playhead rather than the frame clock, so a slow machine drops frames instead of drifting out of time."
       ],
       "stack": [
         "three.js",
@@ -564,7 +564,7 @@
       "blurb": "One to three gods share a single city and take down a rival built by the machine.",
       "body": [
         "A cooperative real-time strategy game where the players are not opponents. Everyone runs the same city, the enemy is a bot settlement growing on the other side of the map, and a match lands somewhere between twenty and forty minutes with pause available at any point.",
-        "Built in a single pass and complete, but it needs its own server process to run, so there is no public link yet — the source is here and it starts with one command."
+        "Built in a single pass and complete, but it needs its own server process to run, so there is no public link yet, the source is here and it starts with one command."
       ],
       "stack": [
         "Node",
@@ -648,7 +648,7 @@
       "blurb": "Yellow rooms, buzzing lights, and a maze that does not care whether you get out.",
       "body": [
         "A first-person walk through an endless office that never quite repeats. There is no map and no marker; the only thing you build up is a sense of which corridor you have already ruined an hour on.",
-        "The tension is carried almost entirely by sound and by light that hums at the wrong frequency — there is very little in the way of enemies, and it does not need them."
+        "The tension is carried almost entirely by sound and by light that hums at the wrong frequency, there is very little in the way of enemies, and it does not need them."
       ],
       "stack": [
         "three.js",
@@ -665,10 +665,10 @@
       "year": "2026",
       "url": "https://gzowoai.gzowo.fun/",
       "repo": "https://github.com/JerzySukiennik/gzowo-ai",
-      "blurb": "A voice assistant for the house in Gzowo — speak to it in Polish and it answers in real time.",
+      "blurb": "A voice assistant for the house in Gzowo, speak to it in Polish and it answers in real time.",
       "body": [
         "A Jarvis-style assistant with a black and white interface and a sphere for a face that shifts between idle, talking and showing. It listens and replies in Polish through a realtime audio model, remembers across sessions, and reaches into the house and the other projects here rather than being a chat window.",
-        "It runs on a Mac at home and costs nothing to operate. When the Mac sleeps the assistant degrades gently instead of breaking — the parts that need the machine go quiet and the rest keeps answering."
+        "It runs on a Mac at home and costs nothing to operate. When the Mac sleeps the assistant degrades gently instead of breaking, the parts that need the machine go quiet and the rest keeps answering."
       ],
       "stack": [
         "Gemini Live",
@@ -685,10 +685,10 @@
       "year": "2026",
       "url": "",
       "repo": "",
-      "blurb": "The visual identity behind GSP — logo, colours and type, in one page you can download from.",
+      "blurb": "The visual identity behind GSP, logo, colours and type, in one page you can download from.",
       "body": [
         "The brand kit for Gzowo Space Program: the mark, the palette, the typefaces and the rules for putting them together, published as a single page with the files attached.",
-        "The look is deliberately severe — black ground, condensed capitals for headlines, a monospace for data, and nothing decorative. It is the identity the rocket site runs on."
+        "The look is deliberately severe, black ground, condensed capitals for headlines, a monospace for data, and nothing decorative. It is the identity the rocket site runs on."
       ],
       "stack": [
         "HTML",
@@ -707,7 +707,7 @@
       "repo": "https://github.com/JerzySukiennik/gzowo-bowling",
       "blurb": "Bowling on a laptop, thrown with a phone. Scan the code and your phone becomes the ball.",
       "body": [
-        "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw — the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
+        "The laptop shows the lane; your phone is the controller. You scan a code, and the swing of your arm is the throw, the motion sensors in the phone are the input, so nobody has to learn a control scheme.",
         "Under the alley is a proper physics simulation with three.js and Rapier, built without a bundler: modules straight from a CDN, which is the pattern most of the games here still use."
       ],
       "stack": [
@@ -730,7 +730,7 @@
       "blurb": "Drop sixteen kinds of building on a plot and watch a town assemble itself around them.",
       "body": [
         "A calm builder: you place buildings, they connect, and the place slowly turns into somewhere. Saves persist and you can build alongside someone else.",
-        "Most of the work went into the parts you do not notice — shadows that make the models sit on the ground properly, an audio bus so the ambience does not stack into noise, and a pixel ratio that drops itself on weaker machines instead of stuttering."
+        "Most of the work went into the parts you do not notice, shadows that make the models sit on the ground properly, an audio bus so the ambience does not stack into noise, and a pixel ratio that drops itself on weaker machines instead of stuttering."
       ],
       "stack": [
         "three.js",
@@ -748,10 +748,10 @@
       "year": "2026",
       "url": "https://gspaerospace.pl/",
       "repo": "",
-      "blurb": "Gzowo Space Program — the site for the model rockets we actually launch.",
+      "blurb": "Gzowo Space Program, the site for the model rockets we actually launch.",
       "body": [
         "GSP is the name everything that flies goes out under. The site collects the rockets, the launches and the parts we print, and it is the closest thing the workshop has to a front door.",
-        "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo — the same field the background of this page is made of."
+        "The rockets themselves are designed in OpenRocket, the printed parts in OpenSCAD, and they fly from the family plot in Gzowo, the same field the background of this page is made of."
       ],
       "stack": [
         "HTML",
@@ -772,7 +772,7 @@
       "blurb": "A gallery for the place the rest of this site is named after.",
       "body": [
         "Photographs from Gzowo, put somewhere they can actually be looked at rather than buried in a phone.",
-        "Small, quick and deliberately plain — the pictures are the whole point."
+        "Small, quick and deliberately plain, the pictures are the whole point."
       ],
       "stack": [
         "HTML",
@@ -793,8 +793,8 @@
       "blurb": "One real property by the Narew: paddle it, dig it, ride a jet ski through it, or watch TV indoors.",
       "body": [
         "One HTML file holding a three.js world: a single property in Gzowo on the Narew, the house on it, a carport, the meadow and the river below. The terrain is not invented. Elevations come from a Copernicus digital elevation model, and the river channel, the oxbow lake and the drainage ditches are polylines traced from OpenStreetMap and carved into the heightfield, so the shape of the water matches the real place. The ground is also editable: an excavator and a shovel cut real holes into a one-metre mesh, with flat bottoms you can climb down into, and the coarse grid underneath is pushed out of the way so the two never fight.",
-        "The water carries traffic. Three kayaks lie on the bank and a jet ski is moored in the channel; the jet ski leaves expanding rings behind it, and those rings are not decoration — they are read back by the kayaks, which lift and pitch when a wake reaches them. Kayak hulls refuse to leave water deeper than thirty centimetres, so the river keeps you in it.",
-        "The television in the glass house is a canvas texture redrawn in place: live weather for Gzowo from open-meteo, short films drawn frame by frame, a shelf of YouTube links behind a password, and NAREBLOX, eleven small games. Nine are drawn on that canvas; two are separate three.js scenes rendered to a texture, so the set displays real 3D from inside a 3D world. Every one of the eleven is multiplayer. Facing the set there is now a sofa with a man in swimming trunks sitting on it, dripping, phone in hand — sit down and the view cuts to his screen, which plays a vertical feed of one person's videos and nothing else.",
+        "The water carries traffic. Three kayaks lie on the bank and a jet ski is moored in the channel; the jet ski leaves expanding rings behind it, and those rings are not decoration, they are read back by the kayaks, which lift and pitch when a wake reaches them. Kayak hulls refuse to leave water deeper than thirty centimetres, so the river keeps you in it.",
+        "The television in the glass house is a canvas texture redrawn in place: live weather for Gzowo from open-meteo, short films drawn frame by frame, a shelf of YouTube links behind a password, and NAREBLOX, eleven small games. Nine are drawn on that canvas; two are separate three.js scenes rendered to a texture, so the set displays real 3D from inside a 3D world. Every one of the eleven is multiplayer. Facing the set there is now a sofa with a man in swimming trunks sitting on it, dripping, phone in hand, sit down and the view cuts to his screen, which plays a vertical feed of one person's videos and nothing else.",
         "The place is populated. A neighbour walks a fixed round of the property and stops to talk when you stand near him; a sounder of ten wild boar roots through the meadow and bolts as a group when you get within eleven metres; five raccoons dance in a ring around the campfire and speed up when it is lit. A keypad by the door takes a two-digit code, and the right one brings a man on horseback across the meadow with a cigarette in his mouth. Their clothes are photographs of linen, cloth and leather from CC0 libraries, cut to 512 pixels, with code-drawn weave as the fallback if the folder is missing.",
         "Around that: characters are GLTF models with blended idle, walk and run clips, multiplayer runs peer to peer over PeerJS with the host relaying positions, and wind is patched into existing materials by swapping their shader, so grass and tree crowns bend from the base with a phase taken from world position. The interface is in Polish, the way it was written."
       ],
