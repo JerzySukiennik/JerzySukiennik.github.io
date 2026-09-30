@@ -827,7 +827,7 @@
       "boost": 0,
       "url": "",
       "repo": "https://github.com/rysiosukiennik/backrooms-game/tree/main/spiderman",
-      "description": "A fan-made open-world Spider-Man game: swing across Manhattan, fight thugs, and take on Rhino. Pad or keyboard.",
+      "description": "A fan-made open-world Spider-Man game: swing across Manhattan, enter buildings, fight Rhino and the Kingpin.",
       "body": [
         "A third-person Spider-Man game written as plain JavaScript modules on top of three.js. The city is a procedurally built Manhattan at sunset, day or night: nine districts, Central Park with a pond, rivers, street traffic with signals and pedestrians, all drawn from generated textures with no image files.",
         "Movement is the point. Swinging uses a real pendulum around a web anchor that is picked by raycasting the buildings, so you can hold one button and chain swings; you can also run up walls, zip forward in mid-air, and fling yourself to rooftop ledges with a point-launch. Combat has a four-hit combo, launchers and air combos, web-wrapping, dodges that slow time, a focus meter for finishers, and thugs that shoot, swing bats or block until you web them.",
@@ -848,5 +848,5 @@
       ]
     }
   ],
-  "updated": "2026-09-29"
+  "updated": "2026-09-30"
 }
