@@ -8,9 +8,13 @@ import { fileURLToPath } from "node:url";
 export const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const projectsFile = join(root, "data/projects.json");
 export const siteFile = join(root, "data/site.json");
+export const rocketsFile = join(root, "data/rockets.json");
 
 export const CATEGORIES = ["Game", "Web app", "Experiment", "AI model", "Hardware"];
 export const STATUSES = ["live", "building", "archive"];
+export const SECTIONS = ["rockets", "printing", "games", "software"];
+const SECTION_BY_CATEGORY = { Game: "games", "Web app": "software", Experiment: "software", "AI model": "software", Hardware: "printing" };
+export const sectionOf = (p) => p.section || SECTION_BY_CATEGORY[p.category] || "software";
 
 export const readJson = (file) => JSON.parse(readFileSync(file, "utf8"));
 export const site = () => readJson(siteFile);
@@ -67,6 +71,7 @@ export function checkProject(p) {
   if (!has(p.slug) || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(p.slug)) errors.push("slug must be lowercase-hyphens");
   if (!has(p.name)) need.push("name (display title)");
   if (!CATEGORIES.includes(p.category)) need.push(`category, one of: ${CATEGORIES.join(", ")}`);
+  if (p.section && !SECTIONS.includes(p.section)) errors.push(`section must be one of: ${SECTIONS.join(", ")}`);
   if (!STATUSES.includes(p.status)) need.push(`status, one of: ${STATUSES.join(", ")}`);
   if (!/^\d{4}$/.test(String(p.year || ""))) need.push("year (4 digits)");
   if (!has(p.blurb) || p.blurb.trim().length < 20) need.push("blurb (one sentence, 20+ characters)");

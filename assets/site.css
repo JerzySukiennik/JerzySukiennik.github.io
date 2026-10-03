@@ -387,6 +387,86 @@ a:hover{color:#ff0000;background:#ffff00}
   .card-shot img,.no-shot{height:auto;aspect-ratio:4/3}
 }
 
+
+/* ---------- the four doors ---------- */
+
+.doors{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 6px}
+.door{
+  display:flex;align-items:center;gap:12px;padding:12px;
+  border:6px outset #c0c0c0;text-decoration:none;color:#000;
+  background:linear-gradient(#fff,#d8d8d8);
+}
+.door:visited{color:#000}
+.door-orange{border-color:#ff9a3c;background:linear-gradient(#fff3e0,#ffb866)}
+.door-cyan{border-color:#40e0e0;background:linear-gradient(#e6ffff,#7ee8ee)}
+.door-lime{border-color:#5be05b;background:linear-gradient(#eaffea,#8df08d)}
+.door-pink{border-color:#ff66ff;background:linear-gradient(#ffeaff,#ff99ff)}
+.door:hover{border-style:inset;background:#ffff00;color:#000}
+.door-icon{flex:0 0 64px;display:block}
+.door-icon svg{display:block}
+.door-copy{display:block;min-width:0}
+.door-name{display:block;font-family:var(--impact);font-size:24px;letter-spacing:1px;color:#000080;text-shadow:1px 1px 0 #fff}
+.door-tag{display:block;font-family:var(--comic);font-size:13px;line-height:1.3;margin:2px 0 4px}
+.door-count{display:inline-block;font-family:var(--courier);font-size:11px;font-weight:bold;color:#fff;background:#000;padding:1px 6px}
+.door:hover .door-name{color:#ff0000}
+
+.more-row{text-align:center;margin:10px 0 0}
+.more-row .btn90{margin:2px}
+.navstrip .btn90[data-current]{background:linear-gradient(#ffff99,#ffcc00);border-style:inset;color:#800000}
+
+/* ---------- rockets page ---------- */
+
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.stats div{
+  flex:1 1 110px;text-align:center;padding:8px 4px;
+  border:4px ridge #ff9a3c;background:#000;
+}
+.stats b{display:block;font-family:var(--impact);font-size:22px;color:#00ff00;letter-spacing:1px}
+.stats span{display:block;font-family:var(--courier);font-size:11px;color:#ffcc00;text-transform:uppercase}
+
+.rocket{
+  display:flex;flex-wrap:wrap;gap:12px;margin:0 0 14px;padding:8px;
+  border:4px ridge var(--cyan);background:#e0ffff;
+}
+.rocket:nth-of-type(even){border-color:var(--pink);background:#ffe6ff}
+.rocket-pic{flex:0 0 210px;width:210px;height:210px;object-fit:contain;border:3px inset #999;background:#000}
+.rocket-info{flex:1 1 260px;min-width:0}
+.rocket-info h3{margin:0 0 2px;font-family:var(--comic);font-size:22px;color:#0000cc}
+.rocket-line{margin:0 0 6px;font-family:var(--courier);font-size:12px;font-weight:bold;color:#008000}
+.rocket-info p{margin:0 0 8px;font-family:var(--times);font-size:15px;line-height:1.4}
+.rocket-state{
+  display:inline-block;vertical-align:middle;margin-left:6px;
+  font-family:var(--impact);font-size:11px;letter-spacing:1px;
+  color:#000;background:#00ff00;border:2px solid #000;padding:1px 5px;
+}
+.rocket-state[data-state="planned"]{background:#ffcc00}
+.rocket-spec{margin:0;font-family:var(--courier);font-size:12px;border:3px outset #ddd;background:#ffffcc;padding:4px 8px}
+.rocket-spec div{display:flex;gap:8px;border-bottom:1px dotted #999;padding:2px 0}
+.rocket-spec div:last-child{border:0}
+.rocket-spec dt{flex:0 0 96px;font-weight:bold;color:#800000}
+.rocket-spec dd{margin:0}
+.rocket-media{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:8px}
+.rocket-media figure{flex:1 1 240px;max-width:100%;margin:0;padding:4px;border:3px ridge #c0c0c0;background:#fff}
+.rocket-media img,.rocket-media video{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;background:#000}
+.rocket-media figcaption{font-family:var(--comic);font-size:12px;margin-top:3px}
+
+.log{width:100%;border-collapse:collapse;font-family:var(--comic);font-size:14px;background:#fff}
+.log th,.log td{border:2px solid #000080;padding:5px 8px;text-align:left;vertical-align:top}
+.log th{background:#000080;color:#ffff00;font-family:var(--impact);letter-spacing:1px;font-weight:normal}
+.log td small{font-family:var(--times);font-size:13px;color:#444}
+.log td:last-child{font-family:var(--courier);font-weight:bold;color:#008000}
+
+.crew{list-style:none;margin:0 0 10px;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.crew li{flex:1 1 200px;padding:8px;border:3px outset #ddd;background:#ffffcc;font-family:var(--comic)}
+.crew span{display:block;font-family:var(--courier);font-size:12px;color:#800000}
+.contact-note{font-family:var(--comic);font-size:14px;line-height:1.45;border:3px double #ff00ff;background:#e6ffff;padding:8px}
+
+@media (max-width:520px){.spinner{display:none}}
+@media (max-width:860px){
+  .doors{grid-template-columns:1fr}
+  .rocket-pic{flex:none;width:100%;height:auto;aspect-ratio:1/1;max-width:320px}
+}
+
 /* ---------- graffiti wall (Konami code) ---------- */
 
 .wall-canvas{

@@ -2,14 +2,14 @@
   "url": "https://gzowo.fun",
   "owner": "Jerzy Sukiennik",
   "tagline": "I build things that fly. And a few that don't crash.",
-  "homeTitle": "Gzowo Labs | Jerzy Sukiennik's Home Page!!!",
+  "homeTitle": "Gzowo Labs | Rockets, 3D Printing, Games and AI",
   "titleSuffix": "Gzowo Labs",
-  "eyebrow": "{owner}'s Official Home Page ~ Gzowo 34, Poland ~ Est. 2026",
-  "marqueeHome": "*~*~* WELCOME TO GZOWO LABS *~*~* {count} BROWSER GAMES AND EXPERIMENTS, ALL FREE, NO DOWNLOAD !!! *~*~* BEST VIEWED IN NETSCAPE NAVIGATOR AT 800x600 *~*~* SIGN MY GUESTBOOK !!! *~*~*",
+  "eyebrow": "{owner}'s Official Home Page ~ Gzowo 34, Poland ~ Est. 2025",
+  "marqueeHome": "*~*~* WELCOME TO GZOWO LABS *~*~* ROCKETS, 3D PRINTED THINGS, GAMES AND AI, ALL IN ONE PLACE !!! *~*~* BEST VIEWED IN NETSCAPE NAVIGATOR AT 800x600 *~*~* SIGN MY GUESTBOOK !!! *~*~*",
   "marqueeProject": "*~*~* YOU ARE NOW LOOKING AT: {name} *~*~* {how} *~*~* TELL YOUR FRIENDS !!! *~*~*",
   "marqueeHowBrowser": "IT IS FREE AND IT RUNS IN YOUR BROWSER",
   "marqueeHowDownload": "IT IS FREE, DOWNLOAD IT AND PLAY",
-  "welcome": "<b>Welcome to my web site !!!</b> My name is {owner}, I am from Warsaw and I make games, web apps and AI models. Almost everything on this page runs in your browser, so there is <b>nothing to install</b>, the few big games are a <b>free download</b>, and it is all <b>100&#37; FREE</b>. <span class=\"new blink\">NEW!</span> {count} projects listed below! Scroll down and click any of them to play. Have fun !!! ~*~*~",
+  "welcome": "<b>Welcome to my web site !!!</b> My name is {owner}, I am from Warsaw and this is <b>everything I make</b>, finally in one place. Pick a door: real <b>ROCKETS</b> that really fly, things I <b>3D PRINT</b>, <b>GAMES</b> you can play in your browser, and <b>SOFTWARE and AI</b> models I train myself. <span class=\"new blink\">NEW!</span> {count} projects inside! Most of it is <b>100&#37; FREE</b>. Have fun !!! ~*~*~",
   "feedTitle": "My Games & Projects",
   "feedNote": "{count} builds, sorted the way I like them. Click a title to open its page.",
   "feedEnd": "That is everything for now.",
@@ -27,12 +27,67 @@
   "footerTail": "~*~*~ Please come back soon ~*~*~",
   "copyrightYears": "2025&ndash;2026",
   "contact": [
-    ["kalakasanyt@gmail.com", "mailto:kalakasanyt@gmail.com"],
-    ["GitHub", "https://github.com/JerzySukiennik"],
-    ["Instagram", "https://instagram.com/gzowo_labs"],
-    ["X", "https://x.com/kalakasanyt"]
+    [
+      "kalakasanyt@gmail.com",
+      "mailto:kalakasanyt@gmail.com"
+    ],
+    [
+      "GitHub",
+      "https://github.com/JerzySukiennik"
+    ],
+    [
+      "Instagram",
+      "https://instagram.com/gzowo_labs"
+    ],
+    [
+      "X",
+      "https://x.com/kalakasanyt"
+    ]
   ],
   "email": "kalakasanyt@gmail.com",
   "github": "https://github.com/JerzySukiennik",
-  "rockets": "https://gspaerospace.pl"
+  "rockets": "/rockets/",
+  "doorsTitle": "Choose Your Adventure",
+  "doorsNote": "Four doors. Click one.",
+  "recentTitle": "Newest Stuff",
+  "recentNote": "The last few things I put up, across all the doors.",
+  "sections": {
+    "rockets": {
+      "label": "Rockets",
+      "nav": "ROCKETS",
+      "door": "ROCKETS",
+      "tag": "Real ones. They really fly.",
+      "title": "Rockets",
+      "note": "Gzowo Space Program, launched from a field in Gzowo.",
+      "color": "orange"
+    },
+    "printing": {
+      "label": "3D Printing",
+      "nav": "3D PRINTING",
+      "door": "3D PRINTING",
+      "tag": "Things made of plastic and stubbornness.",
+      "title": "3D Printed Things",
+      "note": "Hardware from Gzowo Industries. Printed on a Bambu Lab X1C, designed in OpenSCAD.",
+      "color": "cyan"
+    },
+    "games": {
+      "label": "Games",
+      "nav": "GAMES",
+      "door": "GAMES",
+      "tag": "Play in your browser. No download.",
+      "title": "Games",
+      "note": "Click a title to open its page and play.",
+      "color": "lime"
+    },
+    "software": {
+      "label": "Software and AI",
+      "nav": "SOFTWARE & AI",
+      "door": "SOFTWARE + AI",
+      "tag": "Apps, experiments and models trained from scratch.",
+      "title": "Software and AI",
+      "note": "Web apps, experiments and the G model ladder.",
+      "color": "pink"
+    }
+  },
+  "industriesNote": "Gzowo Industries is the hardware side: smart glasses and a robot dog."
 }

@@ -1,0 +1,89 @@
+{
+  "title": "Rockets",
+  "lead": "Gzowo Space Program (GSP) is where the things that fly live. Model rockets built by hand and launched from a family field in Gzowo, Poland, with onboard cameras, parachutes and a lot of waiting for the wind to calm down.",
+  "facts": [
+    ["Founded", "Autumn 2025"],
+    ["Country", "Poland"],
+    ["Launch site", "Gzowo"],
+    ["Rockets built", "5"]
+  ],
+  "fleet": [
+    {
+      "id": "gzofajfus-mini-mk1",
+      "name": "Gzofajfus Mini Mk I",
+      "line": "Gzofajfus / Mini",
+      "state": "flown",
+      "blurb": "The first rocket of the Mini series: a miniature experimental platform with very little mass.",
+      "spec": [["Series", "Gzofajfus Mini"], ["Result", "Successful"]],
+      "image": "https://res.cloudinary.com/do0u0mhqr/image/upload/wissafjsif1cayrpzg77",
+      "photos": [
+        ["https://res.cloudinary.com/do0u0mhqr/image/upload/v1779123721/s5mxymca5ui5j4dtqwv2.jpg", "On the launch rail, seen from below"],
+        ["https://res.cloudinary.com/do0u0mhqr/image/upload/v1779124084/Na_ziemi_otwarta_Medium_bmh9d7.jpg", "Opened up on the ground"]
+      ],
+      "videos": [
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/bfc59ttgs6qbbevkdh0c", "From below"],
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/fyu9mfbfrw05r3hef972", "Flight"]
+      ]
+    },
+    {
+      "id": "gzofajfus-classic-mk2",
+      "name": "Gzofajfus Classic Mk II",
+      "line": "Gzofajfus / Classic",
+      "state": "flown",
+      "blurb": "The first rocket of the full-size Classic series and a proven platform for tests. Its parachute deployed on the first flight.",
+      "spec": [["Series", "Gzofajfus Classic"], ["Flight date", "21.03.2026"], ["Parachute", "Yes, deployed"]],
+      "image": "https://res.cloudinary.com/do0u0mhqr/image/upload/jy2r39al4apdixbh5avq",
+      "photos": [],
+      "videos": [
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/v1774898844/OdDo%C5%82u_fjuqer.mov", "Launch"],
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/v1774899571/FirstChute_f0gbvb.mov", "Parachute deployment"]
+      ]
+    },
+    {
+      "id": "gzofajfus-classic-mk3",
+      "name": "Gzofajfus Classic Mk III",
+      "line": "Gzofajfus / Classic",
+      "state": "flown",
+      "blurb": "The newest Classic. The nose cone has a bay for an AirTag, so the rocket can be found after it lands.",
+      "spec": [["Series", "Gzofajfus Classic"], ["Motor", "F35-4 TSP"]],
+      "image": "https://res.cloudinary.com/do0u0mhqr/image/upload/t4qzgawjvslogkbarr23",
+      "photos": [],
+      "videos": []
+    },
+    {
+      "id": "the-orange-beauty",
+      "name": "The Orange Beauty",
+      "line": "One of a kind",
+      "state": "flown",
+      "blurb": "The only rocket of its kind in the fleet, and the one with the best launch footage.",
+      "spec": [["Flight date", "22.02.2026"], ["Result", "Successful"], ["Parachute", "Did not open"]],
+      "image": "https://res.cloudinary.com/do0u0mhqr/image/upload/wznv12uxtfgmwdh6f5at",
+      "photos": [
+        ["https://res.cloudinary.com/do0u0mhqr/image/upload/v1774899445/IMG-20251129-WA0001_dwnakv.png", "The Orange Beauty"]
+      ],
+      "videos": [
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/v1774980568/Rakieta_na_stanowisku_Insta360_op7f3o.mp4", "On the pad"],
+        ["https://res.cloudinary.com/do0u0mhqr/video/upload/v1774980579/Start_rakiety_z_daleka_listopad_2_xrxmmr.mp4", "Launch from a distance"]
+      ]
+    },
+    {
+      "id": "tbh-mk1",
+      "name": "TBH Mk I",
+      "line": "TBH, The Black Hawks",
+      "state": "planned",
+      "blurb": "The first of the all-black rockets. Its one mission is to come down safely on a parachute.",
+      "spec": [["Series", "The Black Hawks"], ["Motor", "TSP F35-4"], ["Mission", "Safe parachute landing"]],
+      "image": "https://res.cloudinary.com/do0u0mhqr/image/upload/v1779123573/s0uwdyybe6rwqzutm11o.jpg",
+      "photos": [],
+      "videos": []
+    }
+  ],
+  "missions": [
+    { "name": "The Orange Beauty, first flight", "rocket": "The Orange Beauty", "date": "", "result": "success", "note": "First flight of The Orange Beauty." },
+    { "name": "Gzofajfus Classic Mk II, first flight", "rocket": "Gzofajfus Classic Mk II", "date": "2026-03-21", "result": "success", "note": "Parachute deployment confirmed." }
+  ],
+  "team": [
+    ["Jerzy Sukiennik", "CEO"],
+    ["Jan Sukiennik", "Founding Partner"]
+  ]
+}

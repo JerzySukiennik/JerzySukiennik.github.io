@@ -11,6 +11,7 @@ generated pages by hand.
 | Path | What |
 | --- | --- |
 | `data/projects.json` | The shelf. Array order is the display order, newest first. |
+| `data/rockets.json` | The GSP fleet, mission log and crew shown on `/rockets/`. |
 | `data/site.json` | Every piece of site copy outside a project: taglines, marquees, widgets, footer. |
 | `tools/build.mjs` | Builds `index.html` and `p/<slug>/index.html`, then lints for em dashes. |
 | `tools/site.mjs` | Data CLI: add, set, move, hide, delete, check. |
@@ -27,3 +28,7 @@ generated pages by hand.
   name with its own Pages site.
 - **The slug never changes** after creation (URL and image name).
 - The build has no dependencies. `tools/package.json` only pins `playwright-core` for screenshots.
+
+## Sections
+
+Home has four doors: `/rockets/`, `/printing/`, `/games/`, `/software/`. A project lands in a section by category (Game, Hardware, the rest are software) or by an explicit `section` field. Top level paths must not match a repo name that has its own Pages site.

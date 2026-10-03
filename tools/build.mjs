@@ -12,7 +12,7 @@
 import { writeFileSync, mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { root, site as loadSite, loadProjects, checkProject, lintRepo } from "./lib.mjs";
+import { root, site as loadSite, loadProjects, checkProject, lintRepo, SECTIONS, sectionOf, rocketsFile, readJson } from "./lib.mjs";
 
 const S = loadSite();
 const SITE = S.url;
@@ -20,6 +20,9 @@ const STATUS_LABEL = { live: "Live", building: "Building", archive: "Archive" };
 
 const all = loadProjects().projects;
 const projects = all.filter((p) => !p.hidden);
+const R = readJson(rocketsFile);
+const inSection = (key) => projects.filter((p) => sectionOf(p) === key);
+const SEC = S.sections;
 
 /* Broken entries stop the build. Gaps in copy only warn, so an old entry never blocks a
    publish, but `tools/site.mjs add` will not create a new entry with gaps. */
@@ -82,16 +85,11 @@ function head({ title, description, url, image }) {
 </head>`;
 }
 
-/* On a project page the first button walks home instead of jumping to an anchor that is not there. */
-function navstrip(home = true) {
-  const shelf = home
-    ? `<a class="btn90" href="#feed">MY GAMES</a>`
-    : `<a class="btn90" href="/#feed">MY GAMES</a>`;
+function navstrip(current = "") {
+  const on = (key) => (key === current ? ' aria-current="page" data-current' : "");
   return `    <nav class="navstrip" aria-label="Main">
-      <a class="btn90" href="/">HOME</a>
-      ${shelf}
-      <a class="btn90" href="${esc(S.github)}" target="_blank" rel="noopener">MY CODE</a>
-      <a class="btn90" href="${esc(S.rockets)}" target="_blank" rel="noopener">ROCKETS</a>
+      <a class="btn90" href="/"${on("home")}>HOME</a>
+${SECTIONS.map((k) => `      <a class="btn90" href="/${k}/"${on(k)}>${esc(SEC[k].nav)}</a>`).join("\n")}
       <a class="btn90" href="#reviews" data-rev-open>REVIEWS &#9733;</a>
       <a class="btn90" href="mailto:${esc(S.email)}">E-MAIL ME!!</a>
     </nav>`;
@@ -113,9 +111,7 @@ function sidebarLeft() {
           <h4>Navigate!!</h4>
           <ul class="menu">
             <li><a href="/">Home Page</a></li>
-            <li><a href="/#feed">All My Games</a></li>
-            <li><a href="/#feed">AI Stuff</a></li>
-            <li><a href="${esc(S.rockets)}" target="_blank" rel="noopener">Rockets</a></li>
+${SECTIONS.map((k) => `            <li><a href="/${k}/">${esc(SEC[k].label)}</a></li>`).join("\n")}
             <li><a href="${esc(S.github)}" target="_blank" rel="noopener">My Code</a></li>
             <li><a href="mailto:${esc(S.email)}">Guestbook</a></li>
             <li><a href="mailto:${esc(S.email)}">E-Mail Me</a></li>
@@ -165,7 +161,7 @@ function sidebarRight() {
           <h4>Web Ring</h4>
           <p style="margin:0">${esc(S.webring)}</p>
           <p style="margin:4px 0 0">
-            <a href="${esc(S.rockets)}" target="_blank" rel="noopener">&laquo; prev</a> |
+            <a href="/rockets/">&laquo; prev</a> |
             <a href="/">random</a> |
             <a href="${esc(S.github)}" target="_blank" rel="noopener">next &raquo;</a>
           </p>
@@ -254,7 +250,33 @@ function card(project, index) {
         </a>`;
 }
 
+const ICON = {
+  rockets: `<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M32 4c9 8 13 20 11 34H21C19 24 23 12 32 4z" fill="#fff" stroke="#000" stroke-width="3"/><circle cx="32" cy="22" r="5" fill="#00ccff" stroke="#000" stroke-width="3"/><path d="M21 30L9 46l12-3zM43 30l12 16-12-3z" fill="#ff0000" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M26 42h12l-6 16z" fill="#ffcc00" stroke="#000" stroke-width="3" stroke-linejoin="round"/></svg>`,
+  printing: `<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M32 8l22 12v24L32 56 10 44V20z" fill="#00ffff" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M10 20l22 12 22-12M32 32v24" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M32 32L10 20l22-12 22 12z" fill="#fff" fill-opacity=".55"/></svg>`,
+  games: `<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><path d="M14 22h36c6 0 10 8 10 18 0 6-3 8-7 6l-8-6H19l-8 6c-4 2-7 0-7-6 0-10 4-18 10-18z" fill="#00ff00" stroke="#000" stroke-width="3" stroke-linejoin="round"/><path d="M20 28v10M15 33h10" stroke="#000" stroke-width="4"/><circle cx="42" cy="30" r="3" fill="#f00" stroke="#000" stroke-width="2"/><circle cx="49" cy="36" r="3" fill="#ff0" stroke="#000" stroke-width="2"/></svg>`,
+  software: `<svg viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><rect x="16" y="16" width="32" height="32" fill="#ff00ff" stroke="#000" stroke-width="3"/><rect x="24" y="24" width="16" height="16" fill="#fff" stroke="#000" stroke-width="3"/><path d="M24 8v8M32 8v8M40 8v8M24 48v8M32 48v8M40 48v8M8 24h8M8 32h8M8 40h8M48 24h8M48 32h8M48 40h8" stroke="#000" stroke-width="3"/></svg>`,
+};
+
+function doorCount(key) {
+  if (key === "rockets") return `${R.fleet.length} rockets`;
+  const n = inSection(key).length;
+  return `${n} ${n === 1 ? "thing" : "things"}`;
+}
+
+function door(key, index) {
+  const c = SEC[key];
+  return `        <a class="door door-${esc(c.color)}" href="/${key}/">
+          <span class="door-icon">${ICON[key]}</span>
+          <span class="door-copy">
+            <span class="door-name">${esc(c.door)}</span>
+            <span class="door-tag">${esc(c.tag)}</span>
+            <span class="door-count">${esc(doorCount(key))}</span>
+          </span>
+        </a>`;
+}
+
 function home() {
+  const recent = projects.slice(0, 5);
   return `${head({
     title: S.homeTitle,
     description: S.tagline,
@@ -262,11 +284,11 @@ function home() {
     image: `${SITE}/${projects[0]?.image || "assets/og.png"}`,
   })}
 <body>
-  <a class="skip-link" href="#feed">Skip to the games</a>
+  <a class="skip-link" href="#doors">Skip to the doors</a>
 
   <div class="frame">
 ${banner()}
-${navstrip(true)}
+${navstrip("home")}
 
     <div class="layout">
 ${sidebarLeft()}
@@ -278,12 +300,23 @@ ${sidebarLeft()}
 
         <hr class="hr90">
 
-        <h2 class="sect-title rainbow-text" id="feed">${esc(S.feedTitle)}</h2>
-        <p class="feed-note">${esc(fill(S.feedNote, base))}</p>
+        <h2 class="sect-title rainbow-text" id="doors">${esc(S.doorsTitle)}</h2>
+        <p class="feed-note">${esc(S.doorsNote)}</p>
+
+        <div class="doors">
+${SECTIONS.map(door).join("\n")}
+        </div>
+
+        <hr class="hr90">
+
+        <h2 class="sect-title rainbow-text" id="feed">${esc(S.recentTitle)}</h2>
+        <p class="feed-note">${esc(S.recentNote)}</p>
 
         <div class="grid">
-${projects.map(card).join("\n")}
+${recent.map(card).join("\n")}
         </div>
+
+        <p class="more-row"><a class="btn90" href="/games/">ALL GAMES</a> <a class="btn90" href="/software/">ALL SOFTWARE &amp; AI</a> <a class="btn90" href="/printing/">ALL 3D PRINTING</a></p>
 
         <hr class="hr90">
         <p style="font-family:'Comic Sans MS',cursive;text-align:center;font-size:14px">
@@ -301,6 +334,125 @@ ${scripts()}
 </body>
 </html>
 `;
+}
+
+/* ---- section pages ---- */
+
+function sectionShell({ key, title, description, image, content }) {
+  const c = SEC[key];
+  return `${head({ title: `${title} | ${S.titleSuffix}`, description, url: `${SITE}/${key}/`, image })}
+<body>
+  <div class="frame">
+    <div class="topbar marquee"><span>${esc(fill(S.marqueeProject, { name: c.label.toUpperCase(), how: c.tag.toUpperCase() }))}</span></div>
+
+    <header class="banner">
+      <p class="eyebrow">Gzowo Labs presents</p>
+      <h1 class="wordart"><span class="rainbow-text">${esc(title)}</span></h1>
+      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${esc(c.tag)} <span class="blink">&lt;&lt;&lt;</span></p>
+    </header>
+${navstrip(key)}
+
+    <div class="layout">
+${sidebarLeft()}
+
+      <div class="middle">
+        <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
+${content}
+      </div>
+
+${sidebarRight()}
+    </div>
+
+${footer()}
+  </div>
+
+${scripts()}
+</body>
+</html>
+`;
+}
+
+function sectionPage(key) {
+  const c = SEC[key];
+  const list = inSection(key);
+  const extra = key === "printing" ? `\n        <div class="welcome">${esc(S.industriesNote)}</div>\n` : "";
+  const content = `${extra}
+        <p class="feed-note">${esc(c.note)} ${list.length} listed.</p>
+
+        <div class="grid">
+${list.map(card).join("\n")}
+        </div>
+
+        <hr class="hr90">
+        <p class="more-row"><a class="btn90" href="/">&#9664; ALL THE DOORS</a></p>`;
+  return sectionShell({ key, title: c.title, description: c.note, image: `${SITE}/${list[0]?.image || "assets/og.png"}`, content });
+}
+
+/* ---- rockets ---- */
+
+const cdnImg = (url, w) => url.replace("/image/upload/", `/image/upload/w_${w},q_auto,f_auto/`);
+const cdnVideo = (url) => url.replace("/video/upload/", "/video/upload/f_mp4,q_auto,w_720/").replace(/\.(mov|mp4)$/i, "") + ".mp4";
+const cdnPoster = (url) => url.replace("/video/upload/", "/video/upload/so_1,w_720,f_jpg/").replace(/\.(mov|mp4)$/i, "") + ".jpg";
+
+function rocketBlock(r) {
+  const state = r.state === "planned" ? "PLANNED" : "FLOWN";
+  const photos = r.photos
+    .map(([u, cap]) => `            <figure><img src="${esc(cdnImg(u, 640))}" alt="${esc(cap)}" loading="lazy" decoding="async"><figcaption>${esc(cap)}</figcaption></figure>`)
+    .join("\n");
+  const videos = r.videos
+    .map(([u, cap]) => `            <figure><video controls preload="none" playsinline poster="${esc(cdnPoster(u))}" src="${esc(cdnVideo(u))}"></video><figcaption>${esc(cap)}</figcaption></figure>`)
+    .join("\n");
+  const media = photos || videos ? `\n          <div class="rocket-media">\n${photos}${photos && videos ? "\n" : ""}${videos}\n          </div>` : "";
+  return `        <article class="rocket" id="${esc(r.id)}">
+          <img class="rocket-pic" src="${esc(cdnImg(r.image, 420))}" alt="${esc(r.name)}" width="210" height="210" loading="lazy" decoding="async">
+          <div class="rocket-info">
+            <h3>${esc(r.name)} <span class="rocket-state" data-state="${esc(r.state)}">${state}</span></h3>
+            <p class="rocket-line">${esc(r.line)}</p>
+            <p>${esc(r.blurb)}</p>
+            <dl class="rocket-spec">
+${r.spec.map(([k, v]) => `              <div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("\n")}
+            </dl>
+          </div>${media}
+        </article>`;
+}
+
+function fmtDate(iso) {
+  if (!iso) return "date lost to time";
+  const [y, m, d] = iso.split("-");
+  return `${d}.${m}.${y}`;
+}
+
+function rocketsPage() {
+  const kit = inSection("rockets");
+  const content = `
+        <div class="welcome">${esc(R.lead)}</div>
+
+        <aside class="stats">
+${R.facts.map(([k, v]) => `          <div><b>${esc(v)}</b><span>${esc(k)}</span></div>`).join("\n")}
+        </aside>
+
+        <h2 class="sect-title rainbow-text" id="fleet">The Fleet</h2>
+        <p class="feed-note">${R.fleet.length} rockets, newest series last. Videos load when you press play.</p>
+${R.fleet.map(rocketBlock).join("\n")}
+
+        <hr class="hr90">
+        <h2 class="sect-title rainbow-text" id="missions">Mission Log</h2>
+        <table class="log">
+          <thead><tr><th>Date</th><th>Mission</th><th>Result</th></tr></thead>
+          <tbody>
+${R.missions.map((m) => `            <tr><td>${esc(fmtDate(m.date))}</td><td>${esc(m.name)}<br><small>${esc(m.note)}</small></td><td>${m.result === "success" ? "SUCCESS" : esc(m.result.toUpperCase())}</td></tr>`).join("\n")}
+          </tbody>
+        </table>
+
+        <h2 class="sect-title rainbow-text" id="crew">Crew</h2>
+        <ul class="crew">
+${R.team.map(([n, role]) => `          <li><b>${esc(n)}</b> <span>${esc(role)}</span></li>`).join("\n")}
+        </ul>
+${kit.length ? `\n        <h2 class="sect-title rainbow-text">Brand Stuff</h2>\n        <div class="grid">\n${kit.map(card).join("\n")}\n        </div>\n` : ""}
+        <hr class="hr90">
+        <p class="contact-note">Questions, launch invitations, rocket motors you do not need any more: <a href="mailto:kontakt@gspaerospace.pl">kontakt@gspaerospace.pl</a>. The old gspaerospace.pl lives here now.</p>
+        <p class="more-row"><a class="btn90" href="/">&#9664; ALL THE DOORS</a></p>`;
+  return sectionShell({ key: "rockets", title: SEC.rockets.title, description: R.lead, image: `${R.fleet[0].image}`, content });
 }
 
 /* ---- project page ---- */
@@ -344,13 +496,13 @@ function projectPage(project) {
       <h1 class="wordart"><span class="rainbow-text">${esc(project.name)}</span></h1>
       <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> ${esc(project.category)} &middot; ${esc(status)} &middot; ${esc(project.year)} <span class="blink">&lt;&lt;&lt;</span></p>
     </header>
-${navstrip(false)}
+${navstrip(sectionOf(project))}
 
     <div class="layout">
 ${sidebarLeft()}
 
       <div class="middle project">
-        <p><a class="back" href="/">&#9664; back to Gzowo Labs</a></p>
+        <p><a class="back" href="/${sectionOf(project)}/">&#9664; back to ${esc(SEC[sectionOf(project)].label)}</a></p>
 
         <p class="project-lead">${esc(project.blurb)}</p>
 
@@ -396,14 +548,19 @@ ${scripts()}
 // away to that repo's domain, which silently ate eleven pages once.
 const pagesDir = join(root, "p");
 rmSync(pagesDir, { recursive: true, force: true });
+for (const key of SECTIONS) rmSync(join(root, key), { recursive: true, force: true });
 
 writeFileSync(join(root, "index.html"), home());
+for (const key of SECTIONS) {
+  mkdirSync(join(root, key), { recursive: true });
+  writeFileSync(join(root, key, "index.html"), key === "rockets" ? rocketsPage() : sectionPage(key));
+}
 for (const project of projects) {
   mkdirSync(join(pagesDir, project.slug), { recursive: true });
   writeFileSync(join(pagesDir, project.slug, "index.html"), projectPage(project));
 }
 
-console.log(`Built index.html and ${projects.length} project pages.`);
+console.log(`Built index.html, ${SECTIONS.length} section pages and ${projects.length} project pages.`);
 
 const dashes = lintRepo();
 if (dashes.length) {

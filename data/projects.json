@@ -125,7 +125,7 @@
     {
       "slug": "gzowo-glass",
       "name": "Gzowo Glass",
-      "category": "Game",
+      "category": "Hardware",
       "status": "building",
       "year": "2026",
       "url": "",
@@ -695,7 +695,8 @@
         "CSS"
       ],
       "image": "project-images/gsp-brand-kit.webp",
-      "hidden": false
+      "hidden": false,
+      "section": "rockets"
     },
     {
       "slug": "gzowo-bowling",
@@ -759,7 +760,7 @@
         "JavaScript"
       ],
       "image": "project-images/gsp.webp",
-      "hidden": false
+      "hidden": true
     },
     {
       "slug": "galeria-gzowo",

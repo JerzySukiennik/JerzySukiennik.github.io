@@ -36,7 +36,7 @@ const list = data.projects;
 const find = (slug) => list.findIndex((p) => p.slug === slug);
 const need = (slug) => { const i = find(slug); if (i < 0) fail(`No project "${slug}". Slugs: ${list.map((p) => p.slug).join(", ")}`); return i; };
 
-const ALLOWED = ["slug", "name", "category", "status", "year", "url", "repo", "blurb", "body", "stack", "image", "hidden", "download"];
+const ALLOWED = ["section", "slug", "name", "category", "status", "year", "url", "repo", "blurb", "body", "stack", "image", "hidden", "download"];
 
 function validate(entry, { creating }) {
   const unknown = Object.keys(entry).filter((k) => !ALLOWED.includes(k));
