@@ -218,10 +218,12 @@ function footer() {
 
 function scripts() {
   // The agentation module no-ops off localhost, so shipping it costs the live site one 304.
-  return `  <script src="/assets/site.js?v=${ver("assets/site.js")}" defer></script>
+  return `  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+  <script src="/assets/site.js?v=${ver("assets/site.js")}" defer></script>
   <script src="/assets/wall.js?v=${ver("assets/wall.js")}" defer></script>
   <script src="/assets/reviews.js?v=${ver("assets/reviews.js")}" defer></script>
-  <script type="module" src="/assets/agentation.js"></script>`;
+  <script type="module" src="/assets/agentation.js"></script>
+  <script type="module" src="/assets/avatar.js?v=${ver("assets/avatar.js")}"></script>`;
 }
 
 /* ---- home ---- */
