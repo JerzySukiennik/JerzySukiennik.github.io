@@ -467,28 +467,103 @@ a:hover{color:#ff0000;background:#ffff00}
   .rocket-pic{flex:none;width:100%;height:auto;aspect-ratio:1/1;max-width:320px}
 }
 
-/* ---------- graffiti wall (Konami code) ---------- */
+/* ---------- brick wall (wide screens only, see wall.js) ---------- */
 
-.wall-canvas{
-  position:fixed;inset:0;z-index:9998;
-  pointer-events:none;
-  touch-action:none;
-}
-html.wall-on{cursor:crosshair}
-html.wall-on .wall-canvas{cursor:crosshair}
+@font-face{font-family:"GL brush";src:url("/assets/fonts/brush-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"GL brush";src:url("/assets/fonts/brush-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"GL spray";src:url("/assets/fonts/spray-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"GL spray";src:url("/assets/fonts/spray-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"GL drip";src:url("/assets/fonts/drip-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"GL drip";src:url("/assets/fonts/drip-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:"GL sedgwick";src:url("/assets/fonts/sedgwick-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:"GL sedgwick";src:url("/assets/fonts/sedgwick-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
 
-.wall-bar{
-  position:fixed;left:0;right:0;bottom:0;z-index:9999;
-  padding:8px 12px;text-align:center;
-  font-family:var(--comic);font-size:14px;color:#fff;
-  background:repeating-linear-gradient(45deg,#000 0 14px,#7a0000 14px 28px);
-  border-top:4px ridge var(--yellow);
+.wall-hint{
+  display:none;margin-top:6px;font-size:11px;
+  font-family:var(--comic);color:#800080;cursor:pointer;
 }
-.wall-bar b{color:#ffe14d}
-.wall-bar button{
-  margin-left:10px;font-family:var(--comic);font-weight:bold;
-  padding:3px 12px;border:3px outset #eee;background:linear-gradient(#fff,#c8c8c8);
-  color:#000080;cursor:pointer;
+.wall-hint:hover{color:#ff0000;background:#ffff00}
+
+.wall-canvas,.spray-panel{display:none}
+
+@media (min-width:1280px){
+  body{position:relative}
+  body::before,body::after{
+    content:"";position:absolute;top:0;bottom:0;z-index:-1;
+    width:calc(50% - 500px);
+    background:#6f6a66 url("/assets/brick.svg") 0 0/240px 128px;
+    pointer-events:none;
+  }
+  body::before{left:0;box-shadow:inset -28px 0 36px -12px rgba(0,0,0,.6)}
+  body::after{right:0;box-shadow:inset 28px 0 36px -12px rgba(0,0,0,.6)}
+  .frame{cursor:auto}
+  .wall-hint{display:block}
+  html.wall-write body{cursor:text}
+  html.wall-spray body{cursor:crosshair}
+
+  .wall-canvas{
+    display:block;position:fixed;inset:0;z-index:9998;
+    pointer-events:none;
+  }
+
+  .spray-panel{
+    display:block;position:fixed;left:8px;bottom:12px;z-index:9999;
+    width:calc((100vw - 1000px) / 2 - 20px);max-width:236px;
+    padding:6px;background:#141414;border:3px ridge #c0c0c0;
+    box-shadow:4px 4px 0 rgba(0,0,0,.6);
+    font-family:var(--comic);font-size:11px;line-height:1.3;color:#fff;cursor:default;
+    transform:translateX(-24px);opacity:0;visibility:hidden;pointer-events:none;
+    transition:transform .28s cubic-bezier(.2,.9,.3,1.2),opacity .2s,visibility 0s .28s;
+  }
+  .spray-panel.is-open{
+    transform:none;opacity:1;visibility:visible;pointer-events:auto;
+    transition:transform .28s cubic-bezier(.2,.9,.3,1.2),opacity .2s,visibility 0s;
+  }
+  .spray-panel.is-pulse{animation:sp-pulse .9s ease-out 2}
+  .sp-close{
+    position:absolute;right:3px;top:2px;width:20px;height:20px;padding:0;
+    font:bold 16px/16px var(--impact);color:#000;background:#fff;border:2px outset #ddd;cursor:pointer;
+  }
+  .sp-title{
+    margin:-6px -6px 6px;padding:4px 6px;
+    font-family:var(--impact);font-size:14px;letter-spacing:1px;text-align:center;
+    color:#000;background:repeating-linear-gradient(45deg,var(--yellow) 0 10px,#ffc400 10px 20px);
+    border-bottom:3px ridge #c0c0c0;
+  }
+  .sp-tools,.sp-fonts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}
+  .sp-sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
+  .sp-fonts[hidden]{display:none}
+  .sp-btn{
+    padding:3px 2px;font-family:var(--comic);font-weight:bold;font-size:12px;
+    border:2px outset #ddd;background:linear-gradient(#fff,#c8c8c8);color:#000080;cursor:pointer;
+    white-space:nowrap;overflow:hidden;
+  }
+  .sp-btn[aria-pressed="true"]{border-style:inset;background:var(--yellow);color:#000}
+  .sp-font{font-size:15px;font-weight:normal}
+  .sp-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:4px;margin-bottom:6px}
+  .sp-sw{
+    aspect-ratio:1;padding:0;border:2px solid #000;cursor:pointer;
+  }
+  .sp-sw[aria-pressed="true"]{outline:3px solid #fff;outline-offset:-1px;box-shadow:0 0 0 2px #000 inset}
+  .sp-note{margin:0;font-size:10.5px;color:#cfcfcf}
+  .sp-note b{color:var(--yellow)}
+  .sp-count{display:block;margin-top:3px;color:var(--lime)}
+  .sp-count b{color:var(--lime)}
+
+  .wall-input{
+    position:fixed;z-index:10000;margin:0;padding:2px 6px;
+    border:2px dashed #fff;background:rgba(0,0,0,.4);
+    text-align:center;line-height:1.15;outline:none;caret-color:#fff;
+    --wall-outline:#111;
+    text-shadow:-2px 0 var(--wall-outline),2px 0 var(--wall-outline),0 -2px var(--wall-outline),0 2px var(--wall-outline),
+      -2px -2px var(--wall-outline),2px 2px var(--wall-outline),-2px 2px var(--wall-outline),2px -2px var(--wall-outline);
+  }
+  .wall-input::placeholder{color:rgba(255,255,255,.55);text-shadow:none}
+}
+
+@keyframes sp-pulse{
+  0%{box-shadow:4px 4px 0 rgba(0,0,0,.6),0 0 0 0 var(--yellow)}
+  100%{box-shadow:4px 4px 0 rgba(0,0,0,.6),0 0 0 22px rgba(255,255,0,0)}
 }
 
 .wall-flash{
@@ -499,12 +574,6 @@ html.wall-on .wall-canvas{cursor:crosshair}
   box-shadow:5px 5px 0 rgba(0,0,0,.6);
   animation:blink 1s steps(1,end) 2;
 }
-
-.wall-hint{
-  display:block;margin-top:6px;font-size:11px;
-  font-family:var(--comic);color:#800080;cursor:pointer;
-}
-.wall-hint:hover{color:#ff0000;background:#ffff00}
 
 /* ---------- reviews / guestbook ---------- */
 

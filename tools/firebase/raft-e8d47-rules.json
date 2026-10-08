@@ -1,0 +1,140 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "hits": {
+      ".read": true,
+      ".write": "newData.isNumber() && (data.exists() ? newData.val() === data.val() + 1 : newData.val() === 1)"
+    },
+    "wall": {
+      ".read": true,
+      "$stroke": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['d','t'])",
+        "d": {
+          ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9.,]+$/)"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "reviews": {
+      ".read": true,
+      "$review": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['s','m','t'])",
+        "s": {
+          ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5 && newData.val() % 1 === 0"
+        },
+        "m": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 400"
+        },
+        "n": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "bricks": {
+      ".read": true,
+      "$piece": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['k','a','c','t']) && ((newData.child('k').val() === 't' && newData.hasChildren(['s','x','y','f','z'])) || (newData.child('k').val() === 'd' && newData.hasChildren(['d','w'])))",
+        "k": {
+          ".validate": "newData.val() === 't' || newData.val() === 'd'"
+        },
+        "a": {
+          ".validate": "newData.val() === 'l' || newData.val() === 'r'"
+        },
+        "c": {
+          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
+        },
+        "s": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+        },
+        "x": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "y": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 40000"
+        },
+        "f": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+        },
+        "z": {
+          ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 700"
+        },
+        "r": {
+          ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 20"
+        },
+        "w": {
+          ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 200"
+        },
+        "d": {
+          ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "bricksDev": {
+      ".read": true,
+      "$piece": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['k','a','c','t']) && ((newData.child('k').val() === 't' && newData.hasChildren(['s','x','y','f','z'])) || (newData.child('k').val() === 'd' && newData.hasChildren(['d','w'])))",
+        "k": {
+          ".validate": "newData.val() === 't' || newData.val() === 'd'"
+        },
+        "a": {
+          ".validate": "newData.val() === 'l' || newData.val() === 'r'"
+        },
+        "c": {
+          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
+        },
+        "s": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+        },
+        "x": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+        },
+        "y": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 40000"
+        },
+        "f": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 3"
+        },
+        "z": {
+          ".validate": "newData.isNumber() && newData.val() >= 20 && newData.val() <= 700"
+        },
+        "r": {
+          ".validate": "newData.isNumber() && newData.val() >= -20 && newData.val() <= 20"
+        },
+        "w": {
+          ".validate": "newData.isNumber() && newData.val() >= 5 && newData.val() <= 200"
+        },
+        "d": {
+          ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
