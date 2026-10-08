@@ -575,6 +575,76 @@ a:hover{color:#ff0000;background:#ffff00}
   animation:blink 1s steps(1,end) 2;
 }
 
+/* ---------- guestbook sheet ---------- */
+
+html.gb-lock{overflow:hidden}
+
+.gb-overlay{
+  position:fixed;inset:0;z-index:10001;display:none;
+  align-items:center;justify-content:center;padding:16px;
+  background:rgba(8,8,32,.66);
+}
+.gb-overlay.is-open{display:flex;animation:gb-fade .2s ease-out}
+
+.gb-sheet{
+  position:relative;width:min(580px,100%);max-height:min(90vh,860px);overflow:auto;
+  padding:26px 28px 28px 62px;
+  background:
+    linear-gradient(90deg,transparent 46px,#e7a3a3 46px 48px,transparent 48px),
+    #fffdf6;
+  color:#1d1d1f;border-radius:3px;
+  box-shadow:0 22px 60px rgba(0,0,0,.6),0 2px 0 #e6dfcb;
+  font:16px/28px system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  transform-origin:50% 100%;
+  animation:gb-open .5s cubic-bezier(.2,.9,.25,1.08);
+}
+.gb-close{
+  position:absolute;right:10px;top:8px;width:34px;height:34px;padding:0;
+  font:28px/30px system-ui,sans-serif;color:#555;background:none;border:0;border-radius:50%;cursor:pointer;
+}
+.gb-close:hover{background:#eee;color:#000}
+.gb-title{margin:0;font:700 30px/44px system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1d1d1f}
+.gb-sub{margin:0 0 14px;color:#555}
+.gb-form label{display:block;margin:0 0 10px;font-size:13px;font-weight:600;line-height:20px;color:#444}
+.gb-form input,.gb-form textarea{
+  display:block;width:100%;margin-top:3px;padding:8px 10px;
+  font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#111;
+  background:#fff;border:1px solid #bdb6a3;border-radius:3px;
+}
+.gb-form textarea{resize:vertical;min-height:84px}
+.gb-form input:focus,.gb-form textarea:focus{outline:2px solid #2b5fc7;outline-offset:0;border-color:#2b5fc7}
+.gb-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.gb-count{font-size:13px;color:#777}
+.gb-sign{
+  padding:9px 18px;font:600 15px/1 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:#fff;background:#1f3f7a;border:0;border-radius:3px;cursor:pointer;
+}
+.gb-sign:hover{background:#2b5fc7}
+.gb-sign:disabled{opacity:.55;cursor:default}
+.gb-status{min-height:28px;margin:6px 0 0;font-size:14px;color:#1b6b2f}
+.gb-status.is-bad{color:#b3261e}
+.gb-total{margin:10px 0 0;font-size:13px;color:#777}
+.gb-list{
+  list-style:none;margin:0;padding:0;
+  background:repeating-linear-gradient(to bottom,transparent 0 27px,#d8e3f1 27px 28px);
+  background-position:0 0;
+}
+.gb-list li{margin:0 0 28px}
+.gb-text{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.gb-by{margin:0;font-size:13px;color:#666}
+
+@keyframes gb-fade{from{opacity:0}to{opacity:1}}
+@keyframes gb-open{
+  0%{opacity:0;transform:translateY(60px) rotate(-1.5deg) scale(.94)}
+  100%{opacity:1;transform:none}
+}
+
+@media (max-width:560px){
+  .gb-overlay{padding:0;align-items:stretch}
+  .gb-sheet{max-height:none;border-radius:0;padding:20px 16px 24px 46px;
+    background:linear-gradient(90deg,transparent 32px,#e7a3a3 32px 34px,transparent 34px),#fffdf6}
+}
+
 /* ---------- reviews / guestbook ---------- */
 
 .reviews{text-align:left}

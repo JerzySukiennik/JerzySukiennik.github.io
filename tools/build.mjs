@@ -113,7 +113,7 @@ function sidebarLeft() {
             <li><a href="/">Home Page</a></li>
 ${SECTIONS.map((k) => `            <li><a href="/${k}/">${esc(SEC[k].label)}</a></li>`).join("\n")}
             <li><a href="${esc(S.github)}" target="_blank" rel="noopener">My Code</a></li>
-            <li><a href="mailto:${esc(S.email)}">Guestbook</a></li>
+            <li><a href="mailto:${esc(S.email)}" data-guestbook>Guestbook</a></li>
             <li><a href="mailto:${esc(S.email)}">E-Mail Me</a></li>
           </ul>
         </div>
@@ -222,6 +222,7 @@ function scripts() {
   <script src="/assets/site.js?v=${ver("assets/site.js")}" defer></script>
   <script src="/assets/wall.js?v=${ver("assets/wall.js")}" defer></script>
   <script src="/assets/reviews.js?v=${ver("assets/reviews.js")}" defer></script>
+  <script src="/assets/guestbook.js?v=${ver("assets/guestbook.js")}" defer></script>
   <script type="module" src="/assets/agentation.js"></script>
   <script type="module" src="/assets/avatar.js?v=${ver("assets/avatar.js")}"></script>`;
 }
@@ -562,7 +563,16 @@ for (const project of projects) {
   writeFileSync(join(pagesDir, project.slug, "index.html"), projectPage(project));
 }
 
-console.log(`Built index.html, ${SECTIONS.length} section pages and ${projects.length} project pages.`);
+const urls = ["/", ...SECTIONS.map((k) => `/${k}/`), "/islands/", ...projects.map((p) => `/p/${p.slug}/`)];
+writeFileSync(
+  join(root, "sitemap.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    urls.map((u) => `  <url><loc>${SITE}${u}</loc></url>`).join("\n") +
+    `\n</urlset>\n`,
+);
+writeFileSync(join(root, "robots.txt"), `User-agent: *\nAllow: /\nDisallow: /tools/\n\nSitemap: ${SITE}/sitemap.xml\n`);
+
+console.log(`Built index.html, ${SECTIONS.length} section pages, ${projects.length} project pages, sitemap.xml and robots.txt.`);
 
 const dashes = lintRepo();
 if (dashes.length) {

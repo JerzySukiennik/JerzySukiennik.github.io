@@ -140,6 +140,8 @@
     return ALLOWED.test(s) && !BAD.test(clean(s));
   }
 
+  window.glBad = function (s) { return BAD.test(clean(s)); };
+
   function hash(str) {
     var h = 2166136261;
     for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }

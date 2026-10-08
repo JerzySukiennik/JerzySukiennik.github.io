@@ -11,7 +11,7 @@ slug="${2:-}"
 
 node tools/build.mjs
 
-git add index.html p rockets printing games software data assets project-images tools islands win CNAME .gitignore README.md 2>/dev/null || true
+git add index.html p rockets printing games software data assets project-images tools islands win CNAME sitemap.xml robots.txt .gitignore README.md 2>/dev/null || true
 if git diff --cached --quiet; then
   echo "Nothing to publish."
   exit 0

@@ -135,6 +135,44 @@
           ".validate": false
         }
       }
+    },
+    "guestbook": {
+      ".read": true,
+      "$e": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['n','m','t'])",
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
+        },
+        "m": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "guestbookDev": {
+      ".read": true,
+      "$e": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['n','m','t'])",
+        "n": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 30"
+        },
+        "m": {
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 300"
+        },
+        "t": {
+          ".validate": "newData.val() === now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
     }
   }
 }
