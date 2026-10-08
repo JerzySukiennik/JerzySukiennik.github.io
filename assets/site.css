@@ -575,6 +575,68 @@ a:hover{color:#ff0000;background:#ffff00}
   animation:blink 1s steps(1,end) 2;
 }
 
+/* ---------- chat guide ---------- */
+
+.chat-fab{
+  position:fixed;right:8px;bottom:34px;z-index:9999;
+  padding:6px 12px;font:bold 13px/1 var(--comic);color:#000080;
+  background:linear-gradient(#ffff99,#ffcc00);border:3px outset #ffe680;
+  box-shadow:3px 3px 0 rgba(0,0,0,.55);cursor:pointer;
+}
+.chat-fab:hover{color:#ff0000;background:linear-gradient(#ffffcc,#ffdd33)}
+.chat-fab[aria-expanded="true"]{border-style:inset}
+
+.chat-win{
+  position:fixed;right:8px;bottom:72px;z-index:9999;
+  display:flex;flex-direction:column;
+  width:min(360px,calc(100vw - 16px));height:min(520px,calc(100vh - 100px));
+  background:#c0c0c0;border:3px outset #e8e8e8;box-shadow:5px 5px 0 rgba(0,0,0,.55);
+  font:13px/1.4 Tahoma,Verdana,Geneva,sans-serif;color:#000;
+  visibility:hidden;opacity:0;transform:scale(.92) translateY(8px);transform-origin:100% 100%;
+  transition:transform .18s ease-out,opacity .15s,visibility 0s .18s;
+}
+.chat-win.is-open{visibility:visible;opacity:1;transform:none;transition:transform .18s ease-out,opacity .15s,visibility 0s}
+.chat-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:3px 4px 3px 8px;color:#fff;font-weight:bold;
+  background:linear-gradient(90deg,#000080,#1084d0);
+}
+.chat-x{
+  width:20px;height:18px;padding:0;font:bold 15px/14px Tahoma,sans-serif;color:#000;
+  background:#c0c0c0;border:2px outset #fff;cursor:pointer;
+}
+.chat-log{
+  flex:1;overflow-y:auto;margin:6px;padding:8px;background:#fff;border:2px inset #888;
+  display:flex;flex-direction:column;gap:8px;
+}
+.chat-msg{max-width:88%;padding:6px 9px;overflow-wrap:anywhere;white-space:pre-wrap;border-radius:2px}
+.chat-msg.is-bot{align-self:flex-start;background:#f1f1e4;border:1px solid #c9c9b0}
+.chat-msg.is-user{align-self:flex-end;background:#000080;color:#fff}
+.chat-msg.is-typing{animation:blink 1s steps(1,end) infinite}
+.chat-msg a{color:#0000cc}
+.chat-chips{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.chat-chips button{
+  padding:4px 9px;font:12px/1.2 Tahoma,Verdana,sans-serif;color:#000080;text-align:left;
+  background:linear-gradient(#fff,#d8d8d8);border:2px outset #eee;cursor:pointer;
+}
+.chat-chips button:hover{background:#ffff99;color:#f00}
+.chat-form{display:flex;gap:5px;padding:0 6px}
+.chat-form input{
+  flex:1;min-width:0;padding:5px 6px;font:13px Tahoma,Verdana,sans-serif;
+  background:#fff;border:2px inset #888;
+}
+.chat-send{
+  padding:4px 10px;font:bold 12px Tahoma,Verdana,sans-serif;color:#000080;
+  background:linear-gradient(#fff,#c8c8c8);border:2px outset #eee;cursor:pointer;
+}
+.chat-send:disabled{opacity:.5;cursor:default}
+.chat-note{margin:4px 6px 6px;font-size:10.5px;color:#444;text-align:center}
+
+@media (max-width:560px){
+  .chat-win{right:0;left:0;bottom:0;width:100%;height:72vh;border-width:3px 0 0}
+  .chat-fab{bottom:30px}
+}
+
 /* ---------- guestbook sheet ---------- */
 
 html.gb-lock{overflow:hidden}

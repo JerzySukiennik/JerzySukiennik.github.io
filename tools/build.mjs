@@ -222,7 +222,9 @@ function scripts() {
   <script src="/assets/site.js?v=${ver("assets/site.js")}" defer></script>
   <script src="/assets/wall.js?v=${ver("assets/wall.js")}" defer></script>
   <script src="/assets/reviews.js?v=${ver("assets/reviews.js")}" defer></script>
-  <script src="/assets/guestbook.js?v=${ver("assets/guestbook.js")}" defer></script>
+  <script src="/assets/guestbook.js?v=${ver("assets/guestbook.js")}" defer></script>${
+    S.chatUrl ? `\n  <script src="/assets/chat.js?v=${ver("assets/chat.js")}" data-chat="${esc(S.chatUrl)}" defer></script>` : ""
+  }
   <script type="module" src="/assets/agentation.js"></script>
   <script type="module" src="/assets/avatar.js?v=${ver("assets/avatar.js")}"></script>`;
 }
@@ -562,6 +564,29 @@ for (const project of projects) {
   mkdirSync(join(pagesDir, project.slug), { recursive: true });
   writeFileSync(join(pagesDir, project.slug, "index.html"), projectPage(project));
 }
+
+const clip = (t, n) => (t.length > n ? t.slice(0, n - 1).trimEnd() + "..." : t);
+const knowledge = [
+  `SITE: Gzowo Labs (${SITE}), the personal site of ${S.owner} (Gzowo, Poland, since 2025). Tagline: ${S.tagline}`,
+  "Four doors: Rockets (/rockets/), 3D Printing (/printing/), Games (/games/), Software and AI (/software/). The site also has a guestbook (menu), a brick wall in the side margins on wide screens where anyone can write or spray graffiti, a visitor counter, reviews, and a small walking 3D mascot of Jurek.",
+  "",
+  "ROCKETS (Gzowo Space Program, GSP):",
+  clip(readJson(rocketsFile).lead, 400),
+  ...readJson(rocketsFile).fleet.map((r) => `- ${r.name} (${r.state}): ${clip(r.blurb || "", 220)} ${(r.spec || []).map((s) => s.join(": ")).join("; ")}`),
+  "",
+  "PROJECTS (page = " + SITE + "/p/<slug>/):",
+  ...projects.map((p) =>
+    [
+      `- ${p.name} [${p.category}, ${STATUS_LABEL[p.status] || p.status}${p.year ? ", " + p.year : ""}] page: ${SITE}/p/${p.slug}/`,
+      p.blurb ? clip(p.blurb, 200) : "",
+      p.body && p.body.length ? clip(p.body.join(" "), 420) : "",
+      p.stack && p.stack.length ? "Built with " + p.stack.join(", ") + "." : "",
+      p.url ? "Play/open: https://" + String(p.url).replace(/^https?:\/\//, "") : "",
+    ].filter(Boolean).join(" "),
+  ),
+].join("\n");
+mkdirSync(join(root, "tools/chat-worker/src"), { recursive: true });
+writeFileSync(join(root, "tools/chat-worker/src/knowledge.mjs"), `export const KNOWLEDGE = ${JSON.stringify(knowledge)};\n`);
 
 const urls = ["/", ...SECTIONS.map((k) => `/${k}/`), "/islands/", ...projects.map((p) => `/p/${p.slug}/`)];
 writeFileSync(
