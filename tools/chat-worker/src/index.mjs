@@ -11,7 +11,7 @@ const PER_VISITOR = 25;
 const PER_DAY = 1500;
 const MAX_MESSAGES = 12;
 const MAX_CHARS = 500;
-const MAX_TOKENS = 350;
+const MAX_TOKENS = 400;
 
 const SYSTEM = `You are the Gzowo Guide, a friendly assistant on gzowo.fun, the personal site of Jerzy "Jurek" Sukiennik: rockets, 3D printing, games and AI models, all built by Jurek in Gzowo, Poland.
 
@@ -19,7 +19,7 @@ Your only job is to help visitors with this site: what is here, what to play or 
 
 Style:
 - Reply in the language the visitor writes in (Polish or English).
-- Short and friendly: 1 to 4 sentences, a short list only when it really helps. No emoji spam.
+- Short and friendly: under 100 words, 1 to 4 sentences, a short list only when it really helps. Finish every sentence. No emoji spam.
 - Plain text. Never use markdown headings, bold or tables. To link a page write [name](https://gzowo.fun/p/slug/) using only addresses from the knowledge.
 - Stay on topic. For anything unrelated to the site (homework, code requests, general chat, news) politely say you only know this site and offer to help with it.
 - Do not talk about the visitor's private life and never ask for personal details, passwords, addresses or contact info. Do not share any personal information about Jurek beyond what is in the knowledge.
@@ -94,6 +94,7 @@ export default {
         body: JSON.stringify({
           model: MODEL,
           max_tokens: MAX_TOKENS,
+          thinking: { type: "disabled" },
           system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
           messages,
         }),
@@ -102,10 +103,16 @@ export default {
       return reply({ error: "upstream", reply: "I could not reach my brain just now. Try again in a moment." }, 502, origin);
     }
     if (!upstream.ok) {
+      console.error("upstream", upstream.status, (await upstream.text()).slice(0, 400));
       return reply({ error: "upstream", reply: "I am having a bad moment. Try again in a bit." }, 502, origin);
     }
     const out = await upstream.json();
-    const text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+    let text = (out.content || []).filter((b) => b.type === "text").map((b) => b.text).join("").trim();
+    if (out.stop_reason === "max_tokens") {
+      const end = Math.max(text.lastIndexOf(". "), text.lastIndexOf("! "), text.lastIndexOf("? "), text.lastIndexOf(".\n"));
+      if (end > 40) text = text.slice(0, end + 1);
+    }
+    if (!text) console.error("empty", JSON.stringify(out).slice(0, 400));
     return reply({ reply: text || "I do not have an answer for that one." }, 200, origin);
   },
 };

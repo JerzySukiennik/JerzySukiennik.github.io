@@ -5,4 +5,4 @@ workers_dev = true
 
 [[kv_namespaces]]
 binding = "LIMITS"
-id = "REPLACE_WITH_KV_ID"
+id = "9edb2e0c5bbb4881a9f2c78ac9fcbf8d"
