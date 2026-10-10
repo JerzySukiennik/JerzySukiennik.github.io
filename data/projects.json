@@ -20,7 +20,8 @@
         "three.js",
         "Web Audio",
         "JavaScript"
-      ]
+      ],
+      "image": "project-images/foamwalker.webp"
     },
     {
       "slug": "iphone-duo",
