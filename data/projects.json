@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "make-your-own-game",
+      "name": "Make Your Own Game, I'm Lazy",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "make-your-own-game-im-lazy.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/make-your-own-game-im-lazy",
+      "blurb": "Draw a tree, a hero and a gun, say what game you want, and an AI writes it around your drawings.",
+      "body": [
+        "Nobody has made anything yet when you start. You and up to five friends type one shared description of the game (everyone's text is underlined in their own colour), then draw every asset: vector or pixel art, with an optional rig so it walks and a recorded sound. Press Done and Haiku asks questions, tells you what is still missing and then writes the game.",
+        "Your drawings are not pictures pasted on top. A tree can fall apart into five logs, a cursor becomes that player's own mouse pointer, a bomb explodes when sliced. The game code is written live against a small SDK, tested headless in a sandboxed frame, and repaired automatically if it breaks.",
+        "Try the Fruit Ninja idea first, then press Feedback and tell it what is wrong."
+      ],
+      "stack": [
+        "Claude Haiku 5.5",
+        "Canvas 2D",
+        "JavaScript",
+        "Firebase Realtime Database",
+        "Cloudflare Workers"
+      ],
+      "image": "project-images/make-your-own-game.webp"
+    },
+    {
+      "hidden": false,
       "slug": "foamwalker",
       "name": "Foamwalker",
       "category": "Game",
