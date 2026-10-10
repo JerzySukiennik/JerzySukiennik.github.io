@@ -12,6 +12,8 @@ slug="${2:-}"
 node tools/build.mjs
 
 git add index.html p rockets printing games software data assets project-images tools islands win CNAME sitemap.xml robots.txt .gitignore README.md 2>/dev/null || true
+guide=0
+git diff --cached --name-only | grep -q '^tools/chat-worker/src/knowledge.mjs$' && guide=1
 if git diff --cached --quiet; then
   echo "Nothing to publish."
   exit 0
@@ -23,6 +25,11 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 git pull --rebase -q
 git push -q
 echo "Pushed $(git rev-parse --short HEAD)."
+
+# The Gzowo Guide only knows what its Worker was deployed with, so refresh it when the site knowledge changed.
+if [ "$guide" = "1" ]; then
+  (cd tools/chat-worker && npx --yes wrangler deploy 2>&1 | grep -E "Deployed|rror") || echo "Guide Worker NOT redeployed, run: cd tools/chat-worker && npx wrangler deploy" >&2
+fi
 
 # Pages needs a minute or two. Poll the live page for the change instead of guessing.
 tmp=$(mktemp); url="https://gzowo.fun/"
