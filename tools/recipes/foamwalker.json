@@ -1,0 +1,1 @@
+{"wait":2500,"steps":[{"text":"START"},{"wait":1200},{"eval":"Object.assign(__fw.cam,{dist:6.2,pitch:0.8,yaw:0.5})"},{"wait":1500}],"between":[{"eval":"__fw.cam.yaw+=0.5"}]}

@@ -2,6 +2,27 @@
   "version": 3,
   "projects": [
     {
+      "hidden": false,
+      "slug": "foamwalker",
+      "name": "Foamwalker",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "foamwalker.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/foamwalker",
+      "blurb": "A hunched purple alien with a human face crawls through a foam-block maze.",
+      "body": [
+        "You are a very tall alien made of purple blocks, wearing a very calm human face, lost in a colourful foam playground. Find the glowing cores, then walk into the beam of the UFO overhead to go home.",
+        "The walk is fully procedural: four limbs placed with two-bone inverse kinematics, a diagonal trot, and a head that turns to stare at the camera whenever you stop. Foam discs lying around can be kicked across the maze.",
+        "Try holding E. The alien dances to a beat that is synthesized live in the browser, and the face breaks into a smile."
+      ],
+      "stack": [
+        "three.js",
+        "Web Audio",
+        "JavaScript"
+      ]
+    },
+    {
       "slug": "iphone-duo",
       "name": "iPhone Duo",
       "category": "Experiment",
