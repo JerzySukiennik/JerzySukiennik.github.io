@@ -3,6 +3,28 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "wolisz",
+      "name": "Wolisz?!",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "wolisz.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/wolisz",
+      "blurb": "A 2D online sandbox where every would-you-rather question gives your avatar a power, and the powers pile up.",
+      "body": [
+        "Wolisz?! asks a would-you-rather question at the top of the screen, and whatever you pick really happens to your avatar. Would you rather teleport to wherever you poop, or fly but only one meter above the ground? Pick one, and you get the power. Then the next question stacks a new power on top of the old ones.",
+        "Up to ten players join a room with a four-letter code, each picks an avatar colour, and everybody runs around the same 1998-style GeoCities world with all their strange powers at once. There is no winner and no cooldowns, just chaos: poop portals, banana peels, ice trails, bombs, magnets, jetpacks and giant stomping.",
+        "The game is plain Canvas 2D with hand-written physics. Every player simulates their own avatar and a realtime database only carries positions and small events like explosions and swaps, so it also runs on a phone in landscape. Start with the poop teleport and see how long it takes your friends to step in it."
+      ],
+      "stack": [
+        "Canvas 2D",
+        "Firebase Realtime Database",
+        "ES modules"
+      ],
+      "image": "project-images/wolisz.webp"
+    },
+    {
+      "hidden": false,
       "slug": "make-your-own-game",
       "name": "Make Your Own Game, I'm Lazy",
       "category": "Game",
