@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "roadster-88",
+      "name": "Roadster 88",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "roadster.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/roadster-88",
+      "blurb": "Drive, boost and fly the 2026 Tesla Roadster on ten cold-gas thrusters, then hit 88 mph and jump through time.",
+      "body": [
+        "A photoreal browser game about the new Tesla Roadster with the SpaceX package. It drives like a 950 kW electric car, fires its rear thrusters for a boost, and lifts off on ten vectored cold-gas nozzles: four at the back, two in the front corners and four under the sills. Jurek's own avatar sits at the wheel.",
+        "Flying is real physics, not an animation. A small flight computer splits the force and turn you ask for across all ten nozzles, so hops, hovering and spinning in the air come from differential thrust. The body dents and folds in crashes, and the white vapour plumes are flipbooks rendered in Blender to match the unveil footage.",
+        "Try this first: hold Shift on the long straight, then tap Space to hop and hold it to hover. Press T to arm the time circuits, press C for the cockpit, pick a date on the touchscreen and floor it to 88 mph."
+      ],
+      "stack": [
+        "three.js",
+        "WebGPU",
+        "Rapier",
+        "Web Audio",
+        "Blender"
+      ],
+      "image": "project-images/roadster-88.webp"
+    },
+    {
+      "hidden": false,
       "slug": "wolisz",
       "name": "Wolisz?!",
       "category": "Game",
