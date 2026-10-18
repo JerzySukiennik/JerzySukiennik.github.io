@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "kindling",
+      "name": "Kindling",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "kindling.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/kindling",
+      "blurb": "Stick monsters crawl out of a cornfield. Cut them apart with a laser, jump the iron wall and feed the fire.",
+      "body": [
+        "A Halloween defense game in a moonlit cemetery. Monsters made of sticks walk out of the corn toward you, and every cut matters: take a leg and they limp, take both and they crawl, take the arms and they cannot grab you. Thick branches burn through slower than twigs, and every cut end keeps glowing like an ember.",
+        "When a round runs out of monsters, an iron barrier rises behind them and plows everything you cut across the field toward you. Jump it at the right moment and the whole pile tips into the fire pit behind you, which grows with every round.",
+        "Every stick, whole or cut, is drawn by one instanced mesh with its own shader for bark, bends, cut rings and embers, so a field of monsters and their broken pieces stays cheap. The monsters walk on procedural skeletons that plant their feet, and the pieces you cut off fall as real physics bodies.",
+        "Between nights you hang out on Graveyard Hill: spend Candy Corn on new lasers and upgrades, try hats in the wardrobe, practise on the range, race up the gravestone parkour and ring the chapel bell when you are ready. Keys 1 to 4 are emotes. Desktop only, and you can load your own music for the night and the hill in the settings."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "Web Audio"
+      ],
+      "image": "project-images/kindling.webp"
+    },
+    {
+      "hidden": false,
       "slug": "campfire",
       "name": "Campfire",
       "category": "Experiment",
