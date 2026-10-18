@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "cube-breakers",
+      "name": "Cube Breakers",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "cubes.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/cube-breakers",
+      "blurb": "Shoot balls that bounce forever into a giant cube of blocks, together with everyone who is online.",
+      "body": [
+        "A co-op first-person game on a sunny meadow. In the middle stands a 16 by 16 by 16 cube of glossy blocks, and everybody who opens the page breaks the same one. Your launcher fires balls that fly without gravity at a constant speed and bounce forever off blocks, the ground and each other, chipping damage off every block they touch, until they die on the hexagon force field around the meadow.",
+        "The outer shell pops in one hit, the inner layers get much tougher, and the core is built for many sessions. Broken blocks drop loot that floats above the grass. Carry it to the Ball Shop, recycle it for gems and spend them on MultiBalls, BoomBalls, MegaBalls and five other ball types, or on upgrades like Power, Fire Rate, a double jump and a jetpack. When the cube is gone, the next shape grows out of the ground: a pyramid, a sphere, a tower, a GSP rocket and a donut.",
+        "There is no game server. Every hit is an atomic increment in a realtime database, every browser decides on its own when a block is gone, and the player who has been online the longest runs the physics of falling chunks for everyone. Try this first: dig a tunnel with a BoomBall, then shoot an AeroBall into it and watch it rattle around inside."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "Firebase Realtime Database",
+        "Web Audio"
+      ],
+      "image": "project-images/cube-breakers.webp"
+    },
+    {
+      "hidden": false,
       "slug": "roadster-88",
       "name": "Roadster 88",
       "category": "Game",
