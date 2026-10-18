@@ -1,0 +1,1 @@
+{"wait":9000,"steps":[{"hide":"#ui"},{"eval":"(() => { const c = window.__campfire; if (!c) return; c.camera.position.set(-1.05, 0.62, 1.25); c.controls.update(); })()"},{"wait":4000}]}

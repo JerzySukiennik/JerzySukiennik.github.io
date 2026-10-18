@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "campfire",
+      "name": "Campfire",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "campfire.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/campfire",
+      "blurb": "Sit by a campfire in a dark forest: stack logs, stir the embers, toast a marshmallow or put it all out.",
+      "body": [
+        "A realistic campfire that burns in your browser. Every log keeps track of its own heat, char and fuel, so fire creeps along the wood, jumps to the log next to it, cracks the surface into glowing char and finally collapses into the ember bed. Pull a burning log out of the ring and it slowly dies down to a smoulder.",
+        "The flames are a real volume, not flat sprites. Each frame the burning logs are drawn into a small 3D flame field, and a raymarcher eats it away with rising noise until it breaks into licking tongues. That is why the fire follows the wood when you drag a log around. The flickering light casts moving shadows, sparks rise on the plume, and your eyes adapt to the dark when the fire goes out.",
+        "Try this first: put headphones on, click the fire to stir it, then press and hold on the embers to blow. Grab a log from the woodpile, toast a marshmallow until it is golden (not black), and finish with a bucket of water to hear the hiss."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "Web Audio"
+      ],
+      "image": "project-images/campfire.webp"
+    },
+    {
+      "hidden": false,
       "slug": "cube-breakers",
       "name": "Cube Breakers",
       "category": "Game",
