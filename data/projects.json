@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "cutlery",
+      "name": "Cutlery",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "cutlery.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/cutlery",
+      "blurb": "Fork, Knife and Butter find their way back to the breakfast table, each one a tool the others need.",
+      "body": [
+        "A wordless 2.5D co-op platformer in the spirit of Unravel Two. Fork, Knife and Butter are not tied together: they help each other by being what they are. Fork stabs into bread, sponges and soft Butter and climbs them, Knife cuts string and sticks into wood as a springy ledge, and Butter hardens in the cold, softens by the stove, melts into an oily puddle that pours through a grate, and floats across a sink with the other two riding on top.",
+        "The game opens in a dollhouse cut open from the front, and everyone playing at that moment is in the same house. You pick one character at the door and ride a brass cage lift between the floors. Each floor is one story: Butter's three chapters are for one player, Fork and Knife's for two, the top floor for all three. Stand on a portal with the right characters and the chapter starts for your group, each player on their own device.",
+        "Nine chapters cross the whole house: the fridge, the pantry and the living room piano, the cutlery drawer, a dining table with a serving spoon seesaw, a study with a falling ruler, then breakfast, the washing up and the dark kitchen at night. Everything that moves is a kinematic body in a 2D physics world, so online play only sends positions and a few flags. Try this first: enter as Butter, take Cold Start on the ground floor and let the fridge freeze you hard enough to shove a jar."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "Firebase Realtime Database",
+        "Web Audio"
+      ],
+      "image": "project-images/cutlery.webp"
+    },
+    {
+      "hidden": false,
       "slug": "kindling",
       "name": "Kindling",
       "category": "Game",
