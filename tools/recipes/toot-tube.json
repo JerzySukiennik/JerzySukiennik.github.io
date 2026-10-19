@@ -1,0 +1,11 @@
+{"wait":1500,"steps":[
+ {"eval":"new Promise((r) => { const t0 = Date.now(); const c = () => ((window.__tt && window.__tt.mode === 'menu') || Date.now() - t0 > 60000) ? r(1) : setTimeout(c, 300); c(); })"},
+ {"click":"#animal-dots button[data-a=pig]"},
+ {"wait":400},
+ {"click":"#btn-solo"},
+ {"wait":4300},
+ {"eval":"(() => { const G = window.__tt; G.godmode = true; const f = G.track.toWorld(382, 2.6, {}); Object.assign(G.raft, { x: f.x, z: f.z, vx: f.tx * 1.5, vz: f.tz * 1.5, w: 0, hint: undefined }); G.me.phi = -2.3; window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space' })); return 1; })()"},
+ {"hide":"#hud"},
+ {"hide":"#big"},
+ {"wait":1800}
+],"between":[{"eval":"(() => { window.__tt.me.gas = 1; return 1; })()"}]}

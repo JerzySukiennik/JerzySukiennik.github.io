@@ -3,6 +3,28 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "toot-tube",
+      "name": "Toot Tube",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "toot.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/toot-tube",
+      "blurb": "Up to three animals hang on to one inflatable ring and steer it down a spiky river the only way they can: by farting.",
+      "body": [
+        "Toot Tube is a co-op river race for one to three players. Everyone is an animal (capybara, frog, pig, penguin or duck) holding on to the outside of the same swim ring, and the only engine is gas. Toot and the ring is pushed away from you, so to go forward somebody first has to swim around to the back.",
+        "Online, the ring is split into slices with barriers between them, one slice per player, and nobody can swim into a friend's part. Steering turns into a conversation about who toots, who waits and who ducks. A kilometre of river runs through a spike slalom, spinning sweeper bars you dive under, whirlpools, rapids and a waterfall, gates that open and close, and a final gauntlet. Touch purple spikes or get swept off and the whole crew goes back to the last checkpoint while the clock keeps running.",
+        "It runs in the browser with no build step. The river is a path of straights and arcs with its own width, current and drop, the ring has a small 2D physics model, and the host's ring is the shared truth while every player moves their own animal locally, so your toots feel instant. The sounds are real CC0 recordings, twelve of them farts. Try this first: play solo, swim to the back with A or D and hold Space."
+      ],
+      "stack": [
+        "three.js",
+        "Web Audio",
+        "Firebase Realtime Database"
+      ],
+      "image": "project-images/toot-tube.webp"
+    },
+    {
+      "hidden": false,
       "slug": "cutlery",
       "name": "Cutlery",
       "category": "Game",
