@@ -3,6 +3,28 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "timeblock",
+      "name": "Timeblock",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "timeblock.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/timeblock",
+      "blurb": "Drop in a video and it turns into a block of time cast in sanded resin, where every frame is a slice.",
+      "body": [
+        "Timeblock stacks the frames of a video one behind another, so time becomes the depth of a block of frosted resin. Anything that stands still melts away and only the motion is left: a spinning propeller turns into a spiral, a bouncing ball into a row of arches, a ripple into a cone.",
+        "The block is a real volume, not a picture glued to a cube. The frames sit in a 3D texture and every pixel shoots a ray through it, blurring more the deeper it goes, the way sanded resin does. The still background is found with a per-pixel median over time, shaky hand-held clips are lined up first, and the sanding scratches catch the light as you turn the block. A photo gets a relief instead, with the subject lifted off its backdrop.",
+        "Try this first: drop in a short clip filmed with a steady hand, turn the block with your mouse or finger, then drag Skos (slant) to cut it at an angle and see the past and the future in one picture. When you like it, save a PNG or a 6 second MP4."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "WebCodecs"
+      ],
+      "image": "project-images/timeblock.webp"
+    },
+    {
+      "hidden": false,
       "slug": "speak-groove",
       "name": "Speak & Groove",
       "category": "Experiment",
