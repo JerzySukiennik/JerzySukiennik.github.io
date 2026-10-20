@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "speak-groove",
+      "name": "Speak & Groove",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "speak-groove.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/speak-groove",
+      "blurb": "Type a letter and a robot voice spells it through a big reverb, then a techno band joins in behind you.",
+      "body": [
+        "A talking toy groovebox in the spirit of the 1978 spelling toy. Every key you press is spoken by a crunchy 8 kHz robot voice drenched in reverb. Keep typing and the band joins in, one layer every two bars: pad, 909 kick and hats, an acid bassline, clap, arpeggiator, swung percussion, vocal chops and a funky clav. Stop typing and it peels back down to the pad and the echo.",
+        "Everything follows what you type. A to G are literally their notes in A minor, the last letter picks the next chord, and the last sixteen letters become the bassline and the arpeggio. The voice is real LPC speech synthesis, the same trick the original chip used, running in an AudioWorklet so it can sing in key without turning into a chipmunk.",
+        "Try this first: put headphones on, type your name, then press Enter and it spells it back on the beat. Drag the stylus around the round stylophone, smear the whole mix on the touch FX pad, and on a laptop pinch the trackpad for more space or scroll for the acid filter."
+      ],
+      "stack": [
+        "Web Audio",
+        "AudioWorklet",
+        "LPC speech synthesis",
+        "JavaScript"
+      ],
+      "image": "project-images/speak-groove.webp"
+    },
+    {
+      "hidden": false,
       "slug": "toot-tube",
       "name": "Toot Tube",
       "category": "Game",
