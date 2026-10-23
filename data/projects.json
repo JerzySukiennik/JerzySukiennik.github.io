@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "spillway",
+      "name": "Spillway",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "spillway.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/spillway",
+      "blurb": "Draw gutters with a limited marker and pump your colour of water into its cup, alone or with up to three friends online.",
+      "body": [
+        "A co-op water puzzle for 1 to 4 players. Every player owns one colour of water and a plunger at the top of a long side-scrolling map. Draw gutters with a marker that runs out of ink, hold the plunger and steer your water past rocks, wind and no-draw zones into the cup of your colour. Anything that misses falls into the abyss.",
+        "The water is a particle fluid written for the game and it is fully deterministic, so online play only sends inputs: the host keeps the clock, everyone else simulates the same world a fraction of a second behind and checks it against the host. If the host leaves, another player takes over without losing a drop. Each colour is rendered in its own channel, so streams that touch stay crisp.",
+        "Try this first: draw a line from under your tank down to your cup, then hold Space. Later, route every colour into the mixer, which turns them into rainbow water that pays double. Money is shared, the shop between levels is a little scrolling street with funnels, pipes, trampolines, fans, lifts, ice and magnets, and the Continue button at the end takes the whole room to the next level."
+      ],
+      "stack": [
+        "JavaScript",
+        "WebGL2",
+        "Canvas 2D",
+        "Firebase Realtime Database",
+        "Web Audio"
+      ],
+      "image": "project-images/spillway.webp"
+    },
+    {
+      "hidden": false,
       "slug": "mirage",
       "name": "Mirage",
       "category": "Game",
