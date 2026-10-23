@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "mirage",
+      "name": "Mirage",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "mirage.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/mirage",
+      "blurb": "Put on smart glasses, call drones down from orbit and project a dragon, a whale or outer space over Venice.",
+      "body": [
+        "A sandbox in a Venetian district built entirely in code: canals and bridges, a church with a campanile and over six hundred houses with real window openings and furnished rooms behind the glass. You play Jurek's own avatar wearing Gzowo Glass, while the sassy assistant G.L.A.S.S. comments on everything from the HUD.",
+        "The glasses link to the GZOWO LABS satellite, which drops a swarm of drones. Every illusion is split into cells and each cell needs one drone, so you choose how many to send: too few and the dragon, the T-rex or the space dome gets ragged glowing holes with the drones visible inside. Projections build up as holograms, then turn photoreal, and when they attack, the drones hidden inside fire for real: glass shatters, balconies fall, tourists run.",
+        "Try this first: press G to call drones, hold Q and pick the dragon, set the drone count with the mouse wheel and click. Then aim at it, press F and choose Attack. You can also climb any house with Space, row a gondola with E or ride a drone with B."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL",
+        "Web Audio",
+        "JavaScript"
+      ],
+      "image": "project-images/mirage.webp"
+    },
+    {
+      "hidden": false,
       "slug": "timeblock",
       "name": "Timeblock",
       "category": "Experiment",

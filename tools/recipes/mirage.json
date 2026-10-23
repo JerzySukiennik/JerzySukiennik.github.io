@@ -1,0 +1,1 @@
+{"wait":45000,"steps":[{"wait":8000}],"note":"use --url https://mirage.gzowo.fun/?demo=1 (autostart, no pointer lock). The bundled headless Chromium renders WebGL in software and is slow; a GPU shot is made with Mirage/Niepotrzebne/tools/shot.mjs (URL=...?demo=1 DPR=2) and set with shot.mjs set."}
