@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "roadster-jump",
+      "name": "Roadster Jump",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "roadster-jump.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/roadster-jump",
+      "blurb": "Suction the Roadster up a giant curled ramp, hang from the ceiling, then kickflip off the lip on cold-gas jets.",
+      "body": [
+        "A stunt game built on the arena from Jurek's film Roadster Kickflip. You walk up to the Tesla Roadster as Jurek, get in through the gullwing door and drive at a 25 metre ramp that curls over into an upside-down ceiling. Turn on the suction fan and the car sticks to the wall, then to the ceiling, where it can hang upside down for as long as you like.",
+        "Everything is physics. The car comes from Roadster 88: raycast suspension that follows the car's own down axis, real tyre grip and ten gimballed cold-gas nozzles run by a small flight computer. The fan pushes the car onto whatever surface it faces, harder the more it hangs upside down, so the curl works at any speed. Leave the lip upside down and the arrow keys roll and flip the car on thrust. Flight assist can level the wheels before touchdown and turn the jets into a soft landing.",
+        "Try this first: press F for suction, drive up and stop on the ceiling, reverse down, then run at it with half throttle and roll with the arrows after the lip. A film-style 540 kickflip lands right on the painted X. Every landed jump is scored, P replays it from TV cameras in slow motion, and the best jump, the longest jump and the most rotation go on online leaderboards. Works on phones with touch controls."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "Web Audio",
+        "Firebase Realtime Database"
+      ],
+      "image": "project-images/roadster-jump.webp"
+    },
+    {
+      "hidden": false,
       "slug": "spillway",
       "name": "Spillway",
       "category": "Game",
