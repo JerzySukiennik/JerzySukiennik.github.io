@@ -3,6 +3,33 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "rug-rush",
+      "name": "Rug Rush",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "rugs.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/rugs",
+      "blurb": "Unload rug trucks, read the care labels and wash every rug in a co-op warehouse without ruining the silk.",
+      "body": [
+        "A first-person co-op game for 1 to 4 players about running a rug cleaning warehouse. Trucks back up with rolled rugs: drag them out, kick them open, read the ISO care label on a corner and pick from 26 cleaning products, powders, gels, sprays and foam that layer on top of each other. Then scrub, rinse under the hanging hose, squeegee the water into the drain, dry it, wrap it on the roller and load it onto the outbound truck.",
+        "Every rug is real cloth made of its own fibre: wool, silk, sisal, cotton, polyester or polypropylene. They react differently, so the wrong product runs the colours, fades the silk or felts the wool, and that damage stays. Dirt, water, soap and damage live in per-rug textures, the water on the floor is a GPU shallow water simulation that flows along the grout, and online co-op runs over WebRTC with a public room list.",
+        "Try this first: aim at a stain with empty hands to see what it is and how to treat it on that particular rug, or press T to ask Rug Buddy, an AI assistant that can see your whole warehouse. Then foam up a rug and rinse it with the hose."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "WebRTC",
+        "Firebase Realtime Database",
+        "Web Audio",
+        "Cloudflare Workers",
+        "Claude Haiku"
+      ],
+      "image": "project-images/rug-rush.webp"
+    },
+    {
+      "hidden": false,
       "slug": "fabrics",
       "name": "Fabrics",
       "category": "Experiment",
