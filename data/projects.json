@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "fabrics",
+      "name": "Fabrics",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "fabrics.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/fabrics",
+      "blurb": "Pull curtains, fly flags, drape robes and scrunch rugs, then cut, burn, dye and blow on real-time cloth.",
+      "body": [
+        "A textile playground in the browser. Six scenes, each built around one piece of fabric: sheer curtains on a rod with sliding rings, a flag in the wind, a velvet robe on a dress form, a Persian rug, a tablecloth over a laid table and a hammock. Swap the fabric at any time between silk, chiffon, linen, velvet, denim and wool, pick one of nine prints and any colour.",
+        "The cloth is simulated thread by thread with a small physics engine written for it, and every fabric behaves differently: chiffon floats and tears first, denim is stiff, velvet is heavy, silk slides. Pull too hard and it rips along the threads. Fire spreads faster upwards and chars the edges, while wool chars and puts itself out. Dye bleeds into the weave and mixes like real dye, so blue over yellow turns green. The sounds are real recordings.",
+        "Try this first: pull the curtains open, then switch to the tablecloth and yank it off the table fast, like a magician. Throw balls of yarn into the hammock, set the robe alight, and turn on the thread view in the studio settings to see stretched threads glow. On a phone you can tilt it to pour gravity or blow into the microphone for wind."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "XPBD cloth",
+        "Canvas 2D",
+        "Web Audio"
+      ],
+      "image": "project-images/fabrics.webp"
+    },
+    {
+      "hidden": false,
       "slug": "roadster-jump",
       "name": "Roadster Jump",
       "category": "Game",
