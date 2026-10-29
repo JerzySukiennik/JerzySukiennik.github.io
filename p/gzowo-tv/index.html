@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#ff00ff">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#008080">
 <meta name="color-scheme" content="light">
 <title>Gzowo TV | Gzowo Labs</title>
 <meta name="description" content="An Apple TV for the family plot, every streaming service in one launcher, on a Mac plugged into the television.">
@@ -19,177 +19,76 @@
 <meta name="twitter:description" content="An Apple TV for the family plot, every streaming service in one launcher, on a Mac plugged into the television.">
 <meta name="twitter:image" content="https://gzowo.fun/assets/og.png">
 <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/site.css?v=e2dc1972">
+<link rel="stylesheet" href="/assets/site.css?v=83e90c2e">
+<script>try{if(!sessionStorage.getItem("gl-boot")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("booting")}catch(e){}</script>
 </head>
 <body>
-  <div class="frame">
-    <div class="topbar marquee"><span>*~*~* YOU ARE NOW LOOKING AT: GZOWO TV *~*~* IT IS FREE AND IT RUNS IN YOUR BROWSER *~*~* TELL YOUR FRIENDS !!! *~*~*</span></div>
+<div class="boot" id="boot" aria-hidden="true"><div class="boot-box"><svg class="boot-ico" viewBox="0 0 16 16" width="32" height="32" shape-rendering="crispEdges" aria-hidden="true"><rect x="7" y="0" width="2" height="1"/><rect x="6" y="1" width="4" height="1"/><rect x="6" y="2" width="1" height="1"/><rect x="9" y="2" width="1" height="1"/><rect x="5" y="3" width="2" height="1"/><rect x="9" y="3" width="2" height="1"/><rect x="5" y="4" width="1" height="1"/><rect x="10" y="4" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="7" y="5" width="2" height="1"/><rect x="10" y="5" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="7" y="6" width="2" height="1"/><rect x="10" y="6" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="10" y="7" width="1" height="1"/><rect x="5" y="8" width="1" height="1"/><rect x="10" y="8" width="1" height="1"/><rect x="4" y="9" width="2" height="1"/><rect x="10" y="9" width="2" height="1"/><rect x="3" y="10" width="3" height="1"/><rect x="10" y="10" width="3" height="1"/><rect x="2" y="11" width="2" height="1"/><rect x="5" y="11" width="1" height="1"/><rect x="10" y="11" width="1" height="1"/><rect x="12" y="11" width="2" height="1"/><rect x="2" y="12" width="1" height="1"/><rect x="5" y="12" width="6" height="1"/><rect x="13" y="12" width="1" height="1"/><rect x="2" y="13" width="4" height="1"/><rect x="7" y="13" width="2" height="1"/><rect x="10" y="13" width="4" height="1"/><rect x="7" y="14" width="2" height="1"/><rect x="6" y="15" width="1" height="1"/><rect x="9" y="15" width="1" height="1"/></svg><b>Welcome to Gzowo Labs</b></div></div>
+<div class="desk" id="desk" data-route="/p/gzowo-tv/" data-src="/assets/data.json?v=2667785c" data-title="Gzowo Labs | Rockets, 3D Printing, Games and AI">
+<main class="world" id="world" aria-label="Map of the Gzowo Labs plot">
+<canvas class="map" aria-hidden="true"></canvas>
+<nav class="spots" aria-label="Places on the map"><a class="spot" href="/rockets/" data-place="rockets" data-nav aria-label="Launch pad, 5 rockets"><img class="spr" src="/assets/map/launchpad.webp" alt="" draggable="false"><span class="spot-l"><b>Launch pad</b><em>5 rockets</em></span></a><a class="spot" href="/printing/" data-place="printing" data-nav aria-label="Workshop, 2 printed things"><img class="spr" src="/assets/map/workshop.webp" alt="" draggable="false"><span class="spot-l"><b>Workshop</b><em>2 printed things</em></span></a><a class="spot" href="/games/" data-place="games" data-nav aria-label="Arcade, 37 games"><img class="spr" src="/assets/map/arcade.webp" alt="" draggable="false"><span class="spot-l"><b>Arcade</b><em>37 games</em></span></a><a class="spot" href="/software/" data-place="software" data-nav aria-label="Lab, 15 apps and AI models"><img class="spr" src="/assets/map/lab.webp" alt="" draggable="false"><span class="spot-l"><b>Lab</b><em>15 apps and AI models</em></span></a><a class="spot" href="#" data-place="reviews" data-open="reviews" aria-label="Reviews, rate this site"><img class="spr" src="/assets/map/billboard.webp" alt="" draggable="false"><span class="bb"><b>Reviews</b><q data-bb></q></span></a><a class="spot" href="#guestbook" data-place="guestbook" data-open="guestbook" aria-label="Mailbox, guestbook"><img class="spr" src="/assets/map/mailbox.webp" alt="" draggable="false"><span class="spot-l"><b>Mailbox</b><em>guestbook</em></span></a><a class="spot" href="/" data-place="about" data-nav aria-label="Gzowo 34, about us"><img class="spr" src="/assets/map/signpost.webp" alt="" draggable="false"></a><button class="spot spot-wall" type="button" data-place="mural" data-wall aria-label="The Wall, click to spray"><canvas class="spr" data-wall-art width="404" height="147"></canvas><span class="spot-l"><b>The Wall</b><em>click to spray</em></span></button></nav>
+<div class="mural" data-mural aria-hidden="true"><canvas></canvas></div>
+</main>
+<div class="wins" id="wins">
+<section class="win w-project" data-win="p-gzowo-tv" data-route="/p/gzowo-tv/" role="dialog" aria-label="Gzowo TV">
+<header class="tb"><span class="tb-i"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-chip"/></svg></span><h2 class="tb-t">Gzowo TV</h2><span class="tb-btns"><button class="tb-min" type="button" data-min aria-label="Minimize"></button><button class="tb-max" type="button" data-max aria-label="Maximize"></button><button class="tb-x" type="button" data-close aria-label="Close"></button></span></header>
+<div class="wb"><div class="pj"><div class="pj-top"><figure class="pj-shot"><span class="noshot"><svg class="px" viewBox="0 0 16 16" width="32" height="32" aria-hidden="true"><use href="/assets/icons.svg#i-chip"/></svg><em>no shot yet</em></span></figure>
+<div class="pj-side"><p class="pj-lead">An Apple TV for the family plot, every streaming service in one launcher, on a Mac plugged into the television.</p><p class="pj-acts"><span class="btn" aria-disabled="true">Not public yet</span><a class="btn" href="https://github.com/JerzySukiennik/gzowo-tv" target="_blank" rel="noopener">Source code</a></p>
+<table class="pj-facts"><tr><th>Status</th><td>Building</td></tr><tr><th>Kind</th><td>Experiment</td></tr><tr><th>Year</th><td>2026</td></tr><tr><th>Built with</th><td>Node, macOS</td></tr></table></div></div>
+<div class="pj-text"><p>A video aggregator built for the house in Gzowo: one grid, one remote, and the services behind it opening full-screen in a kiosk browser instead of demanding a different device each.</p><p>Two macOS traps cost real time here and are worth writing down. Renaming the application bundle poisoned its entry in the system launcher, opening it reported success and started nothing, with an empty log and no error anywhere; only a fresh bundle identifier fixed it. And because macOS refuses to let a bundled app overwrite a file another process created under the downloads folder, the server died instantly on every start until its log moved elsewhere.</p></div></div></div>
+<footer class="stb"><span>Experiment</span><span>Building</span><span>2026</span></footer>
+</section>
 
-    <header class="banner">
-      <p class="eyebrow">Gzowo Labs presents</p>
-      <h1 class="wordart"><span class="rainbow-text">Gzowo TV</span></h1>
-      <p class="tagline"><span class="blink">&gt;&gt;&gt;</span> Experiment &middot; Building &middot; 2026 <span class="blink">&lt;&lt;&lt;</span></p>
-    </header>
-    <nav class="navstrip" aria-label="Main">
-      <a class="btn90" href="/">HOME</a>
-      <a class="btn90" href="/rockets/">ROCKETS</a>
-      <a class="btn90" href="/printing/">3D PRINTING</a>
-      <a class="btn90" href="/games/">GAMES</a>
-      <a class="btn90" href="/software/" aria-current="page" data-current>SOFTWARE &amp; AI</a>
-      <a class="btn90" href="#reviews" data-rev-open>REVIEWS &#9733;</a>
-      <a class="btn90" href="mailto:kalakasanyt@gmail.com">E-MAIL ME!!</a>
-    </nav>
-
-    <div class="layout">
-      <div class="col-left">
-        <div class="widget">
-          <h4>Navigate!!</h4>
-          <ul class="menu">
-            <li><a href="/">Home Page</a></li>
-            <li><a href="/rockets/">Rockets</a></li>
-            <li><a href="/printing/">3D Printing</a></li>
-            <li><a href="/games/">Games</a></li>
-            <li><a href="/software/">Software and AI</a></li>
-            <li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">My Code</a></li>
-            <li><a href="mailto:kalakasanyt@gmail.com" data-guestbook>Guestbook</a></li>
-            <li><a href="mailto:kalakasanyt@gmail.com">E-Mail Me</a></li>
-          </ul>
-        </div>
-
-        <div class="widget">
-          <h4>Visitors</h4>
-          <div class="counter" data-counter aria-label="visitor counter"></div>
-          <p style="margin:6px 0 0">You are visitor number<br><b>that many</b>!</p>
-          <a class="wall-hint" href="#" data-wall-hint title="up up down down left right left right B A">
-            <i>psst, the margins are a brick wall.<br>Grab a spray can and paint on it.<br>Old gamers know a secret color.</i>
-          </a>
-        </div>
-
-        <div class="widget">
-          <h4>Now Playing</h4>
-          <p style="margin:0">gzowo_theme.mid</p>
-          <button class="btn90 midi" type="button" data-midi>&#9834; PLAY MIDI &#9834;</button>
-        </div>
-
-        <div class="widget award">
-          &#9733;&#9733;&#9733;<br>COOL SITE<br>OF THE DAY<br>&#9733;&#9733;&#9733;<br><small>awarded by me</small>
-        </div>
-      </div>
-
-      <div class="middle project">
-        <p><a class="back" href="/software/">&#9664; back to Software and AI</a></p>
-
-        <p class="project-lead">An Apple TV for the family plot, every streaming service in one launcher, on a Mac plugged into the television.</p>
-
-        <div class="actions">
-          <span class="btn-play" aria-disabled="true">NOT PUBLIC YET</span>
-          <a class="btn" href="https://github.com/JerzySukiennik/gzowo-tv" target="_blank" rel="noopener">Source code &#8599;</a>
-        </div>
-
-        <figure class="project-shot is-empty"><span>Gzowo TV</span><span>no shot yet</span></figure>
-
-        <hr class="hr90">
-
-        <div class="project-body">
-          <div>
-            <p>A video aggregator built for the house in Gzowo: one grid, one remote, and the services behind it opening full-screen in a kiosk browser instead of demanding a different device each.</p>
-            <p>Two macOS traps cost real time here and are worth writing down. Renaming the application bundle poisoned its entry in the system launcher, opening it reported success and started nothing, with an empty log and no error anywhere; only a fresh bundle identifier fixed it. And because macOS refuses to let a bundled app overwrite a file another process created under the downloads folder, the server died instantly on every start until its log moved elsewhere.</p>
-          </div>
-          <aside class="facts">
-            <dl>
-              <div><dt>Status</dt><dd>Building</dd></div>
-              <div><dt>Kind</dt><dd>Experiment</dd></div>
-              <div><dt>Year</dt><dd>2026</dd></div>
-              <div><dt>Built with</dt><dd>Node, macOS</dd></div>
-            </dl>
-          </aside>
-        </div>
-      </div>
-
-      <div class="col-right">
-        <div class="widget">
-          <h4>Today Is</h4>
-          <p style="margin:0" data-today>a very fine day</p>
-        </div>
-
-        <div class="widget">
-          <h4>New!!!</h4>
-          <p style="margin:0"><span class="blink" style="color:#ff0000;font-weight:bold">NEW!</span> Ghostframe is up!<br>
-          <a href="/p/ghostframe/">click here !!~*</a></p>
-        </div>
-
-        <div class="construction">
-          <span>&#9888; Site under construction since 2025 &#9888;</span>
-        </div>
-
-        <div class="widget webring" style="margin-top:10px">
-          <h4>Web Ring</h4>
-          <p style="margin:0">The Gzowo Web Ring</p>
-          <p style="margin:4px 0 0">
-            <a href="/rockets/">&laquo; prev</a> |
-            <a href="/">random</a> |
-            <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">next &raquo;</a>
-          </p>
-        </div>
-
-        <div class="widget stamp">
-          BEST VIEWED IN<br><b>NETSCAPE 4.0</b><br>800 &times; 600<br>256 COLORS<br>SOUND ON !!
-        </div>
-
-        <div class="widget">
-          <h4>Vote!!</h4>
-          <p style="margin:0">Do you like my<br>web site ?</p>
-          <p style="margin:4px 0 0"><a href="mailto:kalakasanyt@gmail.com?subject=YES">YES</a> &middot;
-          <a href="mailto:kalakasanyt@gmail.com?subject=ALSO%20YES">also YES</a></p>
-        </div>
-
-        <div class="widget reviews" data-rev id="reviews">
-          <h4>Reviews!!</h4>
-          <button class="rev-close btn90" type="button" data-rev-close>&times; CLOSE</button>
-          <p class="rev-score" data-rev-score>loading...</p>
-
-          <form class="rev-form" data-rev-form>
-            <div class="rev-stars" data-rev-stars role="group" aria-label="Your rating">
-              <button type="button" aria-pressed="false" aria-label="1 star">&#9733;</button>
-              <button type="button" aria-pressed="false" aria-label="2 stars">&#9733;</button>
-              <button type="button" aria-pressed="false" aria-label="3 stars">&#9733;</button>
-              <button type="button" aria-pressed="false" aria-label="4 stars">&#9733;</button>
-              <button type="button" aria-pressed="false" aria-label="5 stars">&#9733;</button>
-            </div>
-            <input type="text" name="n" maxlength="30" placeholder="your name (or stay mysterious)">
-            <textarea name="m" maxlength="400" rows="3" placeholder="Tell the world what you think !!! (my mum reads this)"></textarea>
-            <button class="btn90 rev-post" type="submit">POST IT !!!</button>
-            <p class="rev-note" data-rev-note></p>
-          </form>
-
-          <div class="rev-list" data-rev-list></div>
-        </div>
-      </div>
-    </div>
-
-    <footer class="footer">
-      <p class="footer-mark">&#9733; Gzowo Labs &#9733; Jerzy Sukiennik &#9733;</p>
-      <nav aria-label="Contact">
-      <a href="mailto:kalakasanyt@gmail.com">kalakasanyt@gmail.com</a>
-      <a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://instagram.com/gzowo_labs" target="_blank" rel="noopener">Instagram</a>
-      <a href="https://x.com/kalakasanyt" target="_blank" rel="noopener">X</a>
-      </nav>
-      <p style="margin:6px 0 0">&copy; 2025&ndash;2026 Gzowo Labs. This page is best experienced with the sound turned ON.<br>
-      <span class="blink">Thank you for visiting !!!</span> ~*~*~ Please come back soon ~*~*~</p>
-    </footer>
-  </div>
-
-  <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
-  <script src="/assets/site.js?v=8f4f9495" defer></script>
-  <script src="/assets/wall.js?v=63dea1a2" defer></script>
-  <script src="/assets/reviews.js?v=3bd80a0f" defer></script>
-  <script src="/assets/guestbook.js?v=e8a04c22" defer></script>
-  <script src="/assets/chat.js?v=7d4f91ee" data-chat="https://gzowo-chat.kalakasanyt.workers.dev" defer></script>
-  <script type="module" src="/assets/agentation.js"></script>
-  <script type="module" src="/assets/avatar.js?v=075a8b7c"></script>
+<section class="win w-reviews" data-win="reviews" role="dialog" aria-label="Reviews" hidden>
+<header class="tb"><span class="tb-i"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-star"/></svg></span><h2 class="tb-t">Reviews</h2><span class="tb-btns"><button class="tb-min" type="button" data-min aria-label="Minimize"></button><button class="tb-max" type="button" data-max aria-label="Maximize"></button><button class="tb-x" type="button" data-close aria-label="Close"></button></span></header>
+<div class="wb"><div class="rev" data-rev><p class="rev-score" data-rev-score>loading...</p>
+<form class="rev-form" data-rev-form><fieldset><legend>Rate this web site</legend><div class="rev-stars" data-rev-stars role="group" aria-label="Your rating"><button type="button" aria-pressed="false" aria-label="1 star">&#9733;</button><button type="button" aria-pressed="false" aria-label="2 stars">&#9733;</button><button type="button" aria-pressed="false" aria-label="3 stars">&#9733;</button><button type="button" aria-pressed="false" aria-label="4 stars">&#9733;</button><button type="button" aria-pressed="false" aria-label="5 stars">&#9733;</button></div>
+<input type="text" name="n" maxlength="30" placeholder="Your name (or stay mysterious)"><textarea name="m" maxlength="400" rows="3" placeholder="Tell the world what you think"></textarea>
+<button class="btn" type="submit">Post review</button><p class="rev-note" data-rev-note></p></fieldset></form>
+<div class="rev-list" data-rev-list></div></div></div>
+</section>
+<section class="win w-gb" data-win="guestbook" role="dialog" aria-label="Guestbook.txt - Notepad" hidden>
+<header class="tb"><span class="tb-i"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-book"/></svg></span><h2 class="tb-t">Guestbook.txt - Notepad</h2><span class="tb-btns"><button class="tb-min" type="button" data-min aria-label="Minimize"></button><button class="tb-max" type="button" data-max aria-label="Maximize"></button><button class="tb-x" type="button" data-close aria-label="Close"></button></span></header>
+<div class="wb"><div class="gb" data-gb><form class="gb-form" novalidate><label>Your name <input name="n" maxlength="30" autocomplete="nickname" required></label>
+<label>Message <textarea name="m" rows="3" maxlength="300" required></textarea></label>
+<div class="gb-row"><span class="gb-count" aria-hidden="true">300</span><button type="submit" class="btn gb-sign">Sign the book</button></div><p class="gb-status" role="status"></p></form>
+<p class="gb-total"></p><ol class="gb-list"></ol></div></div>
+</section>
+<section class="win w-guide" data-win="guide" role="dialog" aria-label="Gzowo Guide.exe" hidden>
+<header class="tb"><span class="tb-i"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-bubble"/></svg></span><h2 class="tb-t">Gzowo Guide.exe</h2><span class="tb-btns"><button class="tb-min" type="button" data-min aria-label="Minimize"></button><button class="tb-max" type="button" data-max aria-label="Maximize"></button><button class="tb-x" type="button" data-close aria-label="Close"></button></span></header>
+<div class="wb"><div class="chat" data-chat-box><div class="chat-log" aria-live="polite"></div><form class="chat-form"><input type="text" maxlength="300" placeholder="Ask about the site..." aria-label="Your question" autocomplete="off"><button type="submit" class="btn chat-send">Send</button></form><p class="chat-note">AI guide. It can make mistakes.</p></div></div>
+</section>
+</div>
+<div class="start-m" id="start-menu" role="menu" hidden><div class="sm-side"><b>Gzowo</b>Labs</div><ul>
+<li><a href="/rockets/" data-nav role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-rocket"/></svg><span>Rockets</span><em>5</em></a></li><li><a href="/printing/" data-nav role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-printer"/></svg><span>3D Printing</span><em>2</em></a></li><li><a href="/games/" data-nav role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-pad"/></svg><span>Games</span><em>37</em></a></li><li><a href="/software/" data-nav role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-chip"/></svg><span>Software and AI</span><em>15</em></a></li>
+<li class="sep"></li>
+<li><a href="#" data-open="newest" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-folder"/></svg><span>What is new</span></a></li>
+<li><a href="#" data-open="reviews" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-star"/></svg><span>Reviews</span></a></li>
+<li><a href="#guestbook" data-open="guestbook" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-book"/></svg><span>Guestbook</span></a></li>
+<li><a href="#" data-wall role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-bricks"/></svg><span>The Wall</span></a></li>
+<li><a href="#" data-open="guide" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-bubble"/></svg><span>Ask the Guide</span></a></li>
+<li class="sep"></li>
+<li><a href="/p/ghostframe/" data-nav data-ring='[&quot;ghostframe&quot;,&quot;rug-rush&quot;,&quot;fabrics&quot;,&quot;roadster-jump&quot;,&quot;spillway&quot;,&quot;mirage&quot;,&quot;timeblock&quot;,&quot;speak-groove&quot;,&quot;toot-tube&quot;,&quot;cutlery&quot;,&quot;kindling&quot;,&quot;campfire&quot;,&quot;cube-breakers&quot;,&quot;roadster-88&quot;,&quot;wolisz&quot;,&quot;make-your-own-game&quot;,&quot;foamwalker&quot;,&quot;iphone-duo&quot;,&quot;wordshader&quot;,&quot;timberline-express&quot;,&quot;haystack-inc-coop&quot;,&quot;hello-miner&quot;,&quot;gzowo-glass&quot;,&quot;squish&quot;,&quot;doodlerun&quot;,&quot;smendilendi-bureau&quot;,&quot;mark-zero&quot;,&quot;noclip&quot;,&quot;voidworks&quot;,&quot;ducks&quot;,&quot;g-doodle&quot;,&quot;hollowtree&quot;,&quot;narew-labs&quot;,&quot;ski-together&quot;,&quot;smendilendi&quot;,&quot;gzowo-builders&quot;,&quot;g-mini&quot;,&quot;gzowo-tv&quot;,&quot;airwave&quot;,&quot;voxel-demolition&quot;,&quot;g-images&quot;,&quot;g-micro&quot;,&quot;mjj-archives&quot;,&quot;untitled-civ-game&quot;,&quot;gargantua&quot;,&quot;cruise-control&quot;,&quot;untitled-pogo-game&quot;,&quot;backrooms&quot;,&quot;gzowo-ai&quot;,&quot;gsp-brand-kit&quot;,&quot;gzowo-bowling&quot;,&quot;modular&quot;,&quot;galeria-gzowo&quot;,&quot;narew&quot;,&quot;spider-man-new-york&quot;]' role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-globe"/></svg><span>The Gzowo Web Ring</span><em>random</em></a></li>
+<li><a href="mailto:kalakasanyt@gmail.com" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-mail"/></svg><span>E-mail me</span></a></li>
+<li><a href="https://github.com/JerzySukiennik" target="_blank" rel="noopener" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-floppy"/></svg><span>Source code</span></a></li>
+<li class="sep"></li>
+<li><a href="/" data-nav role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-computer"/></svg><span>About Gzowo Labs</span></a></li>
+<li><a href="#" data-mascot role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-pad"/></svg><span>Walking Jurek: on</span></a></li>
+<li><a href="#" data-open="shutdown" role="menuitem"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-computer"/></svg><span>Shut Down...</span></a></li>
+</ul></div>
+<footer class="taskbar"><button class="start" type="button" data-start aria-expanded="false" aria-controls="start-menu"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-rocket"/></svg><b>Start</b></button>
+<span class="ql"><a href="/" data-nav title="Show the map"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-computer"/></svg></a><a href="#" data-open="guide" title="Ask the Guide"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-bubble"/></svg></a></span>
+<div class="tasks" data-tasks></div>
+<div class="tray"><button class="tray-b" type="button" data-midi title="Play gzowo_theme.mid" aria-pressed="false"><svg class="px" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><use href="/assets/icons.svg#i-note"/></svg></button><span class="tray-n" data-counter title="Visitors">00000000</span><time class="tray-c" data-clock></time></div></footer>
+</div>
+<noscript><p class="nojs">The map needs JavaScript. Everything is still here: <a href="/rockets/">Rockets</a> | <a href="/printing/">3D Printing</a> | <a href="/games/">Games</a> | <a href="/software/">Software and AI</a> | <a href="mailto:kalakasanyt@gmail.com">E-mail</a></p></noscript>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","/assets/views.mjs":"/assets/views.mjs?v=eed752cc","/assets/map.mjs":"/assets/map.mjs?v=6377db28","/assets/mural.mjs":"/assets/mural.mjs?v=7ea1e0d9","/assets/life.mjs":"/assets/life.mjs?v=66513328","/assets/boot.mjs":"/assets/boot.mjs?v=97b38de1"}}</script>
+<script type="module" src="/assets/desk.mjs?v=10fba6e7"></script>
+<script src="/assets/reviews.js?v=3bd80a0f" defer></script>
+<script src="/assets/guestbook.js?v=899ecdb3" defer></script>
+<script src="/assets/chat.js?v=29381b5b" data-chat="https://gzowo-chat.kalakasanyt.workers.dev" defer></script>
+<script type="module" src="/assets/agentation.js"></script>
+<script type="module" src="/assets/avatar.mjs?v=32e841b9"></script>
 </body>
 </html>

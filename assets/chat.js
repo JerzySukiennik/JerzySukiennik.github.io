@@ -1,6 +1,5 @@
-/* The Gzowo Guide: a small chat window that answers questions about the site.
-   It talks to a Cloudflare Worker (the address comes from data-chat on the script
-   tag) that holds the API key and the limits; nothing secret lives here. */
+/* The Gzowo Guide: the chat in the "Gzowo Guide.exe" window. It talks to a Cloudflare Worker (address in data-chat on
+   the script tag) that holds the API key and the limits; nothing secret lives here. */
 
 (function () {
   var tag = document.querySelector("script[data-chat]");
@@ -14,7 +13,7 @@
 
   var history = [];
   var busy = false;
-  var win, log, input, send, fab;
+  var log, input, send;
 
   try { history = JSON.parse(sessionStorage.getItem("gl-chat") || "[]").slice(-MAX_HISTORY); } catch (e) { history = []; }
 
@@ -31,6 +30,7 @@
       try { href = new URL(href, location.href).pathname; } catch (e) { href = "/"; }
       var a = document.createElement("a");
       a.href = href;
+      a.setAttribute("data-nav", "");
       a.textContent = m[1] || m[3].replace("https://gzowo.fun", "gzowo.fun");
       parent.appendChild(a);
       last = re.lastIndex;
@@ -103,52 +103,25 @@
       .then(function () { setBusy(false); input.focus(); });
   }
 
-  function toggle(open) {
-    var show = open === undefined ? !win.classList.contains("is-open") : open;
-    win.classList.toggle("is-open", show);
-    win.setAttribute("aria-hidden", String(!show));
-    fab.setAttribute("aria-expanded", String(show));
-    if (show) setTimeout(function () { input.focus(); }, 60);
-    else fab.focus();
-  }
-
   function build() {
-    fab = document.createElement("button");
-    fab.type = "button";
-    fab.className = "chat-fab";
-    fab.setAttribute("aria-expanded", "false");
-    fab.textContent = "? ASK THE GUIDE";
-    document.body.appendChild(fab);
-
-    win = document.createElement("section");
-    win.className = "chat-win";
-    win.setAttribute("role", "dialog");
-    win.setAttribute("aria-label", "Gzowo Guide chat");
-    win.setAttribute("aria-hidden", "true");
-    win.innerHTML =
-      '<div class="chat-bar"><span>Gzowo Guide.exe</span><button type="button" class="chat-x" aria-label="Close chat">&times;</button></div>' +
-      '<div class="chat-log" aria-live="polite"></div>' +
-      '<form class="chat-form"><input type="text" maxlength="' + MAX_INPUT + '" placeholder="Ask about the site..." aria-label="Your question" autocomplete="off">' +
-      '<button type="submit" class="chat-send">SEND</button></form>' +
-      '<p class="chat-note">AI guide. It can make mistakes.</p>';
-    document.body.appendChild(win);
-
-    log = win.querySelector(".chat-log");
-    input = win.querySelector("input");
-    send = win.querySelector(".chat-send");
+    var box = document.querySelector("[data-chat-box]");
+    if (!box) return;
+    log = box.querySelector(".chat-log");
+    input = box.querySelector("input");
+    send = box.querySelector(".chat-send");
 
     bubble("bot", WELCOME);
     history.forEach(function (m) { bubble(m.role === "user" ? "user" : "bot", m.content); });
     if (!history.length) chips();
 
-    fab.addEventListener("click", function () { toggle(); });
-    win.querySelector(".chat-x").addEventListener("click", function () { toggle(false); });
-    win.addEventListener("keydown", function (e) { if (e.key === "Escape") toggle(false); });
-    win.querySelector("form").addEventListener("submit", function (e) {
+    box.querySelector("form").addEventListener("submit", function (e) {
       e.preventDefault();
       var v = input.value;
       input.value = "";
       ask(v);
+    });
+    window.addEventListener("gz:open", function (e) {
+      if (e.detail === "guide") setTimeout(function () { input.focus(); }, 60);
     });
   }
 
