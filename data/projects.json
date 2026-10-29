@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "ghostframe",
+      "name": "Ghostframe",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "ghostframe.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/ghostframe",
+      "blurb": "Pose see-through ghosts of Tesla Optimus around a stage and watch it walk and jump through every in-between frame.",
+      "body": [
+        "Ghostframe is a pose-to-pose animation toy starring Tesla Optimus. Every keyframe is a ghost, a see-through copy of the robot that you place on the stage and pose by grabbing a hand, a foot, the head or the hips and pulling. The part you are moving lights up blue, and the ghost you are editing turns into the real, shaded robot so you can judge the pose in depth.",
+        "Everything between the ghosts is generated. Poses blend along smooth curves through time, but when two ghosts stand apart Optimus does not slide across the floor: the app plans real footsteps, plants each foot and rolls it from heel to toe, sways the hips and swings the arms against the legs, with the slightly bent knees of a robot gait. Switch a transition to Jump and you get a crouch, a flight with tucked legs and a landing that soaks up the impact. The robot itself is built entirely in code from lofted shells on a 49-bone rig, with no model files.",
+        "Try this first: press play on the demo, then click a ghost, pull its hand above its head, drag the ring under its feet somewhere new and play it again. Turn on Klatki (frames) to see every generated frame laid out as a trail of faint robots."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "Two-bone IK",
+        "Procedural walk cycle"
+      ],
+      "image": "project-images/ghostframe.webp"
+    },
+    {
+      "hidden": false,
       "slug": "rug-rush",
       "name": "Rug Rush",
       "category": "Game",
