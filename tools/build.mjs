@@ -568,7 +568,7 @@ for (const project of projects) {
 const clip = (t, n) => (t.length > n ? t.slice(0, n - 1).trimEnd() + "..." : t);
 const knowledge = [
   `SITE: Gzowo Labs (${SITE}), the personal site of ${S.owner} (Gzowo, Poland, since 2025). Tagline: ${S.tagline}`,
-  "Four doors: Rockets (/rockets/), 3D Printing (/printing/), Games (/games/), Software and AI (/software/). The site also has a guestbook (menu), a brick wall in the side margins on wide screens where anyone can write or spray graffiti, a visitor counter, reviews, and a small walking 3D mascot of Jurek.",
+  "Four doors: Rockets (/rockets/), 3D Printing (/printing/), Games (/games/), Software and AI (/software/). The site also has a guestbook (menu), a brick wall in the side margins on wide screens where anyone can spray paint drawings in 60 colors, a visitor counter, reviews, and a small walking 3D mascot of Jurek.",
   "",
   "ROCKETS (Gzowo Space Program, GSP):",
   clip(readJson(rocketsFile).lead, 400),

@@ -469,22 +469,13 @@ a:hover{color:#ff0000;background:#ffff00}
 
 /* ---------- brick wall (wide screens only, see wall.js) ---------- */
 
-@font-face{font-family:"GL brush";src:url("/assets/fonts/brush-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
-@font-face{font-family:"GL brush";src:url("/assets/fonts/brush-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
-@font-face{font-family:"GL spray";src:url("/assets/fonts/spray-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
-@font-face{font-family:"GL spray";src:url("/assets/fonts/spray-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
-@font-face{font-family:"GL drip";src:url("/assets/fonts/drip-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
-@font-face{font-family:"GL drip";src:url("/assets/fonts/drip-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
-@font-face{font-family:"GL sedgwick";src:url("/assets/fonts/sedgwick-latin-ext.woff2") format("woff2");font-display:swap;unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
-@font-face{font-family:"GL sedgwick";src:url("/assets/fonts/sedgwick-latin.woff2") format("woff2");font-display:swap;unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
-
 .wall-hint{
   display:none;margin-top:6px;font-size:11px;
   font-family:var(--comic);color:#800080;cursor:pointer;
 }
 .wall-hint:hover{color:#ff0000;background:#ffff00}
 
-.wall-canvas,.spray-panel{display:none}
+.wall-canvas,.spray-panel,.sp-tab{display:none}
 
 @media (min-width:1280px){
   body{position:relative}
@@ -498,8 +489,7 @@ a:hover{color:#ff0000;background:#ffff00}
   body::after{right:0;box-shadow:inset 28px 0 36px -12px rgba(0,0,0,.6)}
   .frame{cursor:auto}
   .wall-hint{display:block}
-  html.wall-write body{cursor:text}
-  html.wall-spray body{cursor:crosshair}
+  html.wall-spray body{cursor:var(--wall-cursor,crosshair)}
 
   .wall-canvas{
     display:block;position:fixed;inset:0;z-index:9998;
@@ -525,40 +515,47 @@ a:hover{color:#ff0000;background:#ffff00}
     font:bold 16px/16px var(--impact);color:#000;background:#fff;border:2px outset #ddd;cursor:pointer;
   }
   .sp-title{
-    margin:-6px -6px 6px;padding:4px 6px;
+    margin:-6px -6px 6px;padding:4px 28px 4px 6px;white-space:nowrap;
     font-family:var(--impact);font-size:14px;letter-spacing:1px;text-align:center;
     color:#000;background:repeating-linear-gradient(45deg,var(--yellow) 0 10px,#ffc400 10px 20px);
     border-bottom:3px ridge #c0c0c0;
   }
-  .sp-tools,.sp-fonts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px}
-  .sp-sizes{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}
-  .sp-fonts[hidden]{display:none}
+  .sp-colors{
+    display:grid;grid-template-columns:repeat(var(--cols,6),1fr);gap:1px;margin-bottom:6px;
+    padding:1px;background:#000;border:2px inset #808080;
+  }
+  .sp-sw{aspect-ratio:1;min-width:0;padding:0;border:0;cursor:pointer}
+  .sp-sw[aria-pressed="true"]{position:relative;z-index:1;outline:2px solid #fff;box-shadow:inset 0 0 0 2px #000}
+  .sp-pick{display:flex;gap:4px;margin-bottom:6px}
+  .sp-cur{flex:1;height:24px;border:2px inset #808080}
+  .sp-more{
+    position:relative;flex:1;display:flex;align-items:center;justify-content:center;height:24px;overflow:hidden;
+    border:2px outset #ddd;cursor:pointer;
+    background:conic-gradient(#ff2d2d,#ffe600,#38e03b,#00e5ff,#2f6bff,#b14bff,#ff2d2d);
+  }
+  .sp-more b{padding:0 3px;font:bold 11px/14px var(--comic);color:#000080;background:#fff;white-space:nowrap;pointer-events:none}
+  .sp-more input{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;border:0;opacity:0;cursor:pointer}
+  .sp-rainbow{flex:0 0 24px;height:24px;aspect-ratio:auto;border:2px outset #ddd}
+  .sp-sizes{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:6px}
   .sp-btn{
     padding:3px 2px;font-family:var(--comic);font-weight:bold;font-size:12px;
     border:2px outset #ddd;background:linear-gradient(#fff,#c8c8c8);color:#000080;cursor:pointer;
     white-space:nowrap;overflow:hidden;
   }
   .sp-btn[aria-pressed="true"]{border-style:inset;background:var(--yellow);color:#000}
-  .sp-font{font-size:15px;font-weight:normal}
-  .sp-colors{display:grid;grid-template-columns:repeat(auto-fill,minmax(20px,1fr));gap:4px;margin-bottom:6px}
-  .sp-sw{
-    aspect-ratio:1;padding:0;border:2px solid #000;cursor:pointer;
-  }
-  .sp-sw[aria-pressed="true"]{outline:3px solid #fff;outline-offset:-1px;box-shadow:0 0 0 2px #000 inset}
+  .sp-size{display:flex;align-items:center;justify-content:center;height:24px;padding:0}
+  .sp-size i{display:block;border-radius:50%;background:#000}
   .sp-note{margin:0;font-size:10.5px;color:#cfcfcf}
   .sp-note b{color:var(--yellow)}
   .sp-count{display:block;margin-top:3px;color:var(--lime)}
   .sp-count b{color:var(--lime)}
-
-  .wall-input{
-    position:fixed;z-index:10000;margin:0;padding:2px 6px;
-    border:2px dashed #fff;background:rgba(0,0,0,.4);
-    text-align:center;line-height:1.15;outline:none;caret-color:#fff;
-    --wall-outline:#111;
-    text-shadow:-2px 0 var(--wall-outline),2px 0 var(--wall-outline),0 -2px var(--wall-outline),0 2px var(--wall-outline),
-      -2px -2px var(--wall-outline),2px 2px var(--wall-outline),-2px 2px var(--wall-outline),2px -2px var(--wall-outline);
+  .sp-tab{
+    display:block;position:fixed;left:8px;bottom:12px;z-index:9999;
+    padding:5px 10px;font-family:var(--impact);font-size:14px;letter-spacing:1px;color:#000;
+    background:repeating-linear-gradient(45deg,var(--yellow) 0 10px,#ffc400 10px 20px);
+    border:3px ridge #c0c0c0;box-shadow:4px 4px 0 rgba(0,0,0,.6);cursor:pointer;
   }
-  .wall-input::placeholder{color:rgba(255,255,255,.55);text-shadow:none}
+  .sp-tab[hidden]{display:none}
 }
 
 @keyframes sp-pulse{
