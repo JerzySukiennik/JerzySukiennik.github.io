@@ -1,5 +1,5 @@
 /* Gzowo Labs: the real visitor counter and the brick wall in the page margins (spray paint only).
-   Both talk plain REST to one Realtime Database, no SDK. Localhost paints on /bricksDev. */
+   Each stroke carries a random key kept only in the painter's browser, and the rules delete a stroke only for that key. */
 
 (function () {
   var DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
@@ -41,10 +41,16 @@
   var WIDE = window.matchMedia("(min-width:1280px)");
   var DEV = LOCAL.indexOf(location.hostname) !== -1 || location.protocol === "file:";
   var PATH = DEV ? "bricksDev" : "bricks";
+  var KEYS = DEV ? "brickKeysDev" : "brickKeys";
+  var UNDO = DEV ? "brickUndoDev" : "brickUndo";
+  var MINE_KEY = "gl-wall-mine-" + PATH;
   var MAX_ITEMS = 1000;
   var QUERY = '.json?orderBy="$key"&limitToLast=' + MAX_ITEMS;
   var MAX_POINTS = 150;
   var MAX_POSTS = 300;
+  var MAX_MINE = 400;
+  var UNDO_KEY = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘Z" : "Ctrl+Z";
+  var PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 
   var HUES = [
     ["red", "#ffb8b8", "#fb6a6a", "#ff0000", "#8e0b0b"],
@@ -71,11 +77,15 @@
   var RAINBOW = ["#ff2d2d", "#ff8a00", "#ffe600", "#38e03b", "#00e5ff", "#2f6bff", "#b14bff"];
   var BAD = /(kurw|chuj|huj|pierdol|spierdal|wypierd|zajeb|jebac|jebi|jeban|jebn|pizd|fuck|shit|bitch|nigg|fagg|cunt|porn|hitler|nazi|cwel|kutas|szmat|dziwk)/;
   var LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "@": "a", "$": "s", "!": "i" };
+  var ERASER = 'url("data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26"><g transform="rotate(-35 13 13)">' +
+    '<rect x="3" y="9" width="20" height="9" rx="2" fill="#ff9ec7" stroke="#000" stroke-width="1.5"/>' +
+    '<rect x="3" y="9" width="7" height="9" rx="2" fill="#fff" stroke="#000" stroke-width="1.5"/></g></svg>') + '") 5 19, cell';
 
-  var canvas, ctx, base, bctx, panel, tab, live = null, drawing = false;
+  var canvas, ctx, base, bctx, panel, tab, live = null, gesture = null;
   var items = [], byId = {}, pending = [], started = false, dirty = true, raf = 0;
-  var color = "#ff0000", size = 2, cols = 0;
+  var color = "#ff0000", size = 2, cols = 0, erasing = false, keyless = false;
   var rainbow = false, posted = 0, flashTimer = 0, opened = false, dismissed = false;
+  var mine = {}, order = [], redo = [], lastT = 0, lastR = [];
 
   try { rainbow = localStorage.getItem("gl-rainbow") === "1"; } catch (e) {}
 
@@ -86,6 +96,8 @@
   }
 
   window.glBad = function (s) { return BAD.test(clean(s)); };
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
   function frameRect() {
     var el = document.querySelector(".frame");
@@ -117,6 +129,59 @@
     clearTimeout(flashTimer);
     flashTimer = setTimeout(function () { el.style.display = "none"; }, 2600);
   }
+
+
+  function loadMine() {
+    try {
+      (JSON.parse(localStorage.getItem(MINE_KEY)) || []).forEach(function (m) {
+        if (Array.isArray(m) && typeof m[0] === "string" && typeof m[1] === "string" && !mine[m[0]]) {
+          mine[m[0]] = { k: m[1], g: m[2] || m[0] };
+          order.push(m[0]);
+        }
+      });
+    } catch (e) {}
+  }
+
+  function saveMine() {
+    try {
+      localStorage.setItem(MINE_KEY, JSON.stringify(order.slice(-MAX_MINE).map(function (id) { return [id, mine[id].k, mine[id].g]; })));
+    } catch (e) {}
+  }
+
+  function remember(id, k, g) {
+    if (!mine[id]) order.push(id);
+    mine[id] = { k: k, g: g };
+    saveMine();
+  }
+
+  function forget(id) {
+    if (!mine[id]) return;
+    delete mine[id];
+    var i = order.indexOf(id);
+    if (i !== -1) order.splice(i, 1);
+    saveMine();
+  }
+
+  function pushId() {
+    var now = Date.now(), dup = now === lastT, id = "", i;
+    lastT = now;
+    var t = [];
+    for (i = 7; i >= 0; i--) { t[i] = PUSH.charAt(now % 64); now = Math.floor(now / 64); }
+    id = t.join("");
+    if (!dup) { for (i = 0; i < 12; i++) lastR[i] = Math.floor(Math.random() * 64); }
+    else { for (i = 11; i >= 0 && lastR[i] === 63; i--) lastR[i] = 0; if (i >= 0) lastR[i]++; }
+    for (i = 0; i < 12; i++) id += PUSH.charAt(lastR[i]);
+    return id;
+  }
+
+  function secret() {
+    var a = new Uint8Array(18);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ("0" + b.toString(16)).slice(-2); }).join("");
+  }
+
+  function newGroup() { return "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
 
   function schedule() {
     if (!raf) raf = requestAnimationFrame(draw);
@@ -204,6 +269,7 @@
     }
   }
 
+
   function parse(id, v) {
     if (!v || typeof v !== "object" || v.k !== "d" || (v.a !== "l" && v.a !== "r")) return null;
     if (typeof v.c !== "string" || !(v.c === "rainbow" || /^#[0-9a-f]{6}$/.test(v.c))) return null;
@@ -218,11 +284,35 @@
 
   function sig(a, d) { return a + "|" + d; }
 
+  function bounds(it) {
+    var ys = it.d.filter(function (_, i) { return i % 2; });
+    it.y0 = Math.min.apply(null, ys);
+    it.y1 = Math.max.apply(null, ys);
+    return it;
+  }
+
   function keep(it) {
     items.push(it);
     if (items.length > MAX_ITEMS) items.shift();
     countUp();
     refresh();
+  }
+
+  function find(id) {
+    for (var i = items.length - 1; i >= 0; i--) if (items[i].id === id) return items[i];
+    return null;
+  }
+
+  function drop(id) {
+    for (var i = items.length - 1; i >= 0; i--) {
+      if (items[i].id === id) {
+        var it = items.splice(i, 1)[0];
+        countUp();
+        refresh();
+        return it;
+      }
+    }
+    return null;
   }
 
   function add(id, v) {
@@ -234,28 +324,46 @@
     if (it) keep(it);
   }
 
+  function gone(id) {
+    byId[id] = true;
+    if (drop(id)) sync();
+  }
+
   function countUp() {
     var el = panel && panel.querySelector("[data-sp-count]");
     if (el) el.textContent = items.length;
   }
 
-  function onMessage(e) {
-    var msg;
-    try { msg = JSON.parse(e.data || "{}"); } catch (err) { return; }
+  function message(e) {
+    try { return JSON.parse(e.data || "null"); } catch (err) { return null; }
+  }
+
+  function onPut(e) {
+    var msg = message(e);
     if (!msg || typeof msg.path !== "string") return;
-    if (msg.path === "/") Object.keys(msg.data || {}).forEach(function (k) { add(k, msg.data[k]); });
-    else if (msg.data) add(msg.path.slice(1), msg.data);
+    if (msg.path === "/") { Object.keys(msg.data || {}).forEach(function (k) { add(k, msg.data[k]); }); sync(); return; }
+    var parts = msg.path.slice(1).split("/");
+    if (parts.length !== 1) return;
+    if (msg.data === null) gone(parts[0]); else add(parts[0], msg.data);
+  }
+
+  function onPatch(e) {
+    var msg = message(e);
+    if (!msg || msg.path !== "/" || !msg.data) return;
+    Object.keys(msg.data).forEach(function (k) { if (msg.data[k] === null) gone(k); else add(k, msg.data[k]); });
   }
 
   function listen() {
     if (typeof EventSource === "undefined") {
       fetch(DB + "/" + PATH + QUERY).then(function (r) { return r.json(); }).then(function (d) {
         Object.keys(d || {}).forEach(function (k) { add(k, d[k]); });
+        sync();
       }).catch(function () {});
       return;
     }
     var source = new EventSource(DB + "/" + PATH + QUERY);
-    source.addEventListener("put", onMessage);
+    source.addEventListener("put", onPut);
+    source.addEventListener("patch", onPatch);
     source.onerror = function () {};
   }
 
@@ -264,15 +372,10 @@
     if (p !== -1) pending.splice(p, 1);
   }
 
-  function send(it) {
-    var d = it.d.join(",");
-    var key = sig(it.a, d);
+  function post(it, body) {
+    var key = sig(it.a, body.d);
     pending.push(key);
-    posted++;
-    fetch(DB + "/" + PATH + ".json", {
-      method: "POST",
-      body: JSON.stringify({ k: "d", a: it.a, c: it.c, d: d, w: it.w, t: { ".sv": "timestamp" } }),
-    })
+    return fetch(DB + "/" + PATH + ".json", { method: "POST", body: JSON.stringify(body) })
       .then(function (r) { return r.json(); })
       .then(function (out) {
         unpend(key);
@@ -280,6 +383,105 @@
       })
       .catch(function () { unpend(key); });
   }
+
+  function send(it) {
+    var d = it.d.join(",");
+    var body = { k: "d", a: it.a, c: it.c, d: d, w: it.w, t: { ".sv": "timestamp" } };
+    posted++;
+    if (keyless) { it.saved = post(it, body); return; }
+    var id = pushId(), key = secret(), patch = {};
+    it.id = id;
+    byId[id] = true;
+    remember(id, key, it.g || id);
+    patch[PATH + "/" + id] = body;
+    patch[KEYS + "/" + id] = key;
+    it.saved = fetch(DB + "/.json", { method: "PATCH", body: JSON.stringify(patch) })
+      .then(function (r) {
+        if (r.ok) return;
+        forget(id);
+        sync();
+        if (r.status === 401 || r.status === 403) { keyless = true; return post(it, body); }
+      })
+      .catch(function () { forget(id); sync(); });
+  }
+
+
+  function copyOf(it) { return { a: it.a, d: it.d.slice(), c: it.c, w: it.w, y0: it.y0, y1: it.y1 }; }
+
+  function erase(it) {
+    var m = mine[it.id];
+    if (!m) return false;
+    var id = it.id, patch = {};
+    drop(id);
+    forget(id);
+    patch[PATH + "/" + id] = null;
+    patch[KEYS + "/" + id] = null;
+    patch[UNDO + "/" + id] = m.k;
+    (it.saved || Promise.resolve())
+      .then(function () { return fetch(DB + "/.json", { method: "PATCH", body: JSON.stringify(patch) }); })
+      .then(function (r) { if (!r.ok) throw r.status; })
+      .catch(function () {
+        remember(id, m.k, m.g);
+        keep(it);
+        sync();
+        flash("COULD NOT REMOVE THAT, TRY AGAIN");
+      });
+    return true;
+  }
+
+  function undo() {
+    var last = null;
+    for (var i = order.length - 1; i >= 0 && !last; i--) last = find(order[i]);
+    if (!last) { flash("NOTHING OF YOURS LEFT TO UNDO"); return; }
+    var g = mine[last.id].g;
+    var batch = items.filter(function (it) { return mine[it.id] && mine[it.id].g === g; });
+    redo.push(batch.map(copyOf));
+    batch.forEach(erase);
+    sync();
+  }
+
+  function redoLast() {
+    var group = redo.pop();
+    if (!group) return;
+    var g = newGroup();
+    group.forEach(function (c) {
+      if (posted >= MAX_POSTS) return;
+      var it = { a: c.a, d: c.d.slice(), c: c.c, w: c.w, y0: c.y0, y1: c.y1, g: g };
+      keep(it);
+      send(it);
+    });
+    sync();
+  }
+
+  function near(it, x, y, f, top) {
+    var pts = it.d, r = Math.max(1.5, it.w / 1000 * unit(f)) / 2 + 6, py = y + top;
+    if (py < it.y0 - r || py > it.y1 + r) return false;
+    for (var i = 0; i < pts.length; i += 2) {
+      var ax = screenX(it.a, pts[i], f), ay = pts[i + 1] - top;
+      var nx = i + 2 < pts.length ? screenX(it.a, pts[i + 2], f) : ax, ny = i + 2 < pts.length ? pts[i + 3] - top : ay;
+      var dx = nx - ax, dy = ny - ay, len = dx * dx + dy * dy;
+      var t = len ? clamp(((x - ax) * dx + (y - ay) * dy) / len, 0, 1) : 0;
+      var ex = ax + t * dx - x, ey = ay + t * dy - y;
+      if (ex * ex + ey * ey <= r * r) return true;
+    }
+    return false;
+  }
+
+  function rub(e) {
+    var f = frameRect();
+    if (!f || !gesture) return;
+    var side = sideAt(e.clientX, f), top = window.scrollY;
+    if (!side) return;
+    for (var i = items.length - 1; i >= 0; i--) {
+      var it = items[i];
+      if (it.a !== side || !near(it, e.clientX, e.clientY, f, top)) continue;
+      if (mine[it.id]) {
+        var c = copyOf(it);
+        if (erase(it)) gesture.removed.push(c);
+      } else gesture.other = true;
+    }
+  }
+
 
   function pagePoint(side, x, y, f) {
     var u = side === "l" ? f.left - x : x - f.right;
@@ -289,16 +491,16 @@
   function flushStroke(keepLast) {
     if (!live) return;
     var done = live;
-    live = keepLast ? { a: done.a, d: done.d.slice(-2), c: done.c, w: done.w, y0: 0, y1: 1e9 } : null;
+    live = keepLast ? { a: done.a, d: done.d.slice(-2), c: done.c, w: done.w, y0: 0, y1: 1e9, g: done.g } : null;
     if (done.d.length < 2) return;
     if (posted >= MAX_POSTS) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
     if (done.d.length === 2) done.d = done.d.concat(done.d);
-    var ys = done.d.filter(function (_, i) { return i % 2; });
-    done.y0 = Math.min.apply(null, ys);
-    done.y1 = Math.max.apply(null, ys);
+    bounds(done);
     done.id = "local" + Math.random().toString(36).slice(2);
+    redo.length = 0;
     keep(done);
     send(done);
+    sync();
   }
 
   function extend(e) {
@@ -312,6 +514,7 @@
     schedule();
   }
 
+
   function onWall(e) {
     return e.target === document.body || e.target === document.documentElement;
   }
@@ -324,26 +527,36 @@
     if (!side) return;
     e.preventDefault();
     if (!dismissed && !isOpen()) showPanel(true);
-    drawing = true;
-    live = { a: side, d: [], c: color, w: Math.round(SIZES[size] * 1000), y0: 0, y1: 1e9 };
+    gesture = { removed: [], other: false };
+    if (erasing) { rub(e); return; }
+    live = { a: side, d: [], c: color, w: Math.round(SIZES[size] * 1000), y0: 0, y1: 1e9, g: newGroup() };
     extend(e);
   }
 
   function move(e) {
-    if (!drawing) return;
+    if (!gesture) return;
     var list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
-    (list.length ? list : [e]).forEach(extend);
+    (list.length ? list : [e]).forEach(erasing ? rub : extend);
   }
 
   function up() {
-    if (!drawing) return;
-    drawing = false;
+    if (!gesture) return;
+    var g = gesture;
+    gesture = null;
+    if (erasing) {
+      if (g.removed.length) redo.push(g.removed);
+      else if (g.other) flash("THE ERASER ONLY TAKES YOUR OWN PAINT");
+      sync();
+      return;
+    }
     flushStroke(false);
     schedule();
   }
 
   function setCursor() {
     var root = document.documentElement;
+    root.classList.add("wall-spray");
+    if (erasing) { root.style.setProperty("--wall-cursor", ERASER); return; }
     var f = frameRect();
     var d = Math.round(Math.max(6, Math.min(56, f ? SIZES[size] * unit(f) : 8)));
     var s = d + 4, c = s / 2;
@@ -356,10 +569,10 @@
     var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '">' + defs +
       '<circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="' + fill + '" stroke="#000"/>' +
       '<circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff"/></svg>';
-    root.classList.add("wall-spray");
     root.style.setProperty("--wall-cursor",
       'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + Math.round(c) + " " + Math.round(c) + ", crosshair");
   }
+
 
   function swatchBg(hex) {
     return hex === "rainbow" ? "linear-gradient(135deg," + RAINBOW.join(",") + ")" : hex;
@@ -394,9 +607,12 @@
 
   function sync() {
     if (!panel) return;
-    panel.querySelectorAll("[data-color]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.color === color)); });
+    panel.querySelectorAll("[data-color]").forEach(function (b) { b.setAttribute("aria-pressed", String(!erasing && b.dataset.color === color)); });
     panel.querySelectorAll("[data-size]").forEach(function (b) { b.setAttribute("aria-pressed", String(+b.dataset.size === size)); });
     panel.querySelector("[data-sp-cur]").style.background = swatchBg(color);
+    panel.querySelector("[data-eraser]").setAttribute("aria-pressed", String(erasing));
+    panel.querySelector("[data-undo]").disabled = !items.some(function (it) { return mine[it.id]; });
+    panel.querySelector("[data-redo]").disabled = !redo.length;
     setCursor();
   }
 
@@ -416,19 +632,28 @@
         return '<button type="button" class="sp-btn sp-size" data-size="' + i + '" aria-label="Brush ' + (i + 1) + '" title="Brush ' + (i + 1) +
           '"><i style="width:' + px + "px;height:" + px + 'px"></i></button>';
       }).join("") + "</div>" +
-      '<p class="sp-note">Click and drag on the bricks to spray. It stays <b>forever</b>. <span class="sp-count"><b data-sp-count>0</b> strokes on the wall.</span></p>';
+      '<div class="sp-acts">' +
+        '<button type="button" class="sp-btn" data-undo aria-label="Undo" title="Take back your last stroke (' + UNDO_KEY + ')">&#8630;</button>' +
+        '<button type="button" class="sp-btn" data-redo aria-label="Redo" title="Put it back (Shift+' + UNDO_KEY + ')">&#8631;</button>' +
+        '<button type="button" class="sp-btn sp-eraser" data-eraser aria-pressed="false" aria-label="Eraser" title="Eraser, it only takes your own paint"><i></i></button>' +
+      "</div>" +
+      '<p class="sp-note">Drag on the bricks to spray. <b>' + UNDO_KEY + '</b> takes back your own strokes. <span class="sp-count"><b data-sp-count>0</b> strokes on the wall.</span></p>';
     document.body.appendChild(panel);
 
     panel.addEventListener("click", function (e) {
       var b = e.target.closest("button");
       if (!b) return;
       if (b.hasAttribute("data-close")) { closePanel(); return; }
-      if (b.dataset.color) color = b.dataset.color;
-      if (b.dataset.size) size = +b.dataset.size;
+      if (b.hasAttribute("data-undo")) { undo(); return; }
+      if (b.hasAttribute("data-redo")) { redoLast(); return; }
+      if (b.hasAttribute("data-eraser")) { erasing = !erasing; sync(); return; }
+      if (b.dataset.color) { color = b.dataset.color; erasing = false; }
+      if (b.dataset.size) { size = +b.dataset.size; erasing = false; }
       sync();
     });
     panel.querySelector("[data-custom]").addEventListener("input", function (e) {
       color = e.target.value.toLowerCase();
+      erasing = false;
       sync();
     });
 
@@ -478,14 +703,34 @@
     panel.querySelector(".sp-rainbow").hidden = false;
     if (announce) {
       color = "rainbow";
+      erasing = false;
       flash("SECRET COLOR UNLOCKED: RAINBOW");
     }
     sync();
   }
 
+  function onKey(e) {
+    if (e.key === "Escape" && isOpen()) { closePanel(); return; }
+    if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+    var tag = (e.target && e.target.tagName) || "";
+    if (tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable)) return;
+    var k = e.key.toLowerCase();
+    if (k === "z" && !e.shiftKey) {
+      if (!order.length) return;
+      e.preventDefault();
+      undo();
+    } else if ((k === "z" && e.shiftKey) || (k === "y" && e.ctrlKey)) {
+      if (!redo.length) return;
+      e.preventDefault();
+      redoLast();
+    }
+  }
+
+
   function start() {
     if (started || !WIDE.matches) return;
     started = true;
+    loadMine();
     canvas = document.createElement("canvas");
     canvas.className = "wall-canvas";
     canvas.setAttribute("aria-hidden", "true");
@@ -503,7 +748,7 @@
     window.addEventListener("pointercancel", up);
     window.addEventListener("resize", function () { fitCanvas(); layoutColors(); setCursor(); });
     window.addEventListener("scroll", refresh, { passive: true });
-    document.addEventListener("keydown", function (e) { if (e.key === "Escape" && isOpen()) closePanel(); });
+    document.addEventListener("keydown", onKey);
   }
 
   var hint = document.querySelector("[data-wall-hint]");
