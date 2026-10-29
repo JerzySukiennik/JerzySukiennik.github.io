@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "robotea",
+      "name": "Robotea",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "robotea.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/robotea",
+      "blurb": "Your webcam turns your hands into a robot's hands: high-five another robot, or make finger guns and hit the range.",
+      "body": [
+        "Robotea is a first-person game you play with your real hands. A webcam watches both of them and a Tesla Optimus copies every move. Raise your hands to high-five a graphite robot whose palms bounce back on springs, or close a fist for a fist bump, and every contact plays a real recorded clap, slap or thump. Online, two players in different homes high-five each other's robots.",
+        "The second mode is a shooting range. Make a finger gun and the robot holds a real pistol in each hand: Glock 17, Beretta 92, Colt 1911, Desert Eagle, a .357 revolver, an Uzi, a MAC-10, or just the finger gun, which fires glowing bolts. Drop your thumb like a hammer or flick your wrist up to fire. Aiming follows where your hand is, not how it is turned, because a webcam reads position far more steadily than rotation. Paper targets score every hole from 10 to 1, steel gongs ring and swing, casings bounce on the bench and the slide locks back when the magazine runs dry.",
+        "Try this first: pick the range, go Solo, hold your finger guns on the middle target for a second to zero your aim, then empty two Desert Eagles into the gongs. Hand tracking runs in the browser, so the camera image never leaves your computer. You need a computer with a webcam."
+      ],
+      "stack": [
+        "three.js",
+        "MediaPipe Hand Landmarker",
+        "Two-bone IK",
+        "WebRTC",
+        "Web Audio"
+      ],
+      "image": "project-images/robotea.webp"
+    },
+    {
+      "hidden": false,
       "slug": "ghostframe",
       "name": "Ghostframe",
       "category": "Experiment",
