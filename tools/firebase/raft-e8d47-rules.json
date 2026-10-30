@@ -177,7 +177,7 @@
     "mural": {
       ".read": true,
       "$piece": {
-        ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && !root.child('muralTrash').child($piece).exists() && newData.parent().parent().child('muralTrash').child($piece).exists())",
+        ".write": false,
         ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c'))",
         "k": {
           ".validate": "newData.val() === 'd' || newData.val() === 'e'"
