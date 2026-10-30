@@ -183,7 +183,7 @@
           ".validate": "newData.val() === 'd' || newData.val() === 'e'"
         },
         "c": {
-          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
+          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow|chrome|gold)$/)"
         },
         "d": {
           ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
@@ -232,7 +232,7 @@
           ".validate": "newData.val() === 'd' || newData.val() === 'e'"
         },
         "c": {
-          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
+          ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow|chrome|gold)$/)"
         },
         "d": {
           ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
@@ -269,6 +269,114 @@
         },
         "$other": {
           ".validate": false
+        }
+      }
+    },
+    "muralWall": {
+      ".read": true,
+      "$p": {
+        ".validate": "$p.length <= 8 && $p.matches(/^[1-9][0-9]*$/)",
+        "$piece": {
+          ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && !root.child('muralWallTrash').child($p).child($piece).exists() && newData.parent().parent().parent().child('muralWallTrash').child($p).child($piece).exists())",
+          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c'))",
+          "k": {
+            ".validate": "newData.val() === 'd' || newData.val() === 'e'"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow|chrome|gold)$/)"
+          },
+          "d": {
+            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
+          },
+          "w": {
+            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 200"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "muralWallTrash": {
+      "$p": {
+        "$piece": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['d','w','e']) && root.child('muralWall').child($p).child($piece).exists() && newData.child('d').val() === root.child('muralWall').child($p).child($piece).child('d').val() && newData.child('c').val() === root.child('muralWall').child($p).child($piece).child('c').val()",
+          "k": {
+            ".validate": "newData.isString()"
+          },
+          "c": {
+            ".validate": "newData.isString()"
+          },
+          "d": {
+            ".validate": "newData.isString()"
+          },
+          "w": {
+            ".validate": "newData.isNumber()"
+          },
+          "e": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "muralWallDev": {
+      ".read": true,
+      "$p": {
+        ".validate": "$p.length <= 8 && $p.matches(/^[1-9][0-9]*$/)",
+        "$piece": {
+          ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && !root.child('muralWallTrashDev').child($p).child($piece).exists() && newData.parent().parent().parent().child('muralWallTrashDev').child($p).child($piece).exists())",
+          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c'))",
+          "k": {
+            ".validate": "newData.val() === 'd' || newData.val() === 'e'"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow|chrome|gold)$/)"
+          },
+          "d": {
+            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9,]+$/)"
+          },
+          "w": {
+            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 200"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "muralWallTrashDev": {
+      "$p": {
+        "$piece": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['d','w','e']) && root.child('muralWallDev').child($p).child($piece).exists() && newData.child('d').val() === root.child('muralWallDev').child($p).child($piece).child('d').val() && newData.child('c').val() === root.child('muralWallDev').child($p).child($piece).child('c').val()",
+          "k": {
+            ".validate": "newData.isString()"
+          },
+          "c": {
+            ".validate": "newData.isString()"
+          },
+          "d": {
+            ".validate": "newData.isString()"
+          },
+          "w": {
+            ".validate": "newData.isNumber()"
+          },
+          "e": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     }

@@ -4,6 +4,7 @@ import * as V from "/assets/views.mjs";
 import { geometry, drawMap, drawWall, loadSprites } from "/assets/map.mjs";
 import { createMural } from "/assets/mural.mjs";
 import { createLife } from "/assets/life.mjs";
+import { createWeather } from "/assets/weather.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
@@ -64,14 +65,19 @@ function layout() {
   world.style.height = mode === "tall" ? geo.H + "px" : "";
   world.style.setProperty("--s", geo.s.toFixed(3));
   world.querySelectorAll(".spot").forEach((s) => {
-    const b = s.dataset.place === "mural" ? geo.mural : geo.places[s.dataset.place];
+    const b = s.dataset.place === "mural" ? geo.run : geo.places[s.dataset.place];
     if (!b) return;
     placeBox(s, b);
     s.style.zIndex = Math.round(b.y + b.h);
     s.style.setProperty("--s", b.k.toFixed(3));
   });
   life.layout(geo);
-  placeBox(muralEl, geo.face);
+  weather.layout(geo);
+  const art = world.querySelector("[data-wall-art]");
+  art.parentNode.style.setProperty("--lx", (geo.mural.w / 2).toFixed(1) + "px");
+  drawWall(art, Math.ceil(geo.run.w / geo.run.k));
+  placeBox(muralEl, { x: geo.face.x, y: geo.face.y, w: geo.run.x + geo.run.w - geo.face.x, h: geo.face.h });
+  muralEl.style.setProperty("--fw", geo.face.w.toFixed(2) + "px");
   muralEl.style.zIndex = Math.round(geo.mural.y + geo.mural.h) + 1;
   mural.resize();
   const g = geo;
@@ -321,15 +327,17 @@ document.addEventListener("keydown", (e) => {
 
 const mural = createMural(muralEl, { onExit: () => exitWall() });
 const life = createLife(world);
+const weather = createWeather({ world, mapCanvas });
 
 function aim() {
+  if (mode === "tall") return;
   const hole = mural.hole(), m = geo.face;
   world.style.transition = "none";
   world.style.transform = "none";
   const wr = world.getBoundingClientRect();
-  const s = Math.min(hole.width / m.w, hole.height / m.h) * 0.97;
-  const tx = hole.left + (hole.width - m.w * s) / 2 - wr.left - m.x * s;
-  const ty = hole.top + (hole.height - m.h * s) / 2 - wr.top - m.y * s;
+  const f = mural.frame(hole), s = (f.k * 1000) / m.w;
+  const tx = hole.left + f.left - wr.left - m.x * s;
+  const ty = hole.top + f.top - wr.top - m.y * s;
   void world.offsetWidth;
   world.style.transition = calm ? "none" : "";
   world.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
@@ -342,6 +350,7 @@ function enterWall() {
   root.classList.add("lock");
   desk.classList.add("is-painting");
   life.pause(true);
+  weather.stop();
   aim();
   setTimeout(() => { if (painting) { mural.enter(); mural.resize(); } }, calm ? 0 : 680);
 }
@@ -417,7 +426,6 @@ function billboard() {
 }
 
 function init() {
-  drawWall(world.querySelector("[data-wall-art]"));
   layout();
   playBoot({ world, mapCanvas, ready: mapReady, desk });
   billboard();

@@ -77,14 +77,14 @@ function land(W, H) {
   const props = [
     at("tree2", 0.012, 0.715, 0.8), at("flag", 0.778, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
     at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85), at("bush", 0.45, 0.85, 0.75), at("bench", 0.525, 0.83, 0.85),
-    at("tree3", 0.555, 0.912, 0.8), at("pine", 0.885, 0.905, 0.75), at("bush", 0.95, 0.875, 0.8),
+    at("tree3", 0.555, 0.912, 0.8),
   ];
   return finish({
     mode: "land", W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
     sun: at("sun", 0.6, 0.2, 1.25), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
       at("cloud1", 0.7, 0.4, 0.38)],
-    river_props: [at("dock", 0.37, 0.975, 0.95)], gull: at("gull", 0.955, 0.99, 0.75), kayaks: [kayak(0.48 * W, 0.975 * H, s * 1.15), kayak(0.585 * W, 0.98 * H, s * 1.15)],
-    spurAt: 0.343 * W, spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * W, y * H]), lane: [0.16 * W, 0.88 * W], person: 92 * s, speed: 120 * s,
+    river_props: [at("dock", 0.37, 0.975, 0.95)], gull: at("gull", 0.955, 0.995, 0.64), kayaks: [kayak(0.48 * W, 0.975 * H, s * 1.15), kayak(0.585 * W, 0.98 * H, s * 1.15)],
+    spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * W, y * H]), lane: [0.16 * W, 0.88 * W], person: 92 * s, speed: 120 * s,
   });
 }
 
@@ -95,7 +95,7 @@ function tall(W) {
     about: at("signpost", 300, 610), rockets: at("launchpad", 80, 900), printing: at("workshop", 280, 1140), games: at("arcade", 118, 1440),
     software: at("lab", 285, 1720), reviews: at("billboard", 100, 1990), guestbook: at("mailbox", 300, 2110),
   };
-  const wall = sprite("wall", X(175), Y(2330), X(320) / 404);
+  const wall = sprite("wall", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
     [66, 1130], [90, 1166], [180, 1172], [280, 1172], [312, 1196], [318, 1300], [316, 1420], [290, 1466], [200, 1472], [100, 1472], [70, 1500], [64, 1600],
     [68, 1700], [92, 1746], [200, 1752], [282, 1752], [306, 1780], [310, 1880], [302, 1980], [270, 2018], [180, 2022], [100, 2024], [72, 2050], [76, 2110],
@@ -107,8 +107,8 @@ function tall(W) {
   return finish({
     mode: "tall", W, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
     sun: at("sun", 330, 410, 1.1), clouds: [at("cloud3", 92, 395, 0.7), at("cloud1", 250, 345, 0.6), at("cloud4", 330, 452, 0.4)],
-    river_props: [at("dock", 318, 2398, 0.8)], gull: at("gull", 30, 2430, 0.6), kayaks: [kayak(X(200), Y(2414), s * 1.2), kayak(X(98), Y(2420), s * 1.2)],
-    spurAt: X(362), spurDown: [[362, 2220], [360, 2290], [362, 2345]].map(([x, y]) => [X(x), Y(y)]), lane: [X(80), X(360)], person: 64 * f, speed: 80 * f,
+    river_props: [at("dock", 78, 2398, 0.8)], gull: at("gull", 372, 2432, 0.6), kayaks: [kayak(X(193), Y(2414), s * 1.2), kayak(X(302), Y(2420), s * 1.2)],
+    spurDown: [[40, 2200], [37, 2290], [34, 2350]].map(([x, y]) => [X(x), Y(y)]), lane: [X(80), X(360)], person: 64 * f, speed: 80 * f,
   });
 }
 
@@ -119,8 +119,9 @@ function kayak(cx, base, scale) {
 
 function trip(g) {
   let best = 0;
-  g.path.pts.forEach((q, i) => { if (Math.abs(q[0] - g.spurAt) < Math.abs(g.path.pts[best][0] - g.spurAt)) best = i; });
-  const dock = g.river_props[0], deck = dock.y + dock.h * 0.38, near = g.mode === "tall" ? 0.92 : 0.08, far = 1 - near;
+  const [sx, sy] = g.spurDown[0], dist = (q) => Math.hypot(q[0] - sx, q[1] - sy);
+  g.path.pts.forEach((q, i) => { if (dist(q) < dist(g.path.pts[best])) best = i; });
+  const dock = g.river_props[0], deck = dock.y + dock.h * 0.38, near = 0.08, far = 1 - near;
   const top = g.path.pts[best];
   const down = [top, ...g.spurDown, [dock.x + dock.w * near, deck]];
   g.trip = { s: g.path.len[best], down, walk: [[dock.x + dock.w * near, deck], [dock.x + dock.w * far, deck]], deck };
@@ -129,6 +130,7 @@ function trip(g) {
 
 function finish(g) {
   g.face = { x: g.mural.x + FACE.x * g.mural.w, y: g.mural.y + FACE.y * g.mural.h, w: FACE.w * g.mural.w, h: FACE.h * g.mural.h };
+  g.run = { x: g.mural.x, y: g.mural.y, w: Math.max(g.mural.w, g.W - g.mural.x), h: g.mural.h, k: g.mural.k };
   g.stations = stationsFor(g.path, g.places, g.mural);
   g.u = g.person / 15;
   trip(g);
@@ -266,22 +268,24 @@ export function drawMap(canvas, g, img) {
   g.props.slice().sort((a, b) => a.y + a.h - (b.y + b.h)).forEach(draw);
 }
 
-let wallArtCache = null;
-function wallArt() {
-  if (wallArtCache) return wallArtCache;
-  const [W, H] = SPR.wall;
+const WALL_H = 147;
+const wallCache = new Map();
+
+function wallLayer(x0, W, ends) {
+  const H = WALL_H;
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
   const c = cv.getContext("2d"), im = c.createImageData(W, H), px = im.data;
   const hex = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
   const tone = (rgb, f) => rgb.map((v) => Math.max(0, Math.min(255, Math.round(f >= 0 ? v + (255 - v) * f : v * (1 + f)))));
+  const mod = (n, m) => ((n % m) + m) % m;
   const noise = (x, y, k) => {
     let h = Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(k, 1442695041);
     h = Math.imul(h ^ (h >>> 13), 1274126177);
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   };
-  const put = (x, y, rgb, a = 255) => { const i = (y * W + x) * 4; px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = a; };
-  const get = (x, y) => { const i = (y * W + x) * 4; return [px[i], px[i + 1], px[i + 2]]; };
+  const put = (x, y, rgb, a = 255) => { x -= x0; if (x < 0 || x >= W) return; const i = (y * W + x) * 4; px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = a; };
+  const get = (x, y) => { const i = (y * W + x - x0) * 4; return [px[i], px[i + 1], px[i + 2]]; };
   const OUT = hex("#1d140f"), BRICKS = ["#b9472b", "#c4512f", "#ad4127", "#c95b36", "#b44a2c", "#bf4e2e", "#a63e26"].map(hex);
   const BURNT = hex("#8f3420"), PALE = hex("#cf6a45"), MORTAR = [hex("#d6a88a"), hex("#c79a7c"), hex("#e2b698")];
   const CAP = [hex("#8d8984"), hex("#9b9792"), hex("#7b7772")], CAP_ROWS = { 1: hex("#c9c5c0"), 2: hex("#a9a5a0"), 8: hex("#6e6a66"), 9: hex("#4a4542") };
@@ -291,14 +295,14 @@ function wallArt() {
   const mortar = (x, y) => { const r = noise(x, y, 4); return r < 0.1 ? MORTAR[1] : r < 0.15 ? MORTAR[2] : MORTAR[0]; };
   const cap = (x, y) => {
     if (CAP_ROWS[y]) return CAP_ROWS[y];
-    const j = (x - 1) % 50;
+    const j = mod(x - 1, 50);
     if (j === 0) return CAP_JOINT;
     if (j === 1 && y < 8) return CAP_JHI;
     const r = noise(x, y, 1);
     return r < 0.08 ? CAP[1] : r < 0.18 ? CAP[2] : CAP[0];
   };
   const plinth = (x, y) => {
-    const j = (x - 2) % 46;
+    const j = mod(x - 2, 46);
     if (y === 138) return j === 0 ? PL_JOINT : PL_HI;
     if (y === 142) return PL_LOW;
     if (j === 0) return PL_JOINT;
@@ -309,7 +313,7 @@ function wallArt() {
   const brickwork = (x, y) => {
     const course = Math.floor((y - 11) / 9), row = (y - 11) % 9;
     if (row === 0 || course > 13) return mortar(x, y);
-    const off = course % 2 ? 8 : 0, bx = (x - 2 + off) % 16, bi = Math.floor((x - 2 + off) / 16), by = row - 1;
+    const off = course % 2 ? 8 : 0, bx = mod(x - 2 + off, 16), bi = Math.floor((x - 2 + off) / 16), by = row - 1;
     if (bx === 15) return mortar(x, y);
     if (by === 0 && bx < 2 && noise(bi, course, 10) < 0.18) return mortar(x, y);
     let base = BRICKS[Math.floor(noise(bi, course, 7) * BRICKS.length)];
@@ -324,31 +328,32 @@ function wallArt() {
   };
 
   for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      if (y === 0) { if (x >= 1 && x <= W - 2) put(x, y, OUT); continue; }
-      if (y <= 10) { put(x, y, x === 0 || x === W - 1 || y === 10 ? OUT : cap(x, y)); continue; }
+    for (let x = x0; x < x0 + W; x++) {
+      const edge = (ends.l && x === 0) || (ends.r && x === x0 + W - 1), rim = (ends.l && x === 1) || (ends.r && x === x0 + W - 2);
+      if (y === 0) { if (!edge) put(x, y, OUT); continue; }
+      if (y <= 10) { put(x, y, edge || y === 10 ? OUT : cap(x, y)); continue; }
       if (y <= 143) {
-        if (x === 0 || x === W - 1) continue;
-        if (x === 1 || x === W - 2 || y === 143) { put(x, y, OUT); continue; }
+        if (edge) continue;
+        if (rim || y === 143) { put(x, y, OUT); continue; }
         let col = y >= 138 ? plinth(x, y) : brickwork(x, y);
         if (y <= 13) col = tone(col, [-0.38, -0.24, -0.12][y - 11]);
-        if (x === 2) col = tone(col, -0.1);
-        else if (x === W - 3) col = tone(col, -0.16);
+        if (ends.l && x === 2) col = tone(col, -0.1);
+        else if (ends.r && x === x0 + W - 3) col = tone(col, -0.16);
         put(x, y, col);
         continue;
       }
-      if (y === 144 && x >= 2 && x <= W - 3) put(x, y, [0, 0, 0], 77);
-      else if (y === 145 && x >= 4 && x <= W - 5) put(x, y, [0, 0, 0], 40);
+      if (y === 144 && (!ends.l || x >= 2) && (!ends.r || x <= x0 + W - 3)) put(x, y, [0, 0, 0], 77);
+      else if (y === 145 && (!ends.l || x >= 4) && (!ends.r || x <= x0 + W - 5)) put(x, y, [0, 0, 0], 40);
     }
   }
 
   const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
   const LIGHT = [255, 196, 110];
-  const lamps = [58, W - 58];
-  lamps.forEach((cx) => {
+  const lo = ends.l ? Math.max(2, x0) : x0, hi = ends.r ? x0 + W - 3 : x0 + W - 1;
+  for (let cx = 58 + 288 * Math.floor((x0 - 110) / 288); cx <= x0 + W + 46; cx += 288) {
     const gy = 20, rx = 46, ry = 32;
     for (let y = 11; y <= 137; y++) {
-      for (let x = Math.max(2, cx - rx); x <= Math.min(W - 3, cx + rx); x++) {
+      for (let x = Math.max(lo, cx - rx); x <= Math.min(hi, cx + rx); x++) {
         const d = Math.hypot((x - cx) / rx, (y - gy) / ry) + (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.47) * 0.12;
         const a = d < 0.26 ? 0.6 : d < 0.48 ? 0.4 : d < 0.7 ? 0.23 : d < 0.92 ? 0.1 : 0;
         if (!a) continue;
@@ -362,27 +367,78 @@ function wallArt() {
       [21, -3, 3, "#f2a933"], [22, -1, 1, "#e0902a"],
     ];
     rows.forEach(([y, a, b, col]) => { for (let dx = a; dx <= b; dx++) put(cx + dx, y, hex(col)); });
-  });
+  }
 
   const MOSS = ["#4e8a36", "#3f7430", "#6aa548"].map(hex);
-  [24, 131, 247, 371].forEach((mx, i) => {
-    for (let n = 0; n < 9; n++) {
-      const x = mx + Math.floor(noise(i, n, 11) * 14) - 7, y = 136 + Math.floor(noise(i, n, 12) * 4);
-      if (x > 2 && x < W - 3) put(x, y, MOSS[Math.floor(noise(i, n, 13) * MOSS.length)]);
-    }
-  });
+  for (let b = Math.floor((x0 - 2) / 400) - 1; b <= Math.floor((x0 + W - 2) / 400) + 1; b++) {
+    [24, 131, 247, 371].forEach((mx, i) => {
+      const s = i + b * 4;
+      for (let n = 0; n < 9; n++) {
+        const x = mx + b * 400 + Math.floor(noise(s, n, 11) * 14) - 7, y = 136 + Math.floor(noise(s, n, 12) * 4);
+        if ((!ends.l || x > 2) && (!ends.r || x < x0 + W - 3)) put(x, y, MOSS[Math.floor(noise(s, n, 13) * MOSS.length)]);
+      }
+    });
+  }
 
   c.putImageData(im, 0, 0);
-  return (wallArtCache = cv);
+  return cv;
 }
 
-export function drawWall(canvas) {
-  const art = wallArt(), k = 4;
+export function drawWall(canvas, w = SPR.wall[0]) {
+  const key = "map" + w;
+  if (!wallCache.has(key)) wallCache.set(key, wallLayer(0, w, { l: true, r: w === SPR.wall[0] }));
+  const art = wallCache.get(key), k = 4;
   canvas.width = art.width * k;
   canvas.height = art.height * k;
   const c = canvas.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(art, 0, 0, canvas.width, canvas.height);
+}
+
+export function drawWallPanel(canvas, p) {
+  let art = wallCache.get(p);
+  if (!art) {
+    art = p ? wallLayer(2 + 400 * p, 400, { l: false }) : wallLayer(0, 402, { l: true });
+    if (wallCache.size > 24) wallCache.delete([...wallCache.keys()].find((k) => typeof k === "number"));
+    wallCache.set(p, art);
+  }
+  canvas.width = art.width; canvas.height = art.height;
+  canvas.getContext("2d").drawImage(art, 0, 0);
+}
+
+export function drawWallScene(canvas, p, rows, top) {
+  canvas.width = 400; canvas.height = rows;
+  const c = canvas.getContext("2d"), r = rng(90001 + (p + 1) * 7919);
+  const px = (x, y, col, w = 1, h = 1) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
+  const horizon = Math.max(8, top + 26), band = horizon / SKY.length;
+  SKY.forEach((col, i) => px(0, Math.floor(i * band), col, 400, Math.ceil(band) + 1));
+  for (let i = 1; i < SKY.length; i++) for (let x = i % 2; x < 400; x += 2) px(x, Math.floor(i * band), SKY[i - 1]);
+  for (let x = 0; x < 400; x++) {
+    const ax = x + p * 400, h = Math.round(10 + Math.sin(ax / 37) * 4 + Math.sin(ax / 13) * 2);
+    px(x, horizon - h, "#7fb98a", 1, h);
+  }
+  const tree = (x, base, rad, dark, light, trunk) => {
+    px(x - 1, base - rad, trunk, 2, rad);
+    for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+      const d = Math.hypot(dx, dy * 1.1);
+      if (d > rad + 0.3) continue;
+      px(x + dx, base - rad * 1.6 + dy, d > rad - 1.2 ? "#1f4a2a" : dx + dy < -rad * 0.6 && r() < 0.7 ? light : dark);
+    }
+  };
+  const g0 = horizon, gr = c.createLinearGradient(0, g0, 0, rows);
+  gr.addColorStop(0, GRASS.top); gr.addColorStop(1, GRASS.bottom);
+  c.fillStyle = gr;
+  c.fillRect(0, g0, 400, rows - g0);
+  for (let i = 0; i < ((rows - g0) * 400) / 22; i++) {
+    const x = Math.floor(r() * 400), y = g0 + 1 + Math.floor(r() * (rows - g0)), t = r();
+    if (t < 0.55) { px(x, y, GRASS.dark, 1, 2); px(x + 1, y + 1, GRASS.dark); } else if (t < 0.85) px(x, y, GRASS.light); else px(x, y, GRASS.darker, 2, 1);
+  }
+  for (let i = 0; i < ((rows - g0) * 400) / 520; i++) {
+    const x = 2 + Math.floor(r() * 396), y = g0 + 4 + Math.floor(r() * Math.max(1, rows - g0 - 6)), col = FLOWERS[Math.floor(r() * FLOWERS.length)];
+    px(x - 1, y, col); px(x + 1, y, col); px(x, y - 1, col); px(x, y + 1, col); px(x, y, "#ffd23a");
+  }
+  for (let x = -12 + r() * 10; x < 412; x += 16 + r() * 18) tree(Math.round(x), horizon + 2, Math.round(6 + r() * 4), "#3f7d4a", "#5c9b5c", "#4a3424");
+  for (let x = -12 + r() * 14; x < 412; x += 22 + r() * 26) tree(Math.round(x), top + 18, Math.round(8 + r() * 5), "#3a8a3c", "#5fb050", "#5b3d22");
 }
 
 const KAYAK_COLORS = [["#ffb24d", "#f2801f", "#a8500f"], ["#5ad6cd", "#1fa39c", "#0f6c67"]];

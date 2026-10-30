@@ -1,5 +1,5 @@
 /* Gzowo Labs: a tiny PS1-style Jurek who walks the path on the map, talks and thinks in comic bubbles, reacts to what happens around him,
-   and takes a kayak out on the Narew when you click one. Starts after the page is idle; stays off under reduced motion, on ?avatar=off,
+   opens an umbrella when it rains, and takes a kayak out on the Narew when you click one. Starts after the page is idle; stays off under reduced motion, on ?avatar=off,
    or when switched off in the Start menu. */
 
 const OFF_KEY = "gzowoAvatarOff";
@@ -25,7 +25,7 @@ const LINES = {
   guestbook: ["Did you sign the guestbook?", "Write something nice in the book.", "I signed it twice."],
   about: ["Welcome to Gzowo 34.", "This is our plot. Nice, huh?", "Est. 2025. Very old.", "Everything here is built by hand."],
   mural: ["Grab a spray can.", "This wall needs more colour.", "Hold the spray still and it drips. Art!", "Sixty colours. I counted."],
-  think: ["Should the next rocket have two stages?", "What if the wall had a dragon on it...", "Pizza or pierogi. Tough one.", "Do fish like rockets?", "Note to self: buy more filament.", "Maybe I should train a bigger model.", "What rhymes with Gzowo?", "If I print a printer, is it my child?", "Ten more minutes of coding. Then sleep.", "Do pixels dream of electric sheep?", "I could make a game about this map.", "Is the Narew warm yet?"],
+  think: ["Should the next rocket have two stages?", "I bet that cloud is full of rain.", "What if the wall had a dragon on it...", "Pizza or pierogi. Tough one.", "Do fish like rockets?", "Note to self: buy more filament.", "Maybe I should train a bigger model.", "What rhymes with Gzowo?", "If I print a printer, is it my child?", "Ten more minutes of coding. Then sleep.", "Do pixels dream of electric sheep?", "I could make a game about this map.", "Is the Narew warm yet?"],
   idea: ["Idea! A rocket that lands itself.", "I know! A kayak racing game.", "Eureka! Or I am just hungry."],
   poke: ["Hey! Personal space!", "Boop!", "That tickles my polygons!", "I am not a button!", "Careful, I am low poly!", "Hands off the hoodie!"],
   back: ["Wait for me!", "Running! Running!"],
@@ -40,6 +40,12 @@ const LINES = {
   painted: ["Nice art!", "The wall looks better already.", "Picasso who?"],
   open: { games: ["Good pick! Have fun.", "Press start!"], rockets: ["Those really fly!", "Real launches, real smoke."], printing: ["Printed with love and PLA."], software: ["Science!"], reviews: ["Five stars? Five stars."], guestbook: ["Sign it! Sign it!"], project: ["Ooh, good one.", "Have fun!", "I made that!"] },
   wake: ["Huh? Oh, hi!", "I was not sleeping. I was buffering."],
+  rain: ["Rain! Who poked the cloud?", "Umbrella time!", "Great. Wet pixels.", "It is raining in Gzowo!", "Did you just squeeze a cloud?"],
+  rainMore: ["It is pouring now!", "OK, that is a lot of rain.", "Stop squeezing the clouds!", "The Narew will flood!"],
+  wet: ["I love the sound of rain.", "Perfect weather for coding.", "No launch today. Weather hold.", "The river is getting bigger.", "Rain on the window. So cozy.", "My shoes are full of water."],
+  rainKayak: ["Rain? I am wet anyway!", "Paddling in the rain. Epic."],
+  rainbow: ["Rainbow!", "Look, a rainbow!", "The sun is back!", "Is there gold at the end of it?"],
+  scrub: ["Launch scrubbed. Weather.", "No engine test in the rain."],
   zzz: ["Zzz...", "Zzz... rockets...", "Zzz... one more level..."],
 };
 
@@ -164,6 +170,22 @@ void main(){
   paddle.visible = false;
   model.add(paddle);
 
+  const umb = new THREE.Group(), canopy = new THREE.Group();
+  for (let i = 0; i < 8; i++) {
+    const m = pm(i % 2 ? 0x1d3f8f : 0xffd84a);
+    m.side = THREE.DoubleSide;
+    canopy.add(new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.28, 2, 1, true, (i * Math.PI) / 4, Math.PI / 4), m));
+  }
+  canopy.position.y = 0.74;
+  const stick = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.9, 0.035), pm(0x262a30)), tip = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.09, 0.05), pm(0x262a30));
+  stick.position.y = 0.45; tip.position.y = 0.92;
+  umb.add(stick, canopy, tip);
+  umb.position.set(-0.2, chestY + 0.1, 0.18);
+  umb.rotation.z = -0.17;
+  umb.visible = false;
+  model.add(umb);
+  const U2 = { want: false, k: 0, framed: false };
+
   function rotWorld(b, q) {
     const wq = b.getWorldQuaternion(Q()), pq = b.parent.getWorldQuaternion(Q());
     b.quaternion.copy(pq.invert().multiply(q.multiply(wq)));
@@ -195,13 +217,14 @@ void main(){
     reach(B.ra, B.rf, B.rh, paddle.localToWorld(V().set(-0.36, 0, 0)), V().set(-1, -0.7, -0.5).applyQuaternion(mq));
   }
 
-  const S = { s: 0, target: 0, key: null, state: "idle", until: performance.now() + 1500, yaw: 0, want: 0, x: 0, y: 0, h: 100, w: 66, lost: 0, backAt: 0, mode: "walk", trip: null, kw: 0, kh: 0, z: 0 };
+  const S = { s: 0, target: 0, key: null, state: "idle", until: performance.now() + 1500, yaw: 0, want: 0, x: 0, y: 0, h: 100, w: 66, lift: 0, lost: 0, backAt: 0, mode: "walk", trip: null, kw: 0, kh: 0, z: 0 };
   const B2 = { line: "", shown: 0, until: 0, kind: "say", wait: 0 };
-  let emoteUntil = 0, lastInput = performance.now(), dozing = false;
+  let emoteUntil = 0, lastInput = performance.now(), dozing = false, wet = false;
 
   function size() {
     S.h = Math.round(G.person);
-    S.w = Math.round(S.h * 0.66);
+    S.w = Math.round(S.h * (U2.framed ? 0.8 : 0.66));
+    S.lift = U2.framed ? Math.round(S.h * 0.31) : 0;
     const ppu = S.h / 2;
     if (S.mode === "kayak") {
       const bottom = hipY + 0.02, top = headTop + 0.1, half = 1.2;
@@ -213,11 +236,11 @@ void main(){
       cam.position.set(0, (top + bottom) / 2, 6); cam.lookAt(0, (top + bottom) / 2, 0);
       U.uRes.value.set(rw, rh);
     } else {
-      const rh = Math.max(40, Math.round(S.h / SCALE)), rw = Math.max(26, Math.round(rh * 0.66));
+      const base = Math.max(40, Math.round(S.h / SCALE)), half = S.w / S.h, rw = Math.max(26, Math.round(base * half)), rh = base + Math.round((base * S.lift) / S.h);
       renderer.setSize(rw, rh, false);
-      canvas.style.width = S.w + "px"; canvas.style.height = S.h + "px";
-      const aspect = rw / rh;
-      cam.left = -aspect; cam.right = aspect; cam.top = 1; cam.bottom = -1;
+      canvas.style.width = S.w + "px"; canvas.style.height = S.h + S.lift + "px";
+      const aspect = rw / base;
+      cam.left = -aspect; cam.right = aspect; cam.top = 1 + (2 * (rh - base)) / base; cam.bottom = -1;
       cam.position.set(0, 0.9, 6); cam.lookAt(0, 0.9, 0);
       U.uRes.value.set(rw, rh);
     }
@@ -229,10 +252,28 @@ void main(){
     S.mode = m;
     paddle.visible = m === "kayak";
     wrap.classList.toggle("is-rowing", m === "kayak");
+    if (m === "kayak") { U2.want = false; U2.k = 0; U2.framed = false; umb.visible = false; }
+    else U2.want = wet;
     size();
   }
 
-  function headTopY() { return S.mode === "kayak" ? S.y - S.kh : S.y - S.h * 0.95; }
+  function headTopY() { return S.mode === "kayak" ? S.y - S.kh : S.y - S.h * 0.95 - S.lift * U2.k; }
+
+  function holdPose() {
+    model.updateMatrixWorld(true);
+    const mq = model.getWorldQuaternion(Q());
+    reach(B.ra, B.rf, B.rh, umb.localToWorld(V().set(0, 0.03, 0)), V().set(-1, -0.6, -0.5).applyQuaternion(mq));
+  }
+
+  function umbrellaStep(dt) {
+    if (U2.want && !U2.framed && S.mode === "walk") { U2.framed = true; size(); }
+    U2.k += ((U2.want ? 1 : 0) - U2.k) * Math.min(1, dt * (U2.want ? 7 : 9));
+    if (!U2.want && U2.k < 0.03) { U2.k = 0; if (U2.framed) { U2.framed = false; size(); } }
+    umb.visible = U2.k > 0.03 && S.mode === "walk";
+    const o = Math.min(1, U2.k * 1.15);
+    canopy.scale.set(0.12 + 0.88 * o, 0.5 + 0.5 * o, 0.12 + 0.88 * o);
+    canopy.position.y = 0.74 + (1 - o) * -0.18;
+  }
 
   function say(line, kind = "say", ms = 2600) {
     B2.line = line; B2.kind = kind; B2.shown = 0;
@@ -266,7 +307,7 @@ void main(){
       wrap.style.transform = `translate(${Math.round(S.x - S.kw / 2)}px,${Math.round(S.y - S.kh)}px)`;
       wrap.style.zIndex = S.z;
     } else {
-      wrap.style.transform = `translate(${Math.round(S.x - S.w / 2)}px,${Math.round(S.y - S.h * 0.95)}px)`;
+      wrap.style.transform = `translate(${Math.round(S.x - S.w / 2)}px,${Math.round(S.y - S.h * 0.95 - S.lift)}px)`;
       wrap.style.zIndex = S.trip && S.trip.phase !== "go" ? Math.max(Math.round(S.y), S.z - 1) : Math.round(S.y);
     }
     const head = headTopY();
@@ -445,6 +486,22 @@ void main(){
   addEventListener("gz:kayak", (e) => { if (running) startTrip(e.detail); });
   addEventListener("gz:fire", () => { if (running && onScreen() && S.state !== "trip") { say(fresh(LINES.fire), "shout", 2000); pop("alert", 1200); } });
   addEventListener("gz:painted", () => { if (running && S.state !== "trip") { say(fresh(LINES.painted), "say", 2400); pop("heart"); } });
+  addEventListener("gz:rain", (e) => {
+    const { on, quiet } = e.detail, was = wet;
+    wet = on;
+    if (S.mode === "walk") U2.want = on;
+    if (!running || dozing) return;
+    if (on && !was) {
+      if (S.state === "trip") { say(fresh(LINES.rainKayak), "say", 2200); return; }
+      stop(fresh(LINES.rain), "shout", 2000);
+      pop("sweat", 1400);
+    } else if (on) {
+      if (S.state !== "trip" && onScreen()) { say(fresh(LINES.rainMore), "shout", 1800); pop("alert", 1000); }
+    } else if (was && !quiet && S.state !== "trip" && onScreen()) {
+      setTimeout(() => { if (running && S.state !== "trip" && !wet) { stop(fresh(LINES.rainbow), "say", 2600); pop("heart"); } }, 700);
+    }
+  });
+  addEventListener("gz:scrub", () => { if (running && S.state !== "trip" && onScreen()) say(fresh(LINES.scrub), "say", 2200); });
   addEventListener("gz:open", (e) => {
     const id = String(e.detail || ""), list = LINES.open[id.startsWith("sec-") ? id.slice(4) : id] || (id.startsWith("p-") ? LINES.open.project : null);
     if (running && list && S.state !== "trip" && onScreen() && Math.random() < 0.6) say(fresh(list), "say", 2200);
@@ -494,7 +551,7 @@ void main(){
       if (t > S.until) { S.state = "idle"; S.until = t + R(1500, 4500); play("idle"); }
     } else if (t > S.until) {
       const roll = Math.random();
-      if (roll < 0.14) stop(fresh(LINES.think), "think", 3200);
+      if (roll < 0.14) stop(fresh(wet ? LINES.wet : LINES.think), "think", 3200);
       else if (roll < 0.19) { pop("idea", 1400); setTimeout(() => { if (running && S.state !== "trip") stop(fresh(LINES.idea), "say", 2800); }, 900); S.state = "talk"; S.until = t + 1000; }
       else { const st = nextStation(); if (st) { hush(); S.key = st.key; S.target = st.s; S.state = "walk"; if (Math.random() < 0.25) pop("note", 1300); } }
     }
@@ -510,9 +567,11 @@ void main(){
     let dyaw = S.want - S.yaw; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw)); S.yaw += dyaw * Math.min(1, dt * 9);
     model.rotation.y = S.yaw;
     if (S.state !== "trip") [S.x, S.y] = pointAt(S.s);
+    umbrellaStep(dt);
     if (acc >= 1 / 15) {
       mixer.update(acc); acc = 0;
       if (S.mode === "kayak") rowPose((S.trip && S.trip.phase2) || 0);
+      else if (rig && umb.visible) holdPose();
     }
     placeDom();
     renderer.render(scene, cam);

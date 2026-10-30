@@ -34,3 +34,7 @@ generated pages by hand.
 ## Sections
 
 Home has four doors: `/rockets/`, `/printing/`, `/games/`, `/software/`. A project lands in a section by category (Game, Hardware, the rest are software) or by an explicit `section` field. Top level paths must not match a repo name that has its own Pages site.
+
+## Sound
+
+`assets/sfx/rain.mp3` (the rain you get by clicking a cloud) is "Rain on window" by ckjzam, CC0 1.0, https://freesound.org/people/ckjzam/sounds/457153/, trimmed to a 24 s loop and loudness-normalised with ffmpeg.

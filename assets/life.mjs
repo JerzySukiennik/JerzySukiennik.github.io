@@ -46,7 +46,8 @@ export function createLife(world) {
   root.setAttribute("aria-hidden", "true");
   world.append(root);
   const spots = world.querySelector(".spots");
-  let g = null, paused = false, fireT = 0, fishT = 0;
+  let g = null, paused = false, wet = false, fireT = 0, fishT = 0;
+  addEventListener("gz:rain", (e) => { wet = e.detail.on; root.classList.toggle("is-wet", wet); });
 
   const kayaks = [0, 1].map((n) => {
     const b = document.createElement("button");
@@ -157,6 +158,7 @@ export function createLife(world) {
     fireT = setTimeout(fire, R(38000, 75000));
     const s = spots.querySelector('.spot[data-place="rockets"]');
     if (paused || document.hidden || !s || !visible(s)) return;
+    if (wet) { dispatchEvent(new CustomEvent("gz:scrub")); return; }
     s.classList.add("is-firing");
     dispatchEvent(new CustomEvent("gz:fire"));
     setTimeout(() => s.classList.remove("is-firing"), 3600);

@@ -4,22 +4,23 @@
 const root = document.documentElement;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-function snapshot(world, mapCanvas, W, H) {
+export function snapshot(world, mapCanvas, box, scale = 1, read = false) {
   const c = document.createElement("canvas");
-  c.width = W; c.height = H;
-  const x = c.getContext("2d", { willReadFrequently: true });
+  c.width = Math.round(box.w * scale); c.height = Math.round(box.h * scale);
+  const x = c.getContext("2d", read ? { willReadFrequently: true } : undefined);
+  x.setTransform(scale, 0, 0, scale, -box.x * scale, -box.y * scale);
   x.fillStyle = "#fff";
-  x.fillRect(0, 0, W, H);
+  x.fillRect(box.x, box.y, box.w, box.h);
   const mr = mapCanvas.getBoundingClientRect();
   if (mapCanvas.width) x.drawImage(mapCanvas, mr.left, mr.top, mr.width, mr.height);
-  const items = [...world.querySelectorAll(".life-cloud, .spot .spr")].map((e) => ({ e, z: parseInt((e.closest(".spot") || e).style.zIndex, 10) || 0 }));
+  const items = [...world.querySelectorAll(".life-cloud, .wx-cloud, .spot .spr, .mural canvas")].map((e) => ({ e, z: parseInt((e.closest(".spot, .mural") || e).style.zIndex, 10) || 0 }));
   items.sort((a, b) => a.z - b.z);
   for (const { e } of items) {
     const r = e.getBoundingClientRect();
-    if (r.bottom < 0 || r.top > H || r.right < 0 || r.left > W || !r.width) continue;
+    if (r.bottom < box.y || r.top > box.y + box.h || r.right < box.x || r.left > box.x + box.w || !r.width) continue;
     try { x.drawImage(e, r.left, r.top, r.width, r.height); } catch (err) {}
   }
-  return x.getImageData(0, 0, W, H).data;
+  return c;
 }
 
 function dither(rgba, W, H) {
@@ -94,7 +95,8 @@ export async function playBoot({ world, mapCanvas, ready, desk }) {
     const left = 700 - (performance.now() - t0);
     if (left > 0) await wait(left);
     const W = innerWidth, H = innerHeight, dpr = Math.min(2, devicePixelRatio || 1);
-    const bits = dither(snapshot(world, mapCanvas, W, H), W, H);
+    const shot = snapshot(world, mapCanvas, { x: 0, y: 0, w: W, h: H }, 1, true);
+    const bits = dither(shot.getContext("2d").getImageData(0, 0, W, H).data, W, H);
     const cv = document.createElement("canvas");
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     const gl = cv.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false });

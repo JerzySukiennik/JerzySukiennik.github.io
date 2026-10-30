@@ -1,16 +1,21 @@
-/* Gzowo Labs wall: spray paint on the brick wall of the map, shown in a Paint-style frame when the camera zooms in.
-   The wall is a log of strokes in wall coordinates (0..1000 x 0..323), spray and eraser alike, replayed in order with seeded mist so every visitor sees the same paint.
-   Anyone can rub out anything with the eraser. Undo deletes only your own strokes and copies them to muralTrash first. */
+/* Gzowo Labs wall: spray paint on the brick wall of the map. Click it and the camera zooms into a Paint-style frame where the wall runs on
+   forever to the right of where it starts: A and D walk along it, two fingers on a phone. Every 1000 units of wall is a panel with its own log of strokes,
+   spray and eraser alike, replayed in order with seeded mist so every visitor sees the same paint. Panel 0 is the wall on the map.
+   Anyone can rub out anything with the eraser. Undo deletes only your own strokes and copies them to the trash first. */
 
 import { icon } from "/assets/views.mjs";
+import { drawWallPanel, drawWallScene } from "/assets/map.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
 const DEV = LOCAL.includes(location.hostname) || location.protocol === "file:";
-const PATH = DEV ? "muralDev" : "mural", TRASH = DEV ? "muralTrashDev" : "muralTrash";
-const MINE_KEY = "gl-mural-mine-" + PATH;
+const HOME = DEV ? "muralDev" : "mural", HOME_BIN = DEV ? "muralTrashDev" : "muralTrash";
+const FAR = DEV ? "muralWallDev" : "muralWall", FAR_BIN = DEV ? "muralWallTrashDev" : "muralWallTrash";
+const pathOf = (p) => (p ? FAR + "/" + p : HOME), binOf = (p) => (p ? FAR_BIN + "/" + p : HOME_BIN);
+const MINE_KEY = "gl-mural-mine-" + HOME;
+const TOUCH = matchMedia("(pointer: coarse)").matches;
 const RES_W = 2000, WX = 1000, WY = 323, RES_H = Math.round((RES_W * WY) / WX), SX = RES_W / WX;
-const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14;
+const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14, SPEED = 1100, LEAD = 110, BACK = 150;
 const UNDO_KEY = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘Z" : "Ctrl+Z";
 const PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 const HUES = [
@@ -50,6 +55,19 @@ function hsl(h, s, l) {
   return "#" + [f(0), f(8), f(4)].map((v) => v.toString(16).padStart(2, "0")).join("");
 }
 const RAINBOW_RUN = Array.from({ length: 24 }, (_, i) => hsl(i * 15, 0.95, 0.55));
+const METAL = {
+  chrome: [[0, "#f7faff"], [0.3, "#b9c4d4"], [0.46, "#4b5464"], [0.5, "#1e2430"], [0.54, "#e6edf8"], [0.76, "#9ba6b7"], [1, "#f3f6fb"]],
+  gold: [[0, "#fff7d2"], [0.3, "#f0c357"], [0.46, "#8c5615"], [0.5, "#5b3308"], [0.54, "#ffeaa2"], [0.76, "#d2932b"], [1, "#fff3c2"]],
+};
+const SHINE = {};
+Object.entries(METAL).forEach(([name, stops]) => {
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  SHINE[name] = Array.from({ length: 32 }, (_, i) => {
+    const t = i / 31, j = Math.max(1, stops.findIndex(([at]) => at >= t)), [a0, c0] = stops[j - 1], [a1, c1] = stops[j], u = (t - a0) / (a1 - a0 || 1);
+    return "#" + rgb(c0).map((v, n) => Math.round(v + (rgb(c1)[n] - v) * u).toString(16).padStart(2, "0")).join("");
+  });
+});
+const metalBg = (name) => "linear-gradient(180deg," + METAL[name].map(([at, c]) => `${c} ${at * 100}%`).join(",") + ")";
 
 const stampCache = new Map();
 function stamps(color, lw) {
@@ -108,12 +126,23 @@ function drip(c, x, y, lw, len, color, r) {
 
 function sprayer(op, c) {
   const r = rng(hash(op.id)), lw = Math.max(4, op.w * SX), step = Math.max(1, lw * 0.2);
-  const tint = (run) => (op.c === "rainbow" ? RAINBOW_RUN[Math.floor(run / (lw * 1.5)) % RAINBOW_RUN.length] : op.c);
+  const metal = SHINE[op.c];
+  const tint = (run, y) => (op.c === "rainbow" ? RAINBOW_RUN[Math.floor(run / (lw * 1.5)) % RAINBOW_RUN.length]
+    : metal ? metal[Math.round(clamp(y / RES_H + Math.sin(run / (lw * 3)) * 0.05, 0, 1) * 31)] : op.c);
   const drips = [];
   let px = null, py = null, left = step, run = 0, held = 0, hx = 0, hy = 0;
   const stamp = (x, y) => {
-    const set = stamps(tint(run), lw), v = set[Math.floor(r() * set.length)], h = v.width / 2, jit = lw * (0.08 + Math.min(held, 45) * 0.005);
+    const set = stamps(tint(run, y), lw), v = set[Math.floor(r() * set.length)], h = v.width / 2, jit = lw * (0.08 + Math.min(held, 45) * 0.005);
     c.drawImage(v, x - h + (r() - 0.5) * jit, y - h + (r() - 0.5) * jit);
+    if (metal && r() < 0.07) {
+      const gx = x + (r() - 0.5) * lw * 0.8, gy = y + (r() - 0.5) * lw * 0.8, s = Math.max(3, lw * (0.25 + r() * 0.3)), a = c.globalAlpha;
+      c.globalAlpha = 0.95;
+      c.fillStyle = "#ffffff";
+      c.fillRect(gx - s, gy - 0.6, s * 2, 1.2);
+      c.fillRect(gx - 0.6, gy - s, 1.2, s * 2);
+      c.beginPath(); c.arc(gx, gy, Math.max(1, s * 0.22), 0, Math.PI * 2); c.fill();
+      c.globalAlpha = a;
+    }
   };
   return {
     add(x, y) {
@@ -126,7 +155,7 @@ function sprayer(op, c) {
       }
       const dx = x - px, dy = y - py, len = Math.hypot(dx, dy);
       if (Math.hypot(x - hx, y - hy) <= lw * 0.25) held++;
-      else { if (held >= DRIP) drips.push([hx, hy, held, tint(run)]); held = 1; hx = x; hy = y; }
+      else { if (held >= DRIP) drips.push([hx, hy, held, tint(run, hy)]); held = 1; hx = x; hy = y; }
       c.globalAlpha = held > 3 ? 0.32 : 0.5;
       if (len < 0.5) stamp(x, y);
       else {
@@ -136,7 +165,7 @@ function sprayer(op, c) {
       }
     },
     end() {
-      if (held >= DRIP) drips.push([hx, hy, held, tint(run)]);
+      if (held >= DRIP) drips.push([hx, hy, held, tint(run, hy)]);
       drips.forEach(([x, y, n, col]) => {
         const len = lw * Math.min(5, 0.6 + (n - DRIP) * 0.07) * (0.8 + r() * 0.4);
         drip(c, x + (r() - 0.5) * lw * 0.3, y + lw * 0.15, lw, len, col, r);
@@ -167,34 +196,39 @@ function rubber(op, c) {
 const painterFor = (op, c) => (op.k === "e" ? rubber : sprayer)(op, c);
 const reset = (c) => { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; };
 
-function paintOp(op, c) {
+function paintOp(op, c, dx) {
   const p = painterFor(op, c);
-  for (let i = 0; i < op.d.length; i += 2) p.add(op.d[i] * SX, op.d[i + 1] * SX);
+  for (let i = 0; i < op.d.length; i += 2) p.add(op.d[i] * SX + dx, op.d[i + 1] * SX);
   p.end();
   reset(c);
 }
+function frame(w, h) {
+  const k = Math.min((h * 0.56) / WY, w / 460), a = (WX * k) / 400;
+  return { k, top: Math.round(((h - WY * k) * 0.45) / a) * a, left: LEAD * k };
+}
+const older = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 export function createMural(el, opts) {
-  const canvas = el.querySelector("canvas");
-  canvas.width = RES_W; canvas.height = RES_H;
-  const ctx = canvas.getContext("2d");
-  const back = document.createElement("canvas");
-  back.width = RES_W; back.height = RES_H;
-  const bctx = back.getContext("2d");
-  let items = [], byId = {}, mine = {}, order = [], redo = [];
+  const home = el.querySelector("canvas"), next = document.createElement("canvas");
+  home.width = next.width = RES_W; home.height = next.height = RES_H;
+  el.append(next);
+  const panels = new Map(), tiles = new Map(), keys = { a: 0, d: 0 }, touches = new Map();
+  const mine = {}, minePanel = {}, order = [], redo = [];
   let color = "#ff0000", size = 2, erasing = false, rainbow = false, posted = 0, lastT = 0, lastR = [], offlineSaid = false;
-  let live = null, cur = null, lastSample = 0, tick = 0, gesture = null, active = false, chrome = null, job = null, jobRaf = 0, flashTimer = 0, made = 0;
+  let live = null, cur = null, client = null, lastSample = 0, tick = 0, gesture = null, active = false, chrome = null, view = null, strip = null;
+  let pumpRaf = 0, flashTimer = 0, made = 0, pan = WX / 2, base = 0, k = 1, holeW = 0, holeH = 0, faceTop = 0, apx = 1, wallTop = 0, rows = 1, lead = null, walkRaf = 0, walkT = 0, panning = false, panAvg = 0, said = "";
+  [home, next].forEach((cv, p) => tiles.set(p, { p, cv, c: cv.getContext("2d"), el: null, job: null, last: "", dirty: false }));
 
   try { rainbow = localStorage.getItem("gl-rainbow") === "1"; } catch (e) {}
   try {
     (JSON.parse(localStorage.getItem(MINE_KEY)) || []).forEach((m) => {
-      if (Array.isArray(m) && typeof m[0] === "string" && !(m[0] in mine)) { mine[m[0]] = m[1] || m[0]; order.push(m[0]); }
+      if (Array.isArray(m) && typeof m[0] === "string" && !(m[0] in mine)) { mine[m[0]] = m[1] || m[0]; minePanel[m[0]] = Number.isInteger(m[2]) ? m[2] : 0; order.push(m[0]); }
     });
   } catch (e) {}
 
-  const saveMine = () => { try { localStorage.setItem(MINE_KEY, JSON.stringify(order.slice(-MAX_MINE).map((id) => [id, mine[id]]))); } catch (e) {} };
-  const remember = (id, g) => { if (!(id in mine)) order.push(id); mine[id] = g; saveMine(); };
-  const forget = (id) => { if (!(id in mine)) return; delete mine[id]; const i = order.indexOf(id); if (i !== -1) order.splice(i, 1); saveMine(); };
+  const saveMine = () => { try { localStorage.setItem(MINE_KEY, JSON.stringify(order.slice(-MAX_MINE).map((id) => [id, mine[id], minePanel[id]]))); } catch (e) {} };
+  const remember = (id, g, p) => { if (!(id in mine)) order.push(id); mine[id] = g; minePanel[id] = p; saveMine(); };
+  const forget = (id) => { if (!(id in mine)) return; delete mine[id]; delete minePanel[id]; const i = order.indexOf(id); if (i !== -1) order.splice(i, 1); saveMine(); };
 
   function pushId() {
     let now = Date.now(), i;
@@ -217,109 +251,144 @@ export function createMural(el, opts) {
     flashTimer = setTimeout(() => { f.hidden = true; }, 2600);
   }
 
-  function replayLive() {
-    if (!live) return;
-    live.p = painterFor(live, ctx);
-    for (let i = 0; i < live.d.length; i += 2) live.p.add(live.d[i] * SX, live.d[i + 1] * SX);
-    reset(ctx);
+  const near = (p, f) => { for (let q = p - 1; q <= p + 1; q++) { const t = tiles.get(q); if (t) f(t); } };
+
+  function redraw(t) {
+    if (t.job) { t.dirty = true; return; }
+    const back = document.createElement("canvas"), list = [];
+    back.width = RES_W; back.height = RES_H;
+    for (let q = t.p - 1; q <= t.p + 1; q++) { const P = panels.get(q); if (P) list.push(...P.ops); }
+    t.job = { list: list.sort(older), i: 0, back, c: back.getContext("2d") };
+    t.dirty = false;
+    if (!pumpRaf) pumpRaf = requestAnimationFrame(pump);
   }
 
   function pump() {
-    jobRaf = 0;
-    if (!job) return;
+    pumpRaf = -1;
     const t0 = performance.now();
-    while (job.i < items.length && performance.now() - t0 < 8) paintOp(items[job.i++], bctx);
-    if (job.i < items.length) { jobRaf = requestAnimationFrame(pump); return; }
-    job = null;
-    ctx.globalCompositeOperation = "copy";
-    ctx.drawImage(back, 0, 0);
-    reset(ctx);
-    replayLive();
+    let busy = false;
+    for (const t of tiles.values()) {
+      const j = t.job;
+      if (!j) continue;
+      while (j.i < j.list.length && performance.now() - t0 < 8) { const op = j.list[j.i++]; paintOp(op, j.c, (op.p - t.p) * WX * SX); }
+      if (j.i < j.list.length) { busy = true; break; }
+      t.job = null;
+      t.c.globalCompositeOperation = "copy";
+      t.c.drawImage(j.back, 0, 0);
+      reset(t.c);
+      t.last = j.list.length ? j.list[j.list.length - 1].id : "";
+      if (t.dirty) redraw(t);
+      else replayLive(t);
+    }
+    pumpRaf = busy || [...tiles.values()].some((t) => t.job) ? requestAnimationFrame(pump) : 0;
   }
 
-  function redrawAll() {
-    job = { i: 0 };
-    bctx.clearRect(0, 0, RES_W, RES_H);
-    if (!jobRaf) jobRaf = requestAnimationFrame(pump);
+  function replayLive(t) {
+    if (!live || Math.abs(t.p - live.p) > 1) return;
+    const pt = painterFor(live, t.c), dx = (live.p - t.p) * WX * SX;
+    for (let i = 0; i < live.d.length; i += 2) pt.add(live.d[i] * SX + dx, live.d[i + 1] * SX);
+    reset(t.c);
+    live.ps.set(t.p, pt);
+  }
+
+  function panel(p) {
+    let P = panels.get(p);
+    if (!P) { P = { p, ops: [], seen: {}, src: null }; panels.set(p, P); }
+    return P;
   }
 
   function insert(op, painted) {
-    const last = items[items.length - 1];
-    if (!last || op.id > last.id) {
-      items.push(op);
-      if (!painted && !job) paintOp(op, ctx);
-    } else {
-      let i = items.length;
-      while (i > 0 && items[i - 1].id > op.id) i--;
-      items.splice(i, 0, op);
-      redrawAll();
-    }
-    count();
+    const list = panel(op.p).ops;
+    if (!list.length || op.id > list[list.length - 1].id) list.push(op);
+    else { let i = list.length; while (i > 0 && list[i - 1].id > op.id) i--; list.splice(i, 0, op); }
+    near(op.p, (t) => {
+      if (t.job) { t.dirty = true; return; }
+      if (op.id > t.last) { if (!painted) paintOp(op, t.c, (op.p - t.p) * WX * SX); t.last = op.id; }
+      else if (!painted) redraw(t);
+    });
+    where();
   }
 
-  function drop(id) {
-    for (let i = items.length - 1; i >= 0; i--) if (items[i].id === id) { const it = items.splice(i, 1)[0]; redrawAll(); count(); return it; }
-    return null;
+  function drop(p, id) {
+    const P = panels.get(p), i = P ? P.ops.findIndex((o) => o.id === id) : -1;
+    if (i === -1) return null;
+    const it = P.ops.splice(i, 1)[0];
+    near(p, redraw);
+    where();
+    return it;
   }
-  const find = (id) => { for (let i = items.length - 1; i >= 0; i--) if (items[i].id === id) return items[i]; return null; };
+  const find = (id, p) => { const P = panels.get(p); return (P && P.ops.find((o) => o.id === id)) || null; };
 
-  function parse(id, v) {
+  function parse(id, v, p) {
     if (!v || typeof v !== "object" || (v.k !== "d" && v.k !== "e")) return null;
-    if (v.k === "d" && (typeof v.c !== "string" || !(v.c === "rainbow" || /^#[0-9a-f]{6}$/.test(v.c)))) return null;
+    if (v.k === "d" && (typeof v.c !== "string" || !(v.c === "rainbow" || v.c in METAL || /^#[0-9a-f]{6}$/.test(v.c)))) return null;
     if (typeof v.d !== "string" || !/^[0-9,]+$/.test(v.d)) return null;
     const pts = v.d.split(",").map(Number);
     if (pts.length < 2 || pts.length % 2) return null;
-    return { id, k: v.k, d: pts, raw: v.d, c: v.k === "d" ? v.c : undefined, w: clamp(v.w || 12, 3, 200) };
+    return { id, p, k: v.k, d: pts, raw: v.d, c: v.k === "d" ? v.c : undefined, w: clamp(v.w || 12, 3, 200) };
   }
 
-  function add(id, v, batch) {
-    if (byId[id] || !v) return;
-    byId[id] = true;
-    const it = parse(id, v);
-    if (!it) return;
-    if (batch) items.push(it);
-    else insert(it, false);
+  function add(P, id, v) {
+    if (P.seen[id] || !v) return;
+    P.seen[id] = true;
+    const it = parse(id, v, P.p);
+    if (it) insert(it, false);
   }
-  function gone(id) { byId[id] = true; if (drop(id)) sync(); }
+  function gone(P, id) { P.seen[id] = true; if (drop(P.p, id)) sync(); }
 
-  function loadAll(data) {
-    Object.keys(data || {}).sort().forEach((k) => add(k, data[k], true));
-    items.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-    redrawAll();
+  function loadAll(P, data) {
+    Object.keys(data || {}).forEach((id) => {
+      if (P.seen[id]) return;
+      P.seen[id] = true;
+      const it = parse(id, data[id], P.p);
+      if (it) P.ops.push(it);
+    });
+    P.ops.sort(older);
+    near(P.p, redraw);
     sync();
   }
 
   const message = (e) => { try { return JSON.parse(e.data || "null"); } catch (err) { return null; } };
-  function listen() {
-    const q = DB + "/" + PATH + '.json?orderBy="$key"&limitToLast=1500';
+  function listen(p) {
+    const P = panel(p);
+    if (P.src) return;
+    const q = DB + "/" + pathOf(p) + '.json?orderBy="$key"&limitToLast=1500';
     if (typeof EventSource === "undefined") {
-      fetch(q).then((r) => r.json()).then(loadAll).catch(() => {});
+      P.src = { close() {} };
+      fetch(q).then((r) => r.json()).then((d) => loadAll(P, d)).catch(() => {});
       return;
     }
-    const src = new EventSource(q);
+    const src = (P.src = new EventSource(q));
     src.addEventListener("put", (e) => {
       const msg = message(e);
-      if (!msg || typeof msg.path !== "string") return;
-      if (msg.path === "/") { loadAll(msg.data); return; }
+      if (!msg || typeof msg.path !== "string" || panels.get(p) !== P) return;
+      if (msg.path === "/") { loadAll(P, msg.data); return; }
       const parts = msg.path.slice(1).split("/");
       if (parts.length !== 1) return;
-      if (msg.data === null) gone(parts[0]); else add(parts[0], msg.data);
+      if (msg.data === null) gone(P, parts[0]); else add(P, parts[0], msg.data);
     });
     src.addEventListener("patch", (e) => {
       const msg = message(e);
-      if (!msg || msg.path !== "/" || !msg.data) return;
-      Object.keys(msg.data).forEach((k) => (msg.data[k] === null ? gone(k) : add(k, msg.data[k])));
+      if (!msg || msg.path !== "/" || !msg.data || panels.get(p) !== P) return;
+      Object.keys(msg.data).forEach((id) => (msg.data[id] === null ? gone(P, id) : add(P, id, msg.data[id])));
     });
     src.onerror = () => {};
+  }
+
+  function unlisten(p) {
+    const P = panels.get(p);
+    if (!P || p <= 1 || (live && Math.abs(live.p - p) <= 1)) return;
+    if (P.src) P.src.close();
+    panels.delete(p);
   }
 
   const body = (it) => { const b = { k: it.k, d: it.raw, w: it.w }; if (it.k === "d") b.c = it.c; return b; };
 
   function send(it) {
     it.raw = it.d.join(",");
-    remember(it.id, it.g || it.id);
+    remember(it.id, it.g || it.id, it.p);
     posted++;
-    it.saved = fetch(DB + "/" + PATH + "/" + it.id + ".json", { method: "PUT", body: JSON.stringify({ ...body(it), t: { ".sv": "timestamp" } }) })
+    it.saved = fetch(DB + "/" + pathOf(it.p) + "/" + it.id + ".json", { method: "PUT", body: JSON.stringify({ ...body(it), t: { ".sv": "timestamp" } }) })
       .then((r) => { if (!r.ok) throw r.status; })
       .catch(() => {
         it.local = true;
@@ -327,30 +396,36 @@ export function createMural(el, opts) {
       });
   }
 
-  const copyOf = (it) => ({ k: it.k, d: it.d.slice(), c: it.c, w: it.w });
+  const copyOf = (it) => ({ k: it.k, d: it.d.slice(), c: it.c, w: it.w, p: it.p });
 
   function remove(it) {
     const id = it.id, g = mine[id];
-    drop(id);
+    drop(it.p, id);
     forget(id);
     if (it.local) return;
     const patch = {};
-    patch[PATH + "/" + id] = null;
-    patch[TRASH + "/" + id] = { ...body(it), e: { ".sv": "timestamp" } };
+    patch[pathOf(it.p) + "/" + id] = null;
+    patch[binOf(it.p) + "/" + id] = { ...body(it), e: { ".sv": "timestamp" } };
     (it.saved || Promise.resolve())
       .then(() => { if (it.local) return { ok: true }; return fetch(DB + "/.json", { method: "PATCH", body: JSON.stringify(patch) }); })
       .then((r) => { if (!r.ok) throw r.status; })
-      .catch(() => { if (g) remember(id, g); insert(it, false); sync(); flash("COULD NOT UNDO THAT, TRY AGAIN"); });
+      .catch(() => { if (g) remember(id, g, it.p); insert(it, false); sync(); flash("COULD NOT UNDO THAT, TRY AGAIN"); });
+  }
+
+  function mineHere() {
+    for (const P of panels.values()) if (P.ops.some((it) => it.id in mine)) return true;
+    return false;
   }
 
   function undo() {
     if (live) return;
     let last = null;
-    for (let i = order.length - 1; i >= 0 && !last; i--) last = find(order[i]);
+    for (let i = order.length - 1; i >= 0 && !last; i--) last = find(order[i], minePanel[order[i]] || 0);
     if (!last) { flash("NOTHING OF YOURS LEFT TO UNDO"); return; }
-    const g = mine[last.id], batch = items.filter((it) => mine[it.id] === g);
+    const g = mine[last.id], batch = [];
+    panels.forEach((P) => P.ops.forEach((it) => { if (mine[it.id] === g) batch.push(it); }));
     redo.push(batch.map(copyOf));
-    batch.forEach(remove);
+    batch.forEach((it) => remove(it));
     sync();
   }
 
@@ -362,96 +437,189 @@ export function createMural(el, opts) {
     group.forEach((c) => {
       if (posted >= MAX_POSTS) return;
       const it = { ...c, d: c.d.slice(), id: pushId(), g };
-      byId[it.id] = true;
+      panel(it.p).seen[it.id] = true;
       insert(it, false);
       send(it);
     });
     sync();
   }
 
-  function wallPoint(e) {
-    const r = el.getBoundingClientRect();
-    return [Math.round(clamp((e.clientX - r.left) / r.width, 0, 1) * WX), Math.round(clamp((e.clientY - r.top) / r.height, 0, 1) * WY)];
+  function wallPoint() {
+    const r = view.getBoundingClientRect();
+    return [pan + (client[0] - r.left - holeW / 2) / k, (client[1] - r.top - faceTop) / k];
   }
 
-  function open(x, y, g) {
-    live = { id: pushId(), k: erasing ? "e" : "d", c: erasing ? undefined : color, w: erasing ? RUBS[size] : SIZES[size], d: [], g };
-    byId[live.id] = true;
-    live.p = painterFor(live, ctx);
-    sample(x, y);
+  function put(x, y) {
+    live.d.push(x, y);
+    live.ps.forEach((pt, q) => { const t = tiles.get(q); if (!t) return; pt.add(x * SX + (live.p - q) * WX * SX, y * SX); reset(t.c); });
+    lastSample = performance.now();
+  }
+
+  function open(p, x, y, g) {
+    live = { id: pushId(), p, k: erasing ? "e" : "d", c: erasing ? undefined : color, w: erasing ? RUBS[size] : SIZES[size], d: [], g, ps: new Map() };
+    panel(p).seen[live.id] = true;
+    near(p, (t) => live.ps.set(t.p, painterFor(live, t.c)));
+    put(x, y);
   }
 
   function close() {
     const op = live;
     live = null;
-    op.p.end();
-    reset(ctx);
-    delete op.p;
+    op.ps.forEach((pt, q) => { const t = tiles.get(q); if (!t) return; pt.end(); reset(t.c); });
+    delete op.ps;
     insert(op, true);
     send(op);
     if (op.k === "d") made++;
   }
 
-  function sample(x, y) {
-    live.d.push(x, y);
-    live.p.add(x * SX, y * SX);
-    reset(ctx);
-    lastSample = performance.now();
-    if (live.d.length >= MAX_POINTS * 2) { const g = live.g; close(); open(x, y, g); }
+  function abort() {
+    const op = live;
+    live = null;
+    op.ps.forEach((_, q) => { const t = tiles.get(q); if (t) redraw(t); });
+  }
+
+  function sample(ux, uy) {
+    const x = live.p ? Math.round(ux - live.p * WX) : Math.max(0, Math.round(ux)), y = Math.round(uy);
+    if (x < 0 || x > WX) {
+      const n = live.d.length, px = live.d[n - 2], py = live.d[n - 1], edge = x < 0 ? 0 : WX;
+      const ey = Math.round(py + ((y - py) * (edge - px)) / (x - px));
+      if (px !== edge) put(edge, ey);
+      const g = live.g, np = live.p + (x < 0 ? -1 : 1);
+      close();
+      open(np, x < 0 ? WX : 0, ey, g);
+      sample(ux, uy);
+      return;
+    }
+    put(x, y);
+    if (live.d.length >= MAX_POINTS * 2) { const g = live.g, p = live.p; close(); open(p, x, y, g); }
+  }
+
+  function step() {
+    if (!live || !client) return;
+    cur = wallPoint();
+    const n = live.d.length;
+    cur[1] = clamp(cur[1], 0, WY);
+    if (Math.hypot(cur[0] - live.p * WX - live.d[n - 2], cur[1] - live.d[n - 1]) >= 2) sample(cur[0], cur[1]);
   }
 
   function hold() {
     tick = 0;
     if (!live) return;
-    if (live.k === "d" && cur && performance.now() - lastSample >= TICK) sample(cur[0], cur[1]);
+    if (live.k === "d" && client && performance.now() - lastSample >= TICK) { cur = wallPoint(); sample(cur[0], clamp(cur[1], 0, WY)); }
     tick = requestAnimationFrame(hold);
   }
 
-  el.addEventListener("pointerdown", (e) => {
-    if (!active || e.button !== 0 || live) return;
-    e.preventDefault();
-    if (posted >= MAX_POSTS) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
-    try { el.setPointerCapture(e.pointerId); } catch (err) {}
-    gesture = { id: e.pointerId };
-    redo.length = 0;
-    cur = wallPoint(e);
-    open(cur[0], cur[1], newGroup());
-    if (!tick) tick = requestAnimationFrame(hold);
-  });
-  el.addEventListener("pointermove", (e) => {
-    if (!gesture || !live || e.pointerId !== gesture.id) return;
-    const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
-    for (const ev of list.length ? list : [e]) {
-      cur = wallPoint(ev);
-      const n = live.d.length;
-      if (Math.hypot(cur[0] - live.d[n - 2], cur[1] - live.d[n - 1]) >= 2) sample(cur[0], cur[1]);
+  const span = () => { const half = holeW / 2 / k; return [Math.max(0, Math.floor((pan - half) / WX)), Math.floor((pan + half) / WX)]; };
+  const setBox = (t) => { t.el.style.left = ((t.p - base) * WX * k).toFixed(1) + "px"; t.el.style.width = (WX * k + 1).toFixed(1) + "px"; };
+  const px = (v) => v.toFixed(1) + "px";
+
+  function scenery(p) {
+    const box = document.createElement("div"), sc = document.createElement("canvas");
+    box.className = "wv-t";
+    sc.className = "wv-b";
+    drawWallScene(sc, p, rows, wallTop);
+    sc.style.height = px(rows * apx);
+    box.append(sc);
+    return box;
+  }
+
+  function tile(p) {
+    let t = tiles.get(p);
+    if (!t) {
+      const cv = document.createElement("canvas");
+      cv.width = RES_W; cv.height = RES_H;
+      t = { p, cv, c: cv.getContext("2d"), el: null, job: null, last: "", dirty: false };
+      tiles.set(p, t);
+      redraw(t);
     }
-  });
-  const up = (e) => {
-    if (!gesture || e.pointerId !== gesture.id) return;
-    gesture = null;
-    if (tick) { cancelAnimationFrame(tick); tick = 0; }
-    if (live) close();
-    sync();
-  };
-  el.addEventListener("pointerup", up);
-  el.addEventListener("pointercancel", up);
+    if (!t.el) {
+      const box = scenery(p), bricks = document.createElement("canvas");
+      bricks.className = "wv-b";
+      drawWallPanel(bricks, p);
+      Object.assign(bricks.style, { left: px(p ? 0 : -2 * apx), width: px(bricks.width * apx), top: px(wallTop * apx), height: px(bricks.height * apx) });
+      Object.assign(t.cv.style, { top: px(faceTop), height: px(WY * k) });
+      box.append(bricks, t.cv);
+      strip.append(box);
+      t.el = box;
+      setBox(t);
+    }
+  }
+
+  function fill(limit = Infinity) {
+    const [lo, hi] = span(), want = [];
+    for (let p = Math.max(0, lo - 1); p <= hi + 1; p++) want.push(p);
+    want.sort((a, b) => Math.abs(a * WX + WX / 2 - pan) - Math.abs(b * WX + WX / 2 - pan));
+    for (const p of want) {
+      const t = tiles.get(p);
+      if (t && t.el) continue;
+      if (limit-- <= 0) break;
+      tile(p);
+    }
+    tiles.forEach((t, p) => {
+      if (p <= 1 || (p >= lo - 2 && p <= hi + 2) || (live && Math.abs(live.p - p) <= 1)) return;
+      if (t.el) t.el.remove();
+      tiles.delete(p);
+    });
+    for (let p = Math.max(0, lo - 2); p <= hi + 2; p++) listen(p);
+    panels.forEach((_, p) => { if (p < lo - 3 || p > hi + 3) unlisten(p); });
+  }
+
+  function move() {
+    pan = Math.max(pan, holeW / 2 / k - BACK);
+    const nb = Math.floor(pan / WX);
+    if (nb !== base) { base = nb; tiles.forEach((t) => { if (t.el) setBox(t); }); }
+    lead.style.left = px((-1 - base) * WX * k);
+    strip.style.transform = `translate3d(${(holeW / 2 - (pan - base * WX) * k).toFixed(1)}px,0,0)`;
+    fill(walkRaf || panning ? 1 : Infinity);
+    where();
+  }
+
+  function place() {
+    const r = view.parentNode.getBoundingClientRect(), f = frame(r.width, r.height);
+    holeW = r.width; holeH = r.height; k = f.k; faceTop = f.top;
+    apx = (WX * k) / 400; wallTop = Math.round(faceTop / apx) - 13; rows = Math.ceil(holeH / apx) + 1;
+    tiles.forEach((t) => { if (t.el) { t.el.remove(); t.el = null; } });
+    if (lead) lead.remove();
+    lead = scenery(-1);
+    lead.style.width = px(WX * k);
+    strip.prepend(lead);
+    move();
+    cursor();
+  }
+
+  function stride(t) {
+    const dt = Math.min(0.05, Math.max(0, (t - walkT) / 1000)), dir = keys.d - keys.a;
+    walkT = t;
+    if (!dir) { walkRaf = 0; fill(); return; }
+    pan += dir * SPEED * dt;
+    move();
+    step();
+    walkRaf = requestAnimationFrame(stride);
+  }
+  function walk() {
+    if (walkRaf || !active) return;
+    walkT = performance.now();
+    walkRaf = requestAnimationFrame(stride);
+  }
+
+  const avg = () => { let s = 0; touches.forEach((x) => (s += x)); return s / touches.size; };
 
   function cursor() {
-    const r = el.getBoundingClientRect();
-    const d = Math.round(clamp(((erasing ? RUBS : SIZES)[size] / WX) * r.width, 6, 64)), s = d + 4, c = s / 2;
+    if (!view) return;
+    const d = Math.round(clamp((erasing ? RUBS : SIZES)[size] * k, 6, 64)), s = d + 4, c = s / 2;
     let svg;
     if (erasing) {
       svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '"><circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="#fff" fill-opacity=".45" stroke="#000"/><circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff"/></svg>';
     } else {
-      const fill = color === "rainbow" ? "url(#r)" : color;
-      const defs = color === "rainbow" ? '<defs><linearGradient id="r">' + RAINBOW.map((h, i) => '<stop offset="' + i / (RAINBOW.length - 1) + '" stop-color="' + h + '"/>').join("") + "</linearGradient></defs>" : "";
+      const stops = color === "rainbow" ? RAINBOW.map((h, i) => [i / (RAINBOW.length - 1), h]) : METAL[color];
+      const fill = stops ? "url(#r)" : color;
+      const defs = stops ? '<defs><linearGradient id="r"' + (METAL[color] ? ' x2="0" y2="1"' : "") + ">" + stops.map(([at, h]) => '<stop offset="' + at + '" stop-color="' + h + '"/>').join("") + "</linearGradient></defs>" : "";
       svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '">' + defs + '<circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="' + fill + '" fill-opacity=".55" stroke="#000"/><circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff"/></svg>';
     }
-    el.style.cursor = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + Math.round(c) + " " + Math.round(c) + ", crosshair";
+    view.style.cursor = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + Math.round(c) + " " + Math.round(c) + ", crosshair";
   }
 
-  const swatchBg = (hex) => (hex === "rainbow" ? "linear-gradient(135deg," + RAINBOW.join(",") + ")" : hex);
+  const swatchBg = (hex) => (hex === "rainbow" ? "linear-gradient(135deg," + RAINBOW.join(",") + ")" : METAL[hex] ? metalBg(hex) : hex);
   const swatch = (hex, name) => `<button type="button" class="pt-c" data-color="${hex}" aria-label="${name}" title="${name}" style="background:${swatchBg(hex)}"></button>`;
 
   function build() {
@@ -473,10 +641,17 @@ export function createMural(el, opts) {
       `<button type="button" class="pt-t" data-redo title="Put it back (Shift+${UNDO_KEY})">&#8631;</button>` +
       `<div class="pt-sizes">${SIZES.map((_, i) => `<button type="button" class="pt-s" data-size="${i}" title="Size ${i + 1}" aria-label="Size ${i + 1}"><i style="width:${[2, 4, 6, 9, 12][i]}px;height:${[2, 4, 6, 9, 12][i]}px"></i></button>`).join("")}</div>` +
       `</div><div class="pt-hole"></div></div>` +
-      `<div class="pt-pal"><span class="pt-cur" data-cur title="Your color"></span><div class="pt-cs">${colors.join("")}<button type="button" class="pt-c pt-rb" data-color="rainbow" aria-label="rainbow" title="rainbow" style="background:${swatchBg("rainbow")}" hidden></button></div>` +
+      `<div class="pt-pal"><span class="pt-cur" data-cur title="Your color"></span><div class="pt-metal">${swatch("chrome", "chrome")}${swatch("gold", "gold")}</div><div class="pt-cs">${colors.join("")}<button type="button" class="pt-c pt-rb" data-color="rainbow" aria-label="rainbow" title="rainbow" style="background:${swatchBg("rainbow")}" hidden></button></div>` +
       `<label class="btn pt-more" title="Any color you like">Edit colors...<input type="color" value="#ff0000" aria-label="Pick any color"></label></div>` +
-      `<footer class="stb"><span data-count>0 strokes on the wall</span><span>Hold still and the paint drips. ${UNDO_KEY} takes back your strokes, the eraser rubs out anything.</span><span class="stb-act"><button class="btn" type="button" data-pt-close>Back to the map</button></span></footer>`;
+      `<footer class="stb"><span data-where>The start of the wall</span><span>${TOUCH ? "Two fingers walk along the wall. Hold still and the paint drips." : `A and D walk along the wall, it never ends. Hold still and the paint drips, ${UNDO_KEY} takes back your strokes.`}</span><span class="stb-act"><button class="btn" type="button" data-pt-close>Back to the map</button></span></footer>`;
     document.body.appendChild(chrome);
+    view = document.createElement("div");
+    view.className = "wv";
+    view.hidden = true;
+    strip = document.createElement("div");
+    strip.className = "wv-strip";
+    view.append(strip);
+    chrome.querySelector(".pt-hole").append(view);
     chrome.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
@@ -490,13 +665,68 @@ export function createMural(el, opts) {
     });
     chrome.querySelector("input[type=color]").addEventListener("input", (e) => { color = e.target.value.toLowerCase(); erasing = false; sync(); });
     if (rainbow) chrome.querySelector(".pt-rb").hidden = false;
+
+    view.addEventListener("pointerdown", (e) => {
+      if (!active) return;
+      if (e.pointerType === "touch") {
+        touches.set(e.pointerId, e.clientX);
+        if (touches.size >= 2) {
+          if (live) { if (gesture && performance.now() - gesture.t0 < 350) abort(); else close(); }
+          gesture = null;
+          if (tick) { cancelAnimationFrame(tick); tick = 0; }
+          panning = true;
+          panAvg = avg();
+          sync();
+          return;
+        }
+      }
+      if (e.button !== 0 || live || panning) return;
+      e.preventDefault();
+      if (posted >= MAX_POSTS) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
+      try { view.setPointerCapture(e.pointerId); } catch (err) {}
+      gesture = { id: e.pointerId, t0: performance.now() };
+      redo.length = 0;
+      client = [e.clientX, e.clientY];
+      cur = wallPoint();
+      if (cur[0] < 0 || cur[1] < 0 || cur[1] > WY) { gesture = null; return; }
+      const p = Math.floor(cur[0] / WX);
+      open(p, Math.round(cur[0] - p * WX), Math.round(cur[1]), newGroup());
+      if (!tick) tick = requestAnimationFrame(hold);
+    });
+    view.addEventListener("pointermove", (e) => {
+      if (touches.has(e.pointerId)) touches.set(e.pointerId, e.clientX);
+      if (panning) {
+        if (touches.size >= 2) { const a = avg(); pan -= (a - panAvg) / k; panAvg = a; move(); }
+        return;
+      }
+      if (!gesture || !live || e.pointerId !== gesture.id) return;
+      const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+      for (const ev of list.length ? list : [e]) { client = [ev.clientX, ev.clientY]; step(); }
+    });
+    const up = (e) => {
+      touches.delete(e.pointerId);
+      if (panning) {
+        if (!touches.size) { panning = false; fill(); }
+        else panAvg = avg();
+        return;
+      }
+      if (!gesture || e.pointerId !== gesture.id) return;
+      gesture = null;
+      if (tick) { cancelAnimationFrame(tick); tick = 0; }
+      if (live) close();
+      sync();
+    };
+    view.addEventListener("pointerup", up);
+    view.addEventListener("pointercancel", up);
   }
 
-  function count() {
-    const c = chrome && chrome.querySelector("[data-count]");
-    if (!c) return;
-    const n = items.reduce((a, it) => a + (it.k === "d" ? 1 : 0), 0);
-    c.textContent = n + (n === 1 ? " stroke" : " strokes") + " on the wall";
+  function where() {
+    if (!chrome || !active) return;
+    const [lo, hi] = span(), m = Math.round((pan - holeW / 2 / k + LEAD) / 100);
+    let n = 0;
+    for (let p = lo; p <= hi; p++) { const P = panels.get(p); if (P) for (const o of P.ops) if (o.k === "d") n++; }
+    const text = (m > 0 ? `${m} m from the start` : "The start of the wall") + `, ${n} ${n === 1 ? "stroke" : "strokes"} here`;
+    if (text !== said) { said = text; chrome.querySelector("[data-where]").textContent = text; }
   }
 
   function sync() {
@@ -505,20 +735,28 @@ export function createMural(el, opts) {
     chrome.querySelectorAll("[data-size]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.size === size)));
     chrome.querySelectorAll("[data-tool]").forEach((b) => b.setAttribute("aria-pressed", String((b.dataset.tool === "eraser") === erasing)));
     chrome.querySelector("[data-cur]").style.background = swatchBg(color);
-    chrome.querySelector("[data-undo]").disabled = !items.some((it) => it.id in mine);
+    chrome.querySelector("[data-undo]").disabled = !mineHere();
     chrome.querySelector("[data-redo]").disabled = !redo.length;
-    count();
+    where();
     if (active) cursor();
   }
 
   document.addEventListener("keydown", (e) => {
     if (!active) return;
     if (e.key === "Escape") { opts.onExit(); return; }
+    const key = e.key.toLowerCase(), tag = (e.target && e.target.tagName) || "";
+    if ((key === "a" || key === "d") && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== "INPUT" && tag !== "TEXTAREA") {
+      e.preventDefault();
+      keys[key] = 1;
+      walk();
+      return;
+    }
     if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
-    const k = e.key.toLowerCase();
-    if (k === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
-    else if ((k === "z" && e.shiftKey) || (k === "y" && e.ctrlKey)) { e.preventDefault(); redoLast(); }
+    if (key === "z" && !e.shiftKey) { e.preventDefault(); undo(); }
+    else if ((key === "z" && e.shiftKey) || (key === "y" && e.ctrlKey)) { e.preventDefault(); redoLast(); }
   });
+  document.addEventListener("keyup", (e) => { const key = e.key.toLowerCase(); if (key === "a" || key === "d") keys[key] = 0; });
+  addEventListener("blur", () => { keys.a = keys.d = 0; });
 
   const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
   let progress = 0;
@@ -534,21 +772,34 @@ export function createMural(el, opts) {
     flash("SECRET COLOR UNLOCKED: RAINBOW");
   });
 
-  listen();
+  [0, 1].forEach(listen);
 
   return {
     enter() {
       if (!chrome) build();
       chrome.hidden = false; active = true; made = 0;
-      el.classList.add("is-live");
+      base = 0; said = "";
+      view.hidden = false;
+      place();
+      pan = holeW / 2 / k - LEAD;
+      move();
+      view.classList.remove("on");
+      void view.offsetWidth;
+      view.classList.add("on");
       sync();
     },
     exit() {
       active = false;
       if (live) { gesture = null; close(); }
+      if (tick) { cancelAnimationFrame(tick); tick = 0; }
+      if (walkRaf) { cancelAnimationFrame(walkRaf); walkRaf = 0; }
+      keys.a = keys.d = 0; panning = false;
+      touches.clear();
       if (chrome) chrome.hidden = true;
-      el.classList.remove("is-live");
-      el.style.cursor = "";
+      if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
+      tiles.forEach((t, p) => { if (t.el) { t.el.remove(); t.el = null; } if (p > 1) tiles.delete(p); });
+      [home, next].forEach((cv) => { cv.style.top = cv.style.height = ""; el.append(cv); });
+      panels.forEach((_, p) => unlisten(p));
     },
     hole() {
       if (!chrome) build();
@@ -558,7 +809,8 @@ export function createMural(el, opts) {
       chrome.hidden = was;
       return r;
     },
-    resize() { if (active) cursor(); },
+    resize() { if (active) place(); },
+    frame: (hole) => frame(hole.width, hole.height),
     made: () => made,
   };
 }
