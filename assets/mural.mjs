@@ -1,6 +1,7 @@
 /* Gzowo Labs wall: spray paint on the brick wall of the map. Click it and the camera zooms into a Paint-style frame where the wall runs on
    forever to the right of where it starts: A and D walk along it, two fingers on a phone. Every 1000 units of wall is a panel with its own log of strokes,
-   spray and eraser alike, replayed in order with seeded mist so every visitor sees the same paint. Panel 0 is the wall on the map.
+   spray and eraser alike, replayed in order with seeded mist so every visitor sees the same paint. The whole wall comes over one stream,
+   because the database speaks HTTP/1.1 and a browser only keeps six connections per host.
    Anyone can rub out anything with the eraser. Undo deletes only your own strokes and copies them to the trash first. */
 
 import { icon } from "/assets/views.mjs";
@@ -9,10 +10,9 @@ import { drawWallPanel, drawWallScene } from "/assets/map.mjs";
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
 const DEV = LOCAL.includes(location.hostname) || location.protocol === "file:";
-const HOME = DEV ? "muralDev" : "mural", HOME_BIN = DEV ? "muralTrashDev" : "muralTrash";
 const FAR = DEV ? "muralWallDev" : "muralWall", FAR_BIN = DEV ? "muralWallTrashDev" : "muralWallTrash";
-const pathOf = (p) => (p ? FAR + "/" + p : HOME), binOf = (p) => (p ? FAR_BIN + "/" + p : HOME_BIN);
-const MINE_KEY = "gl-mural-mine-" + HOME;
+const pathOf = (p) => FAR + "/" + p, binOf = (p) => FAR_BIN + "/" + p;
+const MINE_KEY = "gl-mural-mine-" + (DEV ? "muralDev" : "mural");
 const TOUCH = matchMedia("(pointer: coarse)").matches;
 const RES_W = 2000, WX = 1000, WY = 323, RES_H = Math.round((RES_W * WY) / WX), SX = RES_W / WX;
 const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14, SPEED = 1100, LEAD = 110, BACK = 150;
@@ -349,37 +349,28 @@ export function createMural(el, opts) {
   }
 
   const message = (e) => { try { return JSON.parse(e.data || "null"); } catch (err) { return null; } };
-  function listen(p) {
+  const num = (k) => (/^(0|[1-9][0-9]*)$/.test(k) ? +k : -1);
+  function ingest(path, data) {
+    const parts = path.split("/").filter(Boolean);
+    if (!parts.length) { Object.keys(data || {}).forEach((k) => { if (num(k) >= 0 && data[k]) loadAll(panel(num(k)), data[k]); }); return; }
+    const p = num(parts[0]);
+    if (p < 0) return;
     const P = panel(p);
-    if (P.src) return;
-    const q = DB + "/" + pathOf(p) + '.json?orderBy="$key"&limitToLast=1500';
-    if (typeof EventSource === "undefined") {
-      P.src = { close() {} };
-      fetch(q).then((r) => r.json()).then((d) => loadAll(P, d)).catch(() => {});
-      return;
-    }
-    const src = (P.src = new EventSource(q));
-    src.addEventListener("put", (e) => {
-      const msg = message(e);
-      if (!msg || typeof msg.path !== "string" || panels.get(p) !== P) return;
-      if (msg.path === "/") { loadAll(P, msg.data); return; }
-      const parts = msg.path.slice(1).split("/");
-      if (parts.length !== 1) return;
-      if (msg.data === null) gone(P, parts[0]); else add(P, parts[0], msg.data);
-    });
-    src.addEventListener("patch", (e) => {
-      const msg = message(e);
-      if (!msg || msg.path !== "/" || !msg.data || panels.get(p) !== P) return;
-      Object.keys(msg.data).forEach((id) => (msg.data[id] === null ? gone(P, id) : add(P, id, msg.data[id])));
-    });
-    src.onerror = () => {};
+    if (parts.length === 1) { if (data) loadAll(P, data); return; }
+    if (parts.length === 2) { if (data === null) gone(P, parts[1]); else add(P, parts[1], data); }
   }
 
-  function unlisten(p) {
-    const P = panels.get(p);
-    if (!P || p <= 1 || (live && Math.abs(live.p - p) <= 1)) return;
-    if (P.src) P.src.close();
-    panels.delete(p);
+  function connect() {
+    const q = DB + "/" + FAR + ".json";
+    if (typeof EventSource === "undefined") { fetch(q).then((r) => r.json()).then((d) => ingest("/", d)).catch(() => {}); return; }
+    const src = (stream = new EventSource(q));
+    src.addEventListener("put", (e) => { const msg = message(e); if (msg && typeof msg.path === "string") ingest(msg.path, msg.data); });
+    src.addEventListener("patch", (e) => {
+      const msg = message(e);
+      if (!msg || typeof msg.path !== "string" || !msg.data) return;
+      Object.keys(msg.data).forEach((k) => ingest(msg.path.replace(/\/$/, "") + "/" + k, msg.data[k]));
+    });
+    src.onerror = () => {};
   }
 
   const body = (it) => { const b = { k: it.k, d: it.raw, w: it.w }; if (it.k === "d") b.c = it.c; return b; };
@@ -560,8 +551,6 @@ export function createMural(el, opts) {
       if (t.el) t.el.remove();
       tiles.delete(p);
     });
-    for (let p = Math.max(0, lo - 2); p <= hi + 2; p++) listen(p);
-    panels.forEach((_, p) => { if (p < lo - 3 || p > hi + 3) unlisten(p); });
   }
 
   function move() {
@@ -772,7 +761,12 @@ export function createMural(el, opts) {
     flash("SECRET COLOR UNLOCKED: RAINBOW");
   });
 
-  [0, 1].forEach(listen);
+  let stream = null;
+  connect();
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) { if (stream) { stream.close(); stream = null; } }
+    else if (!stream) connect();
+  });
 
   return {
     enter() {
@@ -799,7 +793,6 @@ export function createMural(el, opts) {
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
       tiles.forEach((t, p) => { if (t.el) { t.el.remove(); t.el = null; } if (p > 1) tiles.delete(p); });
       [home, next].forEach((cv) => { cv.style.top = cv.style.height = ""; el.append(cv); });
-      panels.forEach((_, p) => unlisten(p));
     },
     hole() {
       if (!chrome) build();

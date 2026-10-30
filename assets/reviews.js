@@ -87,35 +87,23 @@
     return { s: value.s, m: value.m, n: typeof value.n === "string" ? value.n : "", t: value.t || 0 };
   }
 
-  fetch(DB + "/reviews.json")
-    .then(function (r) { return r.json(); })
-    .then(function (data) {
-      Object.keys(data || {}).forEach(function (k) {
-        var r = decode(data[k]);
-        if (r) { r.id = k; reviews.push(r); }
+  function load() {
+    fetch(DB + "/reviews.json")
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        Object.keys(data || {}).forEach(function (k) {
+          if (reviews.some(function (x) { return x.id === k; })) return;
+          var r = decode(data[k]);
+          if (r) { r.id = k; reviews.push(r); }
+        });
+        render();
+      })
+      .catch(function () {
+        if (!reviews.length) scoreEl.textContent = "Reviews are offline right now.";
       });
-      render();
-      listen();
-    })
-    .catch(function () {
-      scoreEl.textContent = "Reviews are offline right now.";
-    });
-
-  function listen() {
-    if (typeof EventSource === "undefined") return;
-    var live = new EventSource(DB + "/reviews.json");
-    live.addEventListener("put", function (e) {
-      var msg = JSON.parse(e.data || "{}");
-      if (msg.path === "/") return;
-      var r = decode(msg.data);
-      var id = msg.path.replace("/", "");
-      if (!r || reviews.some(function (x) { return x.id === id; })) return;
-      r.id = id;
-      reviews.push(r);
-      render();
-    });
-    live.onerror = function () {};
   }
+  load();
+  addEventListener("gz:open", function (e) { if (String(e.detail || "").indexOf("review") !== -1) load(); });
 
   /* ---- posting ---- */
 
