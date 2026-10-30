@@ -406,7 +406,7 @@ export function drawWallPanel(canvas, p) {
   canvas.getContext("2d").drawImage(art, 0, 0);
 }
 
-export function drawWallScene(canvas, p, rows, top) {
+function drawWallScene(canvas, p, rows, top) {
   canvas.width = 400; canvas.height = rows;
   const c = canvas.getContext("2d"), r = rng(90001 + (p + 1) * 7919);
   const px = (x, y, col, w = 1, h = 1) => { c.fillStyle = col; c.fillRect(x, y, w, h); };
@@ -510,4 +510,20 @@ export function drawKayak(canvas, n, paddle) {
   const c = canvas.getContext("2d");
   c.imageSmoothingEnabled = false;
   c.drawImage(art, 0, 0, canvas.width, canvas.height);
+}
+
+export const WALL_SM = 90, WALL_SKY = SKY[0], WALL_GRASS = GRASS.bottom;
+const artCache = new Map();
+export function wallArt(p) {
+  if (artCache.has(p)) { const a = artCache.get(p); artCache.delete(p); artCache.set(p, a); return a; }
+  const cv = document.createElement("canvas"), rows = 147 + 2 * WALL_SM;
+  drawWallScene(cv, p, rows, WALL_SM);
+  const c = cv.getContext("2d"), w = document.createElement("canvas");
+  if (p >= -1) {
+    drawWallPanel(w, p >= 0 ? p : 0);
+    c.drawImage(w, p > 0 ? 0 : p === 0 ? -2 : 398, WALL_SM);
+  }
+  artCache.set(p, cv);
+  if (artCache.size > 40) artCache.delete(artCache.keys().next().value);
+  return cv;
 }

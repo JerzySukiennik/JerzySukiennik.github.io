@@ -278,7 +278,7 @@
         ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/)",
         "$piece": {
           ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && !root.child('muralWallTrash').child($p).child($piece).exists() && newData.parent().parent().parent().child('muralWallTrash').child($p).child($piece).exists())",
-          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c'))",
+          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c')) && (newData.hasChild('z') === newData.hasChild('o'))",
           "k": {
             ".validate": "newData.val() === 'd' || newData.val() === 'e'"
           },
@@ -296,6 +296,12 @@
           },
           "$other": {
             ".validate": false
+          },
+          "z": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 30 && newData.val() % 1 === 0"
+          },
+          "o": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && newData.val().matches(/^[0-9]+,[0-9]+$/)"
           }
         }
       }
@@ -322,6 +328,12 @@
           },
           "$other": {
             ".validate": false
+          },
+          "z": {
+            ".validate": "newData.isNumber()"
+          },
+          "o": {
+            ".validate": "newData.isString()"
           }
         }
       }
@@ -332,7 +344,7 @@
         ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/)",
         "$piece": {
           ".write": "(!data.exists() && newData.exists()) || (data.exists() && !newData.exists() && !root.child('muralWallTrashDev').child($p).child($piece).exists() && newData.parent().parent().parent().child('muralWallTrashDev').child($p).child($piece).exists())",
-          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c'))",
+          ".validate": "newData.hasChildren(['k','d','w','t']) && (newData.child('k').val() === 'e' || newData.hasChild('c')) && (newData.hasChild('z') === newData.hasChild('o'))",
           "k": {
             ".validate": "newData.val() === 'd' || newData.val() === 'e'"
           },
@@ -350,6 +362,12 @@
           },
           "$other": {
             ".validate": false
+          },
+          "z": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 30 && newData.val() % 1 === 0"
+          },
+          "o": {
+            ".validate": "newData.isString() && newData.val().length <= 32 && newData.val().matches(/^[0-9]+,[0-9]+$/)"
           }
         }
       }
@@ -376,6 +394,12 @@
           },
           "$other": {
             ".validate": false
+          },
+          "z": {
+            ".validate": "newData.isNumber()"
+          },
+          "o": {
+            ".validate": "newData.isString()"
           }
         }
       }

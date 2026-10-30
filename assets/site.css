@@ -282,14 +282,10 @@ html.tall .tasks .task:not(.on){display:none}
 .pt-s[aria-pressed="true"]{background:var(--sel)}
 .pt-s[aria-pressed="true"] i{background:#fff}
 .pt-hole{position:relative;flex:1;min-width:0;pointer-events:none}
-.wv{position:absolute;inset:0;overflow:hidden;background:#56ae3f;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .35s ease}
+.wv{position:absolute;inset:0;overflow:hidden;background:#3a74d6;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .35s ease}
 .wv.on{opacity:1}
-.wv-strip{position:absolute;left:0;top:0;width:0;height:100%;will-change:transform}
-.wv-t{position:absolute;top:0;height:100%}
-.wv-t canvas{position:absolute;left:0;top:0;width:100%;height:100%}
-.wv-t:first-child{z-index:0}
-.wv-t+.wv-t{z-index:1}
-.wv-b{image-rendering:pixelated}
+.wv-lod{position:absolute;left:0;top:0;width:0;height:0}
+.wv-l{position:absolute;left:0;top:0;width:512px;height:512px;transform-origin:0 0;will-change:transform}
 .pt-pal{display:flex;align-items:center;gap:6px;padding:4px 6px;background:var(--face);box-shadow:var(--raised)}
 .pt-cur{flex:none;width:36px;height:36px;border:2px solid #fff;box-shadow:var(--sunken)}
 .pt-metal{display:flex;flex-direction:column;gap:2px;flex:none}
