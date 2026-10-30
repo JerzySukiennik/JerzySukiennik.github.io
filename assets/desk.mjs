@@ -57,6 +57,7 @@ function layout() {
     desk.classList.toggle("is-land", m === "land");
     placeWelcome();
     lockForWindows();
+    renderTasks();
   }
   const W = world.clientWidth;
   geo = geometry(mode, W, mode === "tall" ? 0 : world.clientHeight);
@@ -111,8 +112,10 @@ function focus(el) {
   renderTasks();
 }
 
+const drawn = (w) => w.getClientRects().length > 0;
+
 function lockForWindows() {
-  const open = mode === "tall" && [...wins.querySelectorAll(".win:not([hidden])")].some((w) => !w.classList.contains("is-min"));
+  const open = mode === "tall" && [...wins.querySelectorAll(".win:not([hidden])")].some((w) => !w.classList.contains("is-min") && drawn(w));
   root.classList.toggle("wlock", open);
 }
 
@@ -194,7 +197,7 @@ addEventListener("popstate", () => {
 });
 
 function renderTasks() {
-  const list = [...wins.querySelectorAll(".win:not([hidden])")];
+  const list = [...wins.querySelectorAll(".win:not([hidden])")].filter((w) => w.classList.contains("is-min") || drawn(w));
   tasks.innerHTML = list.map((w) =>
     `<button class="task${w.classList.contains("on") && !w.classList.contains("is-min") ? " on" : ""}" type="button" data-task="${V.esc(w.dataset.win)}">${w.querySelector(".tb-i").innerHTML}<span>${V.esc(w.getAttribute("aria-label"))}</span></button>`).join("");
 }
