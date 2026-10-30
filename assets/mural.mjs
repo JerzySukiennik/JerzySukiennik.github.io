@@ -337,16 +337,18 @@ export function createMural(el, opts) {
     const key = L + ":" + tx + ":" + ty;
     let t = lod.get(key);
     if (t) { lod.delete(key); lod.set(key, t); return t; }
-    const cv = document.createElement("canvas");
-    cv.width = cv.height = TS;
-    cv.className = "wv-l";
+    const el = document.createElement("div"), bg = document.createElement("canvas"), cv = document.createElement("canvas");
+    el.className = "wv-l";
+    bg.width = bg.height = cv.width = cv.height = TS;
+    el.append(bg, cv);
     const S = span(L);
-    t = { key, L, cv, c: cv.getContext("2d"), v: { x0: tx * S, y0: ty * S, r: RB * 2 ** L }, x1: (tx + 1) * S, y1: (ty + 1) * S, ready: false, job: null, last: "", dirty: false };
+    t = { key, L, el, bg, cv, c: cv.getContext("2d"), v: { x0: tx * S, y0: ty * S, r: RB * 2 ** L }, x1: (tx + 1) * S, y1: (ty + 1) * S, ready: false, job: null, last: "", dirty: false };
+    backdrop(bg.getContext("2d"), t.v, t.x1, t.y1);
     lod.set(key, t);
     for (const [k, old] of lod) {
       if (lod.size <= 160) break;
       if (shown.has(old)) continue;
-      old.cv.remove();
+      old.el.remove();
       lod.delete(k);
     }
     return t;
@@ -374,7 +376,6 @@ export function createMural(el, opts) {
     const back = document.createElement("canvas");
     back.width = back.height = TS;
     const c = back.getContext("2d");
-    backdrop(c, t.v, t.x1, t.y1);
     t.job = { list: opsIn(t.v.x0, t.v.y0, t.x1, t.y1), i: 0, back, c };
     t.dirty = false;
     lodLoop();
@@ -390,11 +391,9 @@ export function createMural(el, opts) {
       while (j.i < j.list.length && performance.now() - t0 < 8) paintOp(j.list[j.i++], j.c, t.v);
       if (j.i < j.list.length) break;
       t.job = null;
-      const old = t.cv;
+      t.cv.replaceWith(j.back);
       t.cv = j.back;
-      t.cv.className = "wv-l";
       t.c = j.c;
-      if (old.parentNode) old.replaceWith(t.cv);
       t.ready = true;
       t.last = j.list.length ? j.list[j.list.length - 1].id : "";
       if (t.dirty) render(t);
@@ -420,14 +419,14 @@ export function createMural(el, opts) {
         }
       }
     }
-    shown.forEach((t) => { if (!now.has(t)) t.cv.remove(); });
+    shown.forEach((t) => { if (!now.has(t)) t.el.remove(); });
     shown = now;
     now.forEach((t) => {
       if (!t.ready) return;
       const s = (span(t.L) * ppu) / TS;
-      t.cv.style.zIndex = 50 + t.L - level;
-      t.cv.style.transform = `translate3d(${((t.v.x0 - cx) * ppu + W / 2).toFixed(2)}px,${((t.v.y0 - cy) * ppu + H / 2).toFixed(2)}px,0) scale(${s.toFixed(6)})`;
-      if (t.cv.parentNode !== layer) layer.append(t.cv);
+      t.el.style.zIndex = 50 + t.L - level;
+      t.el.style.transform = `translate3d(${((t.v.x0 - cx) * ppu + W / 2).toFixed(2)}px,${((t.v.y0 - cy) * ppu + H / 2).toFixed(2)}px,0) scale(${s.toFixed(6)})`;
+      if (t.el.parentNode !== layer) layer.append(t.el);
     });
     where();
   }
@@ -454,7 +453,7 @@ export function createMural(el, opts) {
       if (painted && op.drawn && op.drawn.has(t)) { if (op.id > t.last) t.last = op.id; return; }
       if (op.id > t.last && !painted) { paintOp(op, t.c, t.v); t.last = op.id; return; }
       if (shown.has(t)) render(t);
-      else { t.cv.remove(); lod.delete(t.key); }
+      else { t.el.remove(); lod.delete(t.key); }
     });
   }
 
@@ -474,7 +473,7 @@ export function createMural(el, opts) {
     lod.forEach((t) => {
       if (!hits(it, t.v.x0, t.v.y0, t.x1, t.y1)) return;
       if (shown.has(t)) render(t);
-      else { t.cv.remove(); lod.delete(t.key); }
+      else { t.el.remove(); lod.delete(t.key); }
     });
     where();
     return it;
@@ -523,7 +522,7 @@ export function createMural(el, opts) {
     });
     P.ops.sort(older);
     tiles.forEach((t) => { if (Math.abs(t.p - P.p) <= 1) redraw(t); });
-    lod.forEach((t) => { if (t.x1 >= P.p * WX - 100 && t.v.x0 <= (P.p + 1) * WX + 100) { if (shown.has(t)) render(t); else { t.cv.remove(); lod.delete(t.key); } } });
+    lod.forEach((t) => { if (t.x1 >= P.p * WX - 100 && t.v.x0 <= (P.p + 1) * WX + 100) { if (shown.has(t)) render(t); else { t.el.remove(); lod.delete(t.key); } } });
     sync();
   }
 
@@ -960,7 +959,7 @@ export function createMural(el, opts) {
       touches.clear(); pinch = null;
       if (chrome) chrome.hidden = true;
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
-      shown.forEach((t) => t.cv.remove());
+      shown.forEach((t) => t.el.remove());
       shown = new Set();
       lod.forEach((t) => { t.job = null; });
       lod.clear();
