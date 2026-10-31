@@ -40,6 +40,8 @@ const FLAME = pix([
 
 const LEDS = [[0.145, 0.783, 0.036, 0.033], [0.298, 0.783, 0.029, 0.029], [0.149, 0.859, 0.032, 0.029], [0.222, 0.859, 0.032, 0.029], [0.294, 0.859, 0.037, 0.029], [0.306, 0.935, 0.013, 0.014]];
 
+export { pix, PUFF, FLAME };
+
 export function createLife(world) {
   const root = document.createElement("div");
   root.className = "life";
@@ -157,7 +159,7 @@ export function createLife(world) {
   function fire() {
     fireT = setTimeout(fire, R(38000, 75000));
     const s = spots.querySelector('.spot[data-place="rockets"]');
-    if (paused || document.hidden || !s || !visible(s)) return;
+    if (paused || document.hidden || !s || !visible(s) || s.classList.contains("is-flying")) return;
     if (wet) { dispatchEvent(new CustomEvent("gz:scrub")); return; }
     s.classList.add("is-firing");
     dispatchEvent(new CustomEvent("gz:fire"));

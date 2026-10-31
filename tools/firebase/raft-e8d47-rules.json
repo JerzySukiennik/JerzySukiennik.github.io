@@ -403,6 +403,114 @@
           }
         }
       }
+    },
+    "plot": {
+      ".read": true,
+      "launches": {
+        ".write": "newData.isNumber() && (data.exists() ? newData.val() === data.val() + 1 : newData.val() === 1)"
+      },
+      "garden": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['k','u','v','t'])",
+          "k": {
+            ".validate": "newData.isString() && newData.val().matches(/^(tulip|sunflower|daisy|lavender|bush|tree|mushroom|pumpkin)$/)"
+          },
+          "u": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "v": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "fish": {
+        ".indexOn": [
+          "c"
+        ],
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['n','s','c','t'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "s": {
+            ".validate": "newData.isString() && newData.val().matches(/^(roach|perch|bream|chub|crucian|ide|pike|zander|asp|eel|catfish|golden)$/)"
+          },
+          "c": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 250"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "plotDev": {
+      ".read": true,
+      "launches": {
+        ".write": "newData.isNumber() && (data.exists() ? newData.val() === data.val() + 1 : newData.val() === 1)"
+      },
+      "garden": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['k','u','v','t'])",
+          "k": {
+            ".validate": "newData.isString() && newData.val().matches(/^(tulip|sunflower|daisy|lavender|bush|tree|mushroom|pumpkin)$/)"
+          },
+          "u": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "v": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "fish": {
+        ".indexOn": [
+          "c"
+        ],
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['n','s','c','t'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "s": {
+            ".validate": "newData.isString() && newData.val().matches(/^(roach|perch|bream|chub|crucian|ide|pike|zander|asp|eel|catfish|golden)$/)"
+          },
+          "c": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 250"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
     }
   }
 }

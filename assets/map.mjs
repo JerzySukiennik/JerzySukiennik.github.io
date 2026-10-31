@@ -74,14 +74,14 @@ function land(W, H) {
   const path = withLengths(spline([[-0.02, 0.742], [0.1, 0.74], [0.2, 0.737], [0.3, 0.741], [0.4, 0.743], [0.5, 0.739], [0.6, 0.742], [0.7, 0.74],
     [0.8, 0.743], [0.9, 0.744], [1.02, 0.746]].map(([x, y]) => [x * W, y * H]), 12));
   const props = [
-    at("tree2", 0.012, 0.715, 0.8), at("flag", 0.778, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
-    at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85), at("bush", 0.45, 0.85, 0.75), at("bench", 0.525, 0.83, 0.85),
-    at("tree3", 0.555, 0.912, 0.8),
+    at("tree2", 0.012, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
+    at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85),
   ];
   return finish({
     mode: "land", W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
     sun: at("sun", 0.6, 0.2, 1.25), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
       at("cloud1", 0.7, 0.4, 0.38)],
+    console: box(0.778 * W, 0.722 * H, 56 * s, 64 * s), garden: { x: 0.425 * W, y: 0.785 * H, w: 0.14 * W, h: 0.12 * H },
     river_props: [at("dock", 0.37, 0.975, 0.95)], gull: at("gull", 0.955, 0.995, 0.64), kayaks: [kayak(0.48 * W, 0.975 * H, s * 1.15), kayak(0.585 * W, 0.98 * H, s * 1.15)],
     spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * W, y * H]), lane: [0.16 * W, 0.88 * W], person: 92 * s, speed: 120 * s,
   });
@@ -100,16 +100,19 @@ function tall(W) {
     [68, 1700], [92, 1746], [200, 1752], [282, 1752], [306, 1780], [310, 1880], [302, 1980], [270, 2018], [180, 2022], [100, 2024], [72, 2050], [76, 2110],
     [110, 2140], [200, 2146], [300, 2146], [360, 2150], [405, 2152]].map(([x, y]) => [X(x), Y(y)]), 10));
   const props = [
-    at("flag", 330, 700, 0.8), at("tree2", 300, 850, 0.9), at("bush", 360, 900, 0.8), at("lamp", 150, 1015), at("windsock", 368, 1002, 0.9), at("lamp", 262, 1430), at("bush", 365, 1300, 0.7), at("tree3", 145, 1650, 0.8),
+    at("bush", 360, 900, 0.8), at("lamp", 150, 1015), at("windsock", 368, 1002, 0.9), at("lamp", 262, 1430), at("bush", 365, 1300, 0.7), at("tree3", 145, 1650, 0.8),
     at("lamp", 115, 1712), at("pine", 235, 1860, 0.8), at("bench", 230, 1940, 0.75), at("lamp", 360, 1930), at("bush", 180, 2110, 0.85), at("tree1", 240, 2100, 0.7),
   ];
   return finish({
     mode: "tall", W, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
     sun: at("sun", 330, 410, 1.1), clouds: [at("cloud3", 92, 395, 0.7), at("cloud1", 250, 345, 0.6), at("cloud4", 330, 452, 0.4)],
+    console: box(X(154), Y(905), 36 * s, 42 * s), garden: { x: X(234), y: Y(690), w: X(148), h: Y(140) },
     river_props: [at("dock", 78, 2398, 0.8)], gull: at("gull", 372, 2432, 0.6), kayaks: [kayak(X(193), Y(2414), s * 1.2), kayak(X(302), Y(2420), s * 1.2)],
     spurDown: [[40, 2200], [37, 2290], [34, 2350]].map(([x, y]) => [X(x), Y(y)]), lane: [X(80), X(360)], person: 64 * f, speed: 80 * f,
   });
 }
+
+function box(cx, base, w, h) { return { x: cx - w / 2, y: base - h, w, h, k: w / 40 }; }
 
 function kayak(cx, base, scale) {
   const [w, h] = KAYAK;
@@ -124,6 +127,8 @@ function trip(g) {
   const top = g.path.pts[best];
   const down = [top, ...g.spurDown, [dock.x + dock.w * near, deck]];
   g.trip = { s: g.path.len[best], down, walk: [[dock.x + dock.w * near, deck], [dock.x + dock.w * far, deck]], deck };
+  const land = g.mode === "land", stand = land ? [dock.x + dock.w * near, deck] : [dock.x + dock.w * far, deck], side = land ? -1 : 1;
+  g.fish = { stand, side, bob: [stand[0] + side * g.person * (land ? 1.35 : 0.95), land ? (g.river[0] + g.river[1]) / 2 + g.person * 0.08 : g.river[0] + (dock.y + dock.h * 0.3 - g.river[0]) * 0.7], route: land ? down : down.concat([[dock.x + dock.w * far, deck]]) };
   g.spurs = [down];
 }
 

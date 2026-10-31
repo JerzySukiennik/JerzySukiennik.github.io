@@ -400,6 +400,48 @@ html.tall .paint>.stb>span:first-child{display:none}
 @keyframes kpoke{30%{transform:translateY(calc(-6px * var(--s,1))) rotate(-3deg)}60%{transform:translateY(calc(2px * var(--s,1))) rotate(2deg)}}
 .is-painting .lv,.is-painting .lv *{animation-play-state:paused!important}
 
+.spot-console .spr{image-rendering:pixelated}
+.spot-console .spot-l,.spot-garden .spot-l{white-space:nowrap}
+html.tall .spot-console .spot-l{left:100%;bottom:50%;transform:translate(4px,50%)}
+html.tall .spot-console:hover .spot-l{transform:translate(8px,50%)}
+.is-flying>.spr{visibility:visible}
+.rk{position:absolute;pointer-events:none;will-change:transform}
+.rk img{position:absolute;left:0;top:0;width:100%;height:100%}
+.rk-flame{position:absolute;left:55%;top:99%;width:calc(9px * var(--fk));height:calc(14px * var(--fk));margin-left:calc(-4.5px * var(--fk));background:var(--flame) 0 0/300% 100%;transform-origin:50% 0;transform:scaleY(0);transition:transform .3s;animation:flame .15s steps(3) infinite}
+.rk.is-lit .rk-flame{transform:scaleY(1.3)}
+.rk-chute{position:absolute;left:50%;bottom:98%;width:240%;transform:translateX(-50%) scale(.2,0);transform-origin:50% 100%;image-rendering:pixelated;transition:transform .6s cubic-bezier(.3,1.5,.5,1)}
+.rk.is-chute .rk-chute{transform:translateX(-50%) scale(1,1)}
+.rk.is-down .rk-chute{transform:translateX(5%) rotate(80deg) scale(1,.3);opacity:0;transition:transform 1s ease-in,opacity 1s}
+.rk-puff{position:absolute;pointer-events:none;width:calc(10px * var(--fk));height:calc(8px * var(--fk));background:var(--puff) center/100% 100%;animation:rkpuff var(--d) ease-out forwards}
+@keyframes rkpuff{0%{opacity:.95;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(var(--sc))}}
+.spot-garden{padding:0;border:0;background:none}
+.spot-garden .spr{position:absolute;left:0;top:0;width:100%;height:100%;image-rendering:pixelated}
+.spot-garden .spr+.spr{pointer-events:none}
+.gd-pick{position:fixed;z-index:80;display:grid;grid-template-columns:1fr 1fr;gap:2px;width:236px;padding:4px;background:var(--face);box-shadow:var(--raised),3px 3px 0 rgba(0,0,0,.35)}
+.gd-t{grid-column:1/-1;margin:0 0 2px;padding:2px 4px;color:#fff;background:linear-gradient(90deg,var(--navy),var(--title2));font-weight:bold}
+.gd-pick button{display:flex;align-items:center;gap:6px;padding:3px 4px;border:0;background:var(--face);box-shadow:var(--raised);text-align:left;cursor:pointer}
+.gd-pick button:hover{background:var(--sel);color:#fff}
+.gd-pick canvas{flex:none;width:36px;height:36px;image-rendering:pixelated}
+.spot-dock{padding:0;border:0;background:none}
+.spot-dock:hover{filter:brightness(1.12)}
+.fish-bob{position:absolute;left:0;top:0;width:calc(3px * var(--k));height:calc(4px * var(--k));margin:calc(-2px * var(--k)) 0 0 calc(-1.5px * var(--k));background:var(--bob) center/100% 100%;pointer-events:none;animation:fbob 1.6s ease-in-out infinite}
+.fish-bob.is-nibble{animation:fnib .35s ease-in-out}
+.fish-bob.is-bite{animation:fbite .25s ease-in-out infinite}
+@keyframes fbob{50%{translate:0 1px}}
+@keyframes fnib{50%{translate:0 3px}}
+@keyframes fbite{0%,100%{translate:0 4px}50%{translate:0 9px}}
+.fish-line{position:absolute;height:1px;background:rgba(240,244,248,.85);transform-origin:0 50%;pointer-events:none}
+.fishbox{position:fixed;left:50%;top:50%;z-index:70;width:min(340px,94vw);max-height:none;transform:translate(-50%,-50%)}
+.fish-b{padding:10px 12px;text-align:center;background:#fff;box-shadow:var(--sunken);margin-top:3px}
+.fish-b p{margin:4px 0}
+.fish-big{font-size:16px;font-weight:bold}
+.fish-art{display:block;width:240px;max-width:100%;margin:0 auto;image-rendering:pixelated}
+.fish-act{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:6px 0 2px}
+.fish-form input{width:150px}
+.fish-note{min-height:1.2em;color:#000}
+.fish-top{width:100%;border-collapse:collapse;text-align:left}
+.fish-top td{padding:2px 4px;border-bottom:1px solid #ddd}
+
 .wx-on .life>.life-cloud{pointer-events:auto;cursor:pointer}
 .life-cloud{transition:filter 1.4s ease}
 .life-cloud.is-storm{filter:brightness(.6) saturate(.55)}

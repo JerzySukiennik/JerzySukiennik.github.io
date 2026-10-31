@@ -46,6 +46,16 @@ const LINES = {
   rainKayak: ["Rain? I am wet anyway!", "Paddling in the rain. Epic."],
   rainbow: ["Rainbow!", "Look, a rainbow!", "The sun is back!", "Is there gold at the end of it?"],
   scrub: ["Launch scrubbed. Weather.", "No engine test in the rain."],
+  countdown: ["T minus 3...", "Here we go!", "Everybody back!"],
+  launch: ["Liftoff!", "Go, go, go!", "Look at her fly!"],
+  landed: ["Nailed the landing!", "Back on the pad. Reusable!", "Perfect landing."],
+  plant: ["Nice, it will grow!", "The garden thanks you.", "Water it with your mind."],
+  fishGo: ["Fishing time!", "Let me grab my rod.", "The Narew is full of fish."],
+  bite: ["Bite!", "Now! Click!", "Something is pulling!"],
+  gotAway: ["It got away...", "Too slow!", "Next time."],
+  caught: ["What a catch!", "Dinner!", "Look at this one!"],
+  boot: ["A boot? Really?", "Somebody lost a boot."],
+  fishBack: ["Enough fishing.", "Back to work.", "My arms are tired."],
   zzz: ["Zzz...", "Zzz... rockets...", "Zzz... one more level..."],
 };
 
@@ -186,6 +196,13 @@ void main(){
   model.add(umb);
   const U2 = { want: false, k: 0, framed: false };
 
+  const rod = new THREE.Group(), pole = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.5, 0.03), pm(0x2a2e35)), reel = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), pm(0xffd84a));
+  pole.position.y = 0.75; reel.position.set(0, 0.18, 0.05);
+  rod.add(pole, reel);
+  rod.visible = false;
+  model.add(rod);
+  let fishing = 0;
+
   function rotWorld(b, q) {
     const wq = b.getWorldQuaternion(Q()), pq = b.parent.getWorldQuaternion(Q());
     b.quaternion.copy(pq.invert().multiply(q.multiply(wq)));
@@ -223,8 +240,9 @@ void main(){
 
   function size() {
     S.h = Math.round(G.person);
-    S.w = Math.round(S.h * (U2.framed ? 0.8 : 0.66));
-    S.lift = U2.framed ? Math.round(S.h * 0.31) : 0;
+    const fr = fishing ? [1.55, 0.5] : U2.framed ? [0.8, 0.62] : [0.66, 0];
+    S.w = Math.round(S.h * fr[0]);
+    S.lift = Math.round((S.h * fr[1]) / 2);
     const ppu = S.h / 2;
     if (S.mode === "kayak") {
       const bottom = hipY + 0.02, top = headTop + 0.1, half = 1.2;
@@ -263,6 +281,25 @@ void main(){
     model.updateMatrixWorld(true);
     const mq = model.getWorldQuaternion(Q());
     reach(B.ra, B.rf, B.rh, umb.localToWorld(V().set(0, 0.03, 0)), V().set(-1, -0.6, -0.5).applyQuaternion(mq));
+  }
+
+  function rodPose(t) {
+    const side = fishing, swing = Math.max(0, 1 - (t - (S.trip && S.trip.cast || 0)) / 500);
+    rod.position.set(side * 0.22, chestY - 0.05, 0.22);
+    rod.quaternion.setFromUnitVectors(UP, V().set(side * (0.75 - swing * 0.6), 0.6 + swing * 0.5, 0.25).normalize());
+    model.updateMatrixWorld(true);
+    if (!rig) return;
+    const mq = model.getWorldQuaternion(Q()), grip = rod.localToWorld(V().set(0, 0.02, 0)), up = rod.localToWorld(V().set(0, 0.32, 0));
+    const [main, other] = side < 0 ? [[B.ra, B.rf, B.rh], [B.la, B.lf, B.lh]] : [[B.la, B.lf, B.lh], [B.ra, B.rf, B.rh]];
+    reach(...main, grip, V().set(side, -0.6, -0.5).applyQuaternion(mq));
+    reach(...other, up, V().set(-side, -0.6, -0.5).applyQuaternion(mq));
+  }
+
+  function rodTip() {
+    if (!fishing) return null;
+    model.updateMatrixWorld(true);
+    const v = rod.localToWorld(V().set(0, 1.5, 0)).project(cam), left = S.x - S.w / 2, top = S.y - S.h * 0.95 - S.lift;
+    return [left + ((v.x + 1) / 2) * S.w, top + ((1 - v.y) / 2) * (S.h + S.lift)];
   }
 
   function umbrellaStep(dt) {
@@ -357,11 +394,30 @@ void main(){
     const T = S.trip;
     if (!T) return;
     if (T.afloat) moor(T);
+    if (fishing) { fishing = 0; rod.visible = false; U2.want = wet; size(); }
     setMode("walk");
     S.trip = null;
     S.s = G.trip.s;
     S.state = "idle"; S.until = performance.now() + (silent ? 600 : 2600);
-    if (!silent) { say(fresh(LINES.kayakBack), "say", 2400); play("wave"); }
+    if (!silent) { say(fresh(T.kind === "fish" ? LINES.fishBack : LINES.kayakBack), "say", 2400); play("wave"); }
+  }
+
+  function fishGo() {
+    if (S.trip && S.trip.kind === "fish") {
+      if (S.trip.phase === "fish") { dispatchEvent(new CustomEvent("gz:fish-ack")); S.trip.until = performance.now() + 30000; S.trip.cast = performance.now(); dispatchEvent(new CustomEvent("gz:fish-ready", { detail: { tip: rodTip } })); }
+      else dispatchEvent(new CustomEvent("gz:fish-ack"));
+      return;
+    }
+    if (S.trip || !G.fish) return;
+    dispatchEvent(new CustomEvent("gz:fish-ack"));
+    S.trip = { kind: "fish", phase: "go", i: 0, t0: 0 };
+    S.state = "trip";
+    if (dozing) dozing = false;
+    const jy = pointAt(G.trip.s)[1];
+    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.W * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
+      S.s = G.trip.s + (S.s > G.trip.s ? 1 : -1) * Math.min(Math.abs(S.s - G.trip.s), G.speed * 1.5);
+    }
+    say(fresh(LINES.fishGo), "say", 1800);
   }
 
   function startTrip(n) {
@@ -395,7 +451,7 @@ void main(){
       [S.x, S.y] = pointAt(S.s);
       play("run");
       if (Math.abs(S.x - before[0]) + Math.abs(S.y - before[1]) > 0.01) S.want = Math.abs(S.x - before[0]) > Math.abs(S.y - before[1]) * 0.8 ? (S.x > before[0] ? Math.PI / 2 : -Math.PI / 2) : (S.y < before[1] ? Math.PI : 0);
-      if (Math.abs(d) < 2) { T.phase = "down"; T.route = R0.down.concat(R0.walk.slice(1)); T.i = 1; }
+      if (Math.abs(d) < 2) { T.phase = "down"; T.route = T.kind === "fish" ? G.fish.route : R0.down.concat(R0.walk.slice(1)); T.i = 1; }
       return;
     }
     if (T.phase === "down" || T.phase === "up") {
@@ -406,12 +462,23 @@ void main(){
       if (dist <= step) {
         S.x = target[0]; S.y = target[1]; T.i++;
         if (T.i >= route.length) {
-          if (T.phase === "down") {
+          if (T.phase === "down" && T.kind === "fish") {
+            T.phase = "fish"; T.until = t + 30000; T.cast = t;
+            fishing = G.fish.side; rod.visible = true; U2.want = false; U2.k = 0; U2.framed = false; umb.visible = false;
+            size(); play("idle"); S.want = 0;
+            dispatchEvent(new CustomEvent("gz:fish-ready", { detail: { tip: rodTip } }));
+          } else if (T.phase === "down") {
             const kb = T.kb, seat = [kb.x + kb.w / 2, kb.y + kb.h * (11.5 / 28)];
             T.phase = "jump"; T.from = [S.x, S.y]; T.to = seat; T.t0 = t; T.dur = 560;
           } else endTrip(false);
         }
       } else { S.x += (dx / dist) * step; S.y += (dy / dist) * step; }
+      return;
+    }
+    if (T.phase === "fish") {
+      S.want = 0;
+      play("idle");
+      if (t > T.until) { T.phase = "up"; T.route = G.fish.route.slice().reverse(); T.i = 1; fishing = 0; rod.visible = false; U2.want = wet; size(); }
       return;
     }
     if (T.phase === "jump" || T.phase === "hop") {
@@ -484,6 +551,21 @@ void main(){
     }
   });
   addEventListener("gz:kayak", (e) => { if (running) startTrip(e.detail); });
+  addEventListener("gz:fish-go", () => { if (running) fishGo(); });
+  addEventListener("gz:fish-bite", () => { if (running && fishing) { say(fresh(LINES.bite), "shout", 1100); pop("alert", 1000); } });
+  addEventListener("gz:fish-done", (e) => {
+    if (!running || !S.trip || S.trip.kind !== "fish") return;
+    const d = e.detail || {};
+    S.trip.until = performance.now() + 30000;
+    if (d.miss) say(fresh(LINES.gotAway), "say", 2000);
+    else if (d.key === "boot") say(fresh(LINES.boot), "say", 2400);
+    else { say(`${fresh(LINES.caught)} ${d.cm} cm!`, "shout", 2400); pop("heart"); }
+  });
+  addEventListener("gz:fish-leave", () => { if (S.trip && S.trip.kind === "fish" && S.trip.phase === "fish") S.trip.until = 0; });
+  addEventListener("gz:countdown", (e) => { if (running && e.detail === 3 && S.state !== "trip" && onScreen()) { stop(fresh(LINES.countdown), "shout", 2200); } });
+  addEventListener("gz:launch", () => { if (running && S.state !== "trip" && onScreen()) { say(fresh(LINES.launch), "shout", 2200); pop("alert", 1200); S.want = 0; } });
+  addEventListener("gz:landed", () => { if (running && S.state !== "trip" && onScreen()) { say(fresh(LINES.landed), "say", 2400); pop("heart"); } });
+  addEventListener("gz:plant", () => { if (running && S.state !== "trip" && onScreen() && Math.random() < 0.7) { say(fresh(LINES.plant), "say", 2200); pop("heart"); } });
   addEventListener("gz:fire", () => { if (running && onScreen() && S.state !== "trip") { say(fresh(LINES.fire), "shout", 2000); pop("alert", 1200); } });
   addEventListener("gz:painted", () => { if (running && S.state !== "trip") { say(fresh(LINES.painted), "say", 2400); pop("heart"); } });
   addEventListener("gz:rain", (e) => {
@@ -571,6 +653,7 @@ void main(){
     if (acc >= 1 / 15) {
       mixer.update(acc); acc = 0;
       if (S.mode === "kayak") rowPose((S.trip && S.trip.phase2) || 0);
+      else if (rig && fishing) rodPose(t);
       else if (rig && umb.visible) holdPose();
     }
     placeDom();

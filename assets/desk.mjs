@@ -5,6 +5,9 @@ import { geometry, drawMap, drawWall, loadSprites } from "/assets/map.mjs";
 import { createMural } from "/assets/mural.mjs";
 import { createLife } from "/assets/life.mjs";
 import { createWeather } from "/assets/weather.mjs";
+import { createLaunch } from "/assets/rocket.mjs";
+import { createGarden } from "/assets/garden.mjs";
+import { createFishing } from "/assets/fishing.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
@@ -73,6 +76,9 @@ function layout() {
   });
   life.layout(geo);
   weather.layout(geo);
+  launch.layout(geo);
+  garden.layout(geo);
+  fishing.layout(geo);
   const art = world.querySelector("[data-wall-art]");
   art.parentNode.style.setProperty("--lx", (geo.mural.w / 2).toFixed(1) + "px");
   drawWall(art, Math.ceil(geo.run.w / geo.run.k));
@@ -328,6 +334,7 @@ document.addEventListener("keydown", (e) => {
 const mural = createMural(muralEl, { onExit: () => exitWall() });
 const life = createLife(world);
 const weather = createWeather({ world, mapCanvas });
+const launch = createLaunch(world), garden = createGarden(world), fishing = createFishing(world);
 
 function aim() {
   if (mode === "tall") return;
