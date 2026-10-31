@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "stillvale",
+      "name": "Stillvale",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "stillvale.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/stillvale",
+      "blurb": "A quiet walk through an alpine valley: tall grass, a still lake and birdsong. Keep an eye on the timer.",
+      "body": [
+        "A calm third-person walk through a mountain valley. Wander a meadow of wind-blown grass and wildflowers, follow the dirt road down to the lake, and listen to the birds and the cowbells somewhere up the slopes. There are no quests and no score, only a timer at the top of the screen that nobody explains.",
+        "The valley, the road over the pass, the lake and the forest are all generated in the browser. The grass is one instanced field that travels with the camera, sways in gusts of wind and bends around your feet, and every sound is a real field recording. It runs as plain ES modules with no build step, on a laptop or a phone.",
+        "Try this first: put on headphones, walk into the tall grass by the lake and wait for the timer to run out."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "GLSL",
+        "Web Audio"
+      ],
+      "image": "project-images/stillvale.webp"
+    },
+    {
+      "hidden": false,
       "slug": "robotea",
       "name": "Robotea",
       "category": "Game",
