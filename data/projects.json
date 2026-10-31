@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "rybna-wyspa",
+      "name": "Rybna Wyspa",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "rybna-wyspa.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/rybna-wyspa",
+      "blurb": "Build a fish farm with friends on a small island in the Narew: pumps, belts, flumes, machines and a riverside fish fry.",
+      "body": [
+        "Rybna Wyspa (Fish Island) is a first-person co-op tycoon on a little island in the middle of the Narew. Everyone in a room shares one farm: one till, one warehouse of blocks and one set of upgrades. Place spawners, from a cast-iron hand pump to a sluice dam and a stone portal, lay conveyor belts and water flumes, and carry stacks of flapping fish to the skup, the big steel hopper that buys them.",
+        "Every fish is a physics body that flops, slides off belts and splashes into the river if you are careless. There are 28 real Narew species in six rarities plus six secret fish, among them a GSP rocket. Around fifty traits from weather, ice and machines add to the price, and rare silver, gold and rainbow fish multiply it. One player in the room runs the physics and streams it to the others over WebRTC, while the farm itself lives in Firebase, so it keeps earning at half speed for up to 12 hours when nobody is online.",
+        "Try this first: pump a few fish with the hand pump, lay a belt from it to the skup, then read the chalkboard at the fish fry by the river, because the three species on it sell there for double. Join the public island to farm with strangers, or start a private one and share its six-letter code. You need a computer with a keyboard and mouse."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebRTC",
+        "Firebase Realtime Database",
+        "Web Audio"
+      ],
+      "image": "project-images/rybna-wyspa.webp"
+    },
+    {
+      "hidden": false,
       "slug": "stillvale",
       "name": "Stillvale",
       "category": "Game",
