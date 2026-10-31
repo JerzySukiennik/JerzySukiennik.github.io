@@ -23,9 +23,8 @@ export function loadSprites() {
   const out = {};
   images = Promise.all(Object.keys(SPR).filter((n) => n !== "wall").map((n) => new Promise((res) => {
     const im = new Image();
-    im.onload = () => { out[n] = im; res(); };
-    im.onerror = () => res();
     im.src = `/assets/map/${n}.webp`;
+    im.decode().then(() => { out[n] = im; res(); }, () => res());
   }))).then(() => out);
   return images;
 }
@@ -239,11 +238,10 @@ function river(c, g, img, r) {
   }
 }
 
-export function drawMap(canvas, g, img) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = Math.round(g.W * dpr); canvas.height = Math.round(g.H * dpr);
-  canvas.style.width = g.W + "px"; canvas.style.height = g.H + "px";
-  const c = canvas.getContext("2d", { willReadFrequently: false });
+export async function drawMap(canvas, g, img, current = () => true) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1), off = document.createElement("canvas"), pause = () => new Promise((r) => setTimeout(r));
+  off.width = Math.round(g.W * dpr); off.height = Math.round(g.H * dpr);
+  const c = off.getContext("2d");
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   c.imageSmoothingQuality = "high";
   const r = rng(g.mode === "tall" ? 977 : 5381);
@@ -261,11 +259,18 @@ export function drawMap(canvas, g, img) {
   c.beginPath(); c.moveTo(0, g.horizon);
   for (let x = 0; x <= g.W; x += 8) c.lineTo(x, g.horizon - (18 + Math.sin(x / g.W * 7) * 10 + Math.sin(x / g.W * 23) * 4) * g.s);
   c.lineTo(g.W, g.horizon); c.closePath(); c.fill();
+  await pause();
   forest(c, g, img, r);
+  await pause();
   ground(c, g, r);
+  await pause();
   river(c, g, img, r);
   g.river_props.forEach(draw);
   g.props.slice().sort((a, b) => a.y + a.h - (b.y + b.h)).forEach(draw);
+  if (!current()) return;
+  canvas.width = off.width; canvas.height = off.height;
+  canvas.style.width = g.W + "px"; canvas.style.height = g.H + "px";
+  canvas.getContext("2d").drawImage(off, 0, 0);
 }
 
 const WALL_H = 147;

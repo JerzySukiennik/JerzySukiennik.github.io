@@ -591,9 +591,11 @@ void main(){
   };
 }
 
-function boot() {
+async function boot() {
   if (booted || disabled || calm) return;
   booted = true;
+  const { softGL } = await import("/assets/boot.mjs");
+  if (await softGL()) return;
   const go = () => {
     if (!G && window.gzMap) { G = window.gzMap.geo; world = window.gzMap.world; }
     if (!G) { addEventListener("gz:map", go, { once: true }); return; }

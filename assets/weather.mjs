@@ -2,7 +2,7 @@
    on the grass and rings on the Narew, drops stick to the screen, and when it stops a rainbow comes out. More clicks, heavier rain. */
 
 import { SPR } from "/assets/map.mjs";
-import { snapshot } from "/assets/boot.mjs";
+import { snapshot, softGL } from "/assets/boot.mjs";
 import { createGlass } from "/assets/glass.mjs";
 
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -18,6 +18,9 @@ const STORM = {
   land: [["cloud3", 0.1, 0.02, 1.55], ["cloud2", 0.36, -0.03, 1.45], ["cloud2", 0.6, 0.04, 1.9], ["cloud3", 0.9, 0, 1.6]],
   tall: [["cloud3", 0.2, 318, 1.05], ["cloud2", 0.55, 290, 0.95], ["cloud4", 0.85, 336, 1.5]],
 };
+
+let soft = false;
+softGL().then((v) => { soft = v; });
 
 export function createWeather({ world, mapCanvas }) {
   const mk = (tag, cls) => { const e = document.createElement(tag); e.className = cls; e.setAttribute("aria-hidden", "true"); return e; };
@@ -160,7 +163,7 @@ export function createWeather({ world, mapCanvas }) {
     tint(true, r.left + r.width / 2);
     dim.style.opacity = DIM[level];
     setTimeout(() => { if (state === "rain") rollIn(); }, 500);
-    if (glass === null) glass = createGlass(world) || false;
+    if (glass === null) glass = (!soft && createGlass(world)) || false;
     shotT = 0;
     setTimeout(() => { if (state === "rain" && glass) glass.rain(level); }, 1100);
     sound(level);

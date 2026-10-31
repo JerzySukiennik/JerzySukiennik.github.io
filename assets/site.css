@@ -29,6 +29,7 @@ html.tall .desk{padding-bottom:var(--tb)}
 .mural canvas{position:absolute;left:0;top:0;width:var(--fw,50%);height:100%}
 .mural canvas+canvas{left:var(--fw,50%)}
 .spots{position:absolute;inset:0;pointer-events:none}
+.desk:not(.is-ready) .spots,.desk:not(.is-ready) .mural{visibility:hidden}
 .spot{position:absolute;display:block;padding:0;border:0;background:none;color:#fff;text-decoration:none;cursor:pointer;pointer-events:auto}
 .spot:focus-visible{outline:1px dotted #fff;outline-offset:3px}
 .spr{display:block;width:100%;height:100%;pointer-events:none;user-select:none;-webkit-user-drag:none}

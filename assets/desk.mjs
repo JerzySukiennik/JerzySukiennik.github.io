@@ -81,7 +81,7 @@ function layout() {
   muralEl.style.zIndex = Math.round(geo.mural.y + geo.mural.h) + 1;
   mural.resize();
   const g = geo;
-  mapReady = loadSprites().then((img) => { if (g === geo) drawMap(mapCanvas, g, img); });
+  mapReady = loadSprites().then((img) => (g === geo ? drawMap(mapCanvas, g, img, () => g === geo) : null));
   if (mode === "land") wins.querySelectorAll(".win:not([hidden])").forEach(keepInside);
   window.gzMap = { geo, world };
   window.dispatchEvent(new CustomEvent("gz:map", { detail: { geo, world } }));

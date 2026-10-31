@@ -161,7 +161,7 @@ export function projectBody(p) {
 }
 
 export function welcomeBody(ctx) {
-  return `<div class="hello"><h1 class="fire"><img src="/assets/gzowo-labs-fire.gif" alt="Gzowo Labs" width="515" height="93"></h1>
+  return `<div class="hello"><h1 class="fire"><img src="/assets/gzowo-labs-fire.webp" alt="Gzowo Labs" width="515" height="93"></h1>
 <p class="eyebrow">${esc(ctx.site.eyebrow)}</p><p class="tagline">${esc(ctx.site.tagline)}</p>
 <p class="hint"><span class="on-land">This is our plot in Gzowo. Click a building to walk in, or the wall to spray on it.</span><span class="on-tall">This is our plot in Gzowo. Walk down the path and tap a building.</span></p>
 <p class="acts">${btn("/games/", `${PLAY_IC} Play a game!`, "go")}<button class="btn" type="button" data-open="newest">${icon("doc")} What is new</button></p></div>`;

@@ -1,8 +1,39 @@
 /* Gzowo Labs boot: once per visit the plot appears like a drop falling into water, first in Mac System 7 black and white
-   (Atkinson dithered, like the old Macs did it), then a second ripple brings the colour back. */
+   (Atkinson dithered, like the old Macs did it), then a second ripple brings the colour back. Browsers that only have software
+   WebGL get a quick fade instead, and the avatar and the drops on the glass stay off there too. */
 
 const root = document.documentElement;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+const SOFT = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+const PROBE = `let r="?";try{if(typeof OffscreenCanvas!=="undefined"){const gl=new OffscreenCanvas(1,1).getContext("webgl");if(gl){const i=gl.getExtension("WEBGL_debug_renderer_info");r=${SOFT}.test(String(gl.getParameter(i?i.UNMASKED_RENDERER_WEBGL:gl.RENDERER)))?"1":"0";}}}catch(e){}postMessage(r);`;
+function probeHere() {
+  try {
+    const gl = document.createElement("canvas").getContext("webgl");
+    const info = gl && gl.getExtension("WEBGL_debug_renderer_info");
+    const soft = !gl || SOFT.test(String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER)));
+    const lose = gl && gl.getExtension("WEBGL_lose_context");
+    if (lose) lose.loseContext();
+    return soft;
+  } catch (e) { return true; }
+}
+let soft = null;
+export function softGL() {
+  if (soft) return soft;
+  soft = new Promise((done) => {
+    let saved = null;
+    try { saved = localStorage.getItem("gl-soft"); } catch (e) {}
+    if (saved === "0" || saved === "1") { done(saved === "1"); return; }
+    const keep = (v) => { try { localStorage.setItem("gl-soft", v ? "1" : "0"); } catch (e) {} done(v); };
+    try {
+      const url = URL.createObjectURL(new Blob([PROBE], { type: "text/javascript" })), w = new Worker(url);
+      const t = setTimeout(() => { w.terminate(); keep(probeHere()); }, 2500);
+      w.onmessage = (e) => { clearTimeout(t); w.terminate(); URL.revokeObjectURL(url); keep(e.data === "?" ? probeHere() : e.data === "1"); };
+      w.onerror = () => { clearTimeout(t); w.terminate(); keep(probeHere()); };
+    } catch (e) { keep(probeHere()); }
+  });
+  return soft;
+}
 
 export function snapshot(world, mapCanvas, box, scale = 1, read = false) {
   const c = document.createElement("canvas");
@@ -88,6 +119,7 @@ export async function playBoot({ world, mapCanvas, ready, desk }) {
     if (desk) { desk.classList.add("is-arriving"); setTimeout(() => desk.classList.remove("is-arriving"), 900); }
   };
   setTimeout(finish, 12000);
+  if (await softGL()) { cover.classList.add("is-fade"); await wait(300); finish(); return; }
   try {
     await Promise.race([ready, wait(5000)]);
     const imgs = [...world.querySelectorAll("img")].filter((i) => !i.complete);
