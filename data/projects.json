@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "instalator",
+      "name": "Instalator",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "instalator.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/instalator",
+      "blurb": "Kit out real houses with real smart home gear: the TV shows a dollhouse, your phones are the tools.",
+      "body": [
+        "Instalator is a couch game about installing a smart home. A laptop on the TV shows the house as a cut-away dollhouse, and up to four phones join with a QR code and become the tools. Pick a job from the board, from a studio flat in Mokotów to a cabin by the Narew in Gzowo or a villa in Konstancin, each with its own client, budget and checklist, then take turns, one task per turn.",
+        "The gear is real: UniFi gateways, switches, access points and cameras, Philips Hue, Shelly Pro DIN modules, tado°, Aqara, Nuki and Sonos, at Polish shop prices. You screw, drill and peel on the phone, flip breakers and clip modules onto the DIN rail, patch Ethernet cables in the rack between the same 3D models the TV shows, watch the Wi-Fi heat map grow, and design the wall tablet in the style of Home Assistant, Apple Home or Google Home, with camera feeds rendered from the 3D house. The TV holds the game state and the phones talk to it over WebRTC.",
+        "It was made for a dad who installs smart homes for real, so nothing punishes you and there is no way to lose. Try this first: open it on a laptop connected to the TV, scan the QR code with your phones and start with the breaker panel, because the house has no power yet. No phones around? Play on the computer alone and the tools open next to the house. The game itself is in Polish."
+      ],
+      "stack": [
+        "three.js",
+        "WebRTC",
+        "Firebase Realtime Database",
+        "Canvas 2D",
+        "Web Audio"
+      ],
+      "image": "project-images/instalator.webp"
+    },
+    {
+      "hidden": false,
       "slug": "rybna-wyspa",
       "name": "Rybna Wyspa",
       "category": "Game",
