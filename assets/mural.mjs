@@ -15,7 +15,7 @@ const FAR = DEV ? "muralWallDev" : "muralWall", FAR_BIN = DEV ? "muralWallTrashD
 const pathOf = (p) => FAR + "/" + p, binOf = (p) => FAR_BIN + "/" + p;
 const MINE_KEY = "gl-mural-mine-" + (DEV ? "muralDev" : "mural");
 const TOUCH = matchMedia("(pointer: coarse)").matches;
-const RES_W = 2000, WX = 1000, WY = 323, RES_H = Math.round((RES_W * WY) / WX), SX = RES_W / WX;
+const WX = 1000, WY = 323, SX = 2;
 const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14, SPEED = 1100, LEAD = 110, BACK = 150;
 const RB = 2, TS = 512, MAXZ = 2 ** 30, MINZ = 0.45, ART = 2.5, ARTY = 323 / 129;
 const UNDO_KEY = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘Z" : "Ctrl+Z";
@@ -244,16 +244,24 @@ function frame(w, h) {
 }
 
 export function createMural(el, opts) {
-  const home = el.querySelector("canvas"), next = document.createElement("canvas");
-  home.width = next.width = RES_W; home.height = next.height = RES_H;
-  el.append(next);
+  const home = el.querySelector("canvas");
   const panels = new Map(), tiles = new Map(), lod = new Map(), keys = { a: 0, d: 0, w: 0, s: 0, q: 0, e: 0 }, touches = new Map();
   const mine = {}, minePanel = {}, order = [], redo = [];
   let color = "#ff0000", size = 2, erasing = false, rainbow = false, posted = 0, lastT = 0, lastR = [], offlineSaid = false;
   let live = null, client = null, lastSample = 0, tick = 0, gesture = null, active = false, chrome = null, view = null, layer = null;
   let pumpRaf = 0, lodRaf = 0, flashTimer = 0, made = 0, said = "", walkRaf = 0, walkT = 0, stream = null;
   let W = 1, H = 1, k0 = 1, faceTop = 0, cx = 0, cy = 0, Z = 1, ytop = 0, ybot = 1, level = 0, shown = new Set(), pinch = null;
-  [home, next].forEach((cv, p) => tiles.set(p, { p, cv, c: cv.getContext("2d"), job: null, last: "", dirty: false }));
+  function tile(p, cv) {
+    const r = p < 2 ? SX : SX / 2;
+    cv.width = Math.round(WX * r); cv.height = Math.round(WY * r);
+    cv.style.setProperty("--p", p);
+    if (!cv.parentNode) el.append(cv);
+    const t = { p, r, cv, c: cv.getContext("2d"), job: null, last: "", dirty: false };
+    tiles.set(p, t);
+    return t;
+  }
+  tile(0, home);
+  tile(1, document.createElement("canvas"));
 
   try { rainbow = localStorage.getItem("gl-rainbow") === "1"; } catch (e) {}
   try {
@@ -301,13 +309,13 @@ export function createMural(el, opts) {
     return list.sort(older);
   }
 
-  const mapView = (t) => ({ x0: t.p * WX, y0: 0, r: SX });
+  const mapView = (t) => ({ x0: t.p * WX, y0: 0, r: t.r });
   const nearMap = (op, f) => tiles.forEach((t) => { if (hits(op, t.p * WX, 0, (t.p + 1) * WX, WY)) f(t); });
 
   function redraw(t) {
     if (t.job) { t.dirty = true; return; }
     const back = document.createElement("canvas");
-    back.width = RES_W; back.height = RES_H;
+    back.width = t.cv.width; back.height = t.cv.height;
     t.job = { list: opsIn(t.p * WX, 0, (t.p + 1) * WX, WY), i: 0, back, c: back.getContext("2d") };
     t.dirty = false;
     if (!pumpRaf) pumpRaf = requestAnimationFrame(pump);
@@ -935,13 +943,13 @@ export function createMural(el, opts) {
   });
 
   return {
-    enter() {
+    enter(p = 0) {
       if (!chrome) build();
       chrome.hidden = false; active = true; made = 0; said = "";
       view.hidden = false;
       Z = 1; k0 = 0;
       place();
-      cx = W / 2 / k0 - LEAD;
+      cx = p * WX + W / 2 / k0 - LEAD;
       cy = (ytop + ybot) / 2;
       clampView();
       present();
@@ -973,6 +981,7 @@ export function createMural(el, opts) {
       return r;
     },
     resize() { if (active) place(); },
+    span(n) { for (let p = tiles.size; p < Math.min(n, 24); p++) redraw(tile(p, document.createElement("canvas"))); },
     frame: (hole) => frame(hole.width, hole.height),
     made: () => made,
   };

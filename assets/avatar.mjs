@@ -57,6 +57,14 @@ const LINES = {
   boot: ["A boot? Really?", "Somebody lost a boot."],
   fishBack: ["Enough fishing.", "Back to work.", "My arms are tired."],
   zzz: ["Zzz...", "Zzz... rockets...", "Zzz... one more level..."],
+  hangar: ["The whole fleet lives in here.", "Mind the fins.", "Every rocket here has flown. Almost.", "Smells like rocket motors."],
+  board: ["Read the notes. Some are funny.", "Pin something!", "Who drew that?"],
+  claw: ["This claw is rigged. Probably.", "I won a crown once!", "Three goes a day. Use them well."],
+  booth: ["Make your own little Gzowian!", "Try a crown. Trust me.", "Everyone here is made by visitors."],
+  folkNew: ["A new folk! Welcome to Gzowo!", "Look who just arrived!", "Fresh from the changing booth!"],
+  clawWin: ["You beat the claw!", "No way, it actually held on!", "Nice prize!"],
+  pinned: ["I will read it later!", "Pinned. Nice.", "The board is getting full."],
+  meet: ["Hi {n}!", "Nice to meet you, {n}!", "Hey {n}, welcome to Gzowo!", "{n}! Good to see you.", "Oh hi, {n}!"],
 };
 
 const EMOTES = {
@@ -78,9 +86,10 @@ let disabled = false;
 try { disabled = localStorage.getItem(OFF_KEY) === "1"; } catch (e) {}
 if (params.get("avatar") === "off") disabled = true;
 
-let G = null, world = null, running = false, booted = false, api = null;
-if (window.gzMap) { G = window.gzMap.geo; world = window.gzMap.world; }
-addEventListener("gz:map", (e) => { G = e.detail.geo; world = e.detail.world; if (api) api.relayout(); });
+let G = null, world = null, pan = null, running = false, booted = false, api = null;
+if (window.gzMap) ({ geo: G, world, pan } = window.gzMap);
+addEventListener("gz:map", (e) => { G = e.detail.geo; world = e.detail.world; pan = e.detail.pan; if (api) api.relayout(); });
+const viewX = () => (pan ? pan.scrollLeft : 0);
 addEventListener("gz:mascot", (e) => {
   const on = e.detail;
   if (on) { disabled = false; if (api) api.resume(); else boot(); }
@@ -236,7 +245,7 @@ void main(){
 
   const S = { s: 0, target: 0, key: null, state: "idle", until: performance.now() + 1500, yaw: 0, want: 0, x: 0, y: 0, h: 100, w: 66, lift: 0, lost: 0, backAt: 0, mode: "walk", trip: null, kw: 0, kh: 0, z: 0 };
   const B2 = { line: "", shown: 0, until: 0, kind: "say", wait: 0 };
-  let emoteUntil = 0, lastInput = performance.now(), dozing = false, wet = false;
+  let emoteUntil = 0, lastInput = performance.now(), dozing = false, wet = false, shaking = 0;
 
   function size() {
     S.h = Math.round(G.person);
@@ -293,6 +302,12 @@ void main(){
     const [main, other] = side < 0 ? [[B.ra, B.rf, B.rh], [B.la, B.lf, B.lh]] : [[B.la, B.lf, B.lh], [B.ra, B.rf, B.rh]];
     reach(...main, grip, V().set(side, -0.6, -0.5).applyQuaternion(mq));
     reach(...other, up, V().set(-side, -0.6, -0.5).applyQuaternion(mq));
+  }
+
+  function shakePose(t) {
+    model.updateMatrixWorld(true);
+    const mq = model.getWorldQuaternion(Q()), bob = Math.sin(t / 70) * 0.05;
+    reach(B.ra, B.rf, B.rh, model.localToWorld(V().set(-0.1, chestY - 0.3 + bob, 0.48)), V().set(-1, -0.6, -0.5).applyQuaternion(mq));
   }
 
   function rodTip() {
@@ -366,18 +381,22 @@ void main(){
   function nextStation() {
     const list = G.stations.filter((st) => st.key !== S.key);
     if (G.mode === "tall") {
-      const mid = scrollY + innerHeight / 2;
-      list.sort((a, b) => Math.abs(a.y - mid) - Math.abs(b.y - mid));
-      return list[Math.floor(Math.random() * Math.min(3, list.length))];
+      const mid = scrollY + innerHeight / 2, col = Math.round(viewX() / G.V);
+      const here = list.filter((st) => Math.floor(st.x / G.V) === col);
+      const pool = here.length ? here : list;
+      pool.sort((a, b) => Math.abs(a.y - mid) - Math.abs(b.y - mid));
+      return pool[Math.floor(Math.random() * Math.min(3, pool.length))];
     }
-    return pick(list);
+    const mid = viewX() + G.V / 2;
+    list.sort((a, b) => Math.abs(a.x - mid) - Math.abs(b.x - mid));
+    return list[Math.floor(Math.random() * Math.min(4, list.length))];
   }
 
   function catchUp() {
     hush();
-    const mid = scrollY + innerHeight * 0.6;
+    const mid = G.mode === "tall" ? scrollY + innerHeight * 0.6 : 0, cx = viewX() + G.V * (G.mode === "tall" ? 0.5 : 0.5 + (Math.random() - 0.5) * 0.6);
     let best = 0, bd = Infinity;
-    G.path.pts.forEach((p, i) => { const d = Math.abs(p[1] - mid); if (d < bd) { bd = d; best = i; } });
+    G.path.pts.forEach((p, i) => { const d = G.mode === "tall" ? Math.abs(p[1] - mid) + Math.abs(p[0] - cx) * 0.6 : Math.abs(p[0] - cx); if (d < bd) { bd = d; best = i; } });
     S.s = G.path.len[best];
     S.state = "idle"; S.until = performance.now() + 600;
     if (performance.now() - S.backAt > 15000) { S.backAt = performance.now(); say(fresh(LINES.back), "say", 1800); }
@@ -414,7 +433,7 @@ void main(){
     S.state = "trip";
     if (dozing) dozing = false;
     const jy = pointAt(G.trip.s)[1];
-    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.W * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
+    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.V * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
       S.s = G.trip.s + (S.s > G.trip.s ? 1 : -1) * Math.min(Math.abs(S.s - G.trip.s), G.speed * 1.5);
     }
     say(fresh(LINES.fishGo), "say", 1800);
@@ -427,7 +446,7 @@ void main(){
     S.trip = T;
     S.state = "trip";
     const jy = pointAt(G.trip.s)[1];
-    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.W * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
+    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.V * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
       S.s = G.trip.s + (S.s > G.trip.s ? 1 : -1) * Math.min(Math.abs(S.s - G.trip.s), G.speed * 1.5);
     }
     say(fresh(LINES.kayakGo), "say", 1800);
@@ -583,6 +602,22 @@ void main(){
       setTimeout(() => { if (running && S.state !== "trip" && !wet) { stop(fresh(LINES.rainbow), "say", 2600); pop("heart"); } }, 700);
     }
   });
+  addEventListener("gz:folk-meet", (e) => {
+    const d = e.detail || {};
+    if (!running || S.state === "trip" || Math.abs(d.x - S.x) > G.person * 2) return;
+    lastInput = performance.now();
+    if (dozing) dozing = false;
+    S.state = "talk"; S.until = performance.now() + 2800;
+    S.want = d.x > S.x ? Math.PI / 2 : -Math.PI / 2;
+    shaking = performance.now() + 1500;
+    play("idle");
+    say(fresh(LINES.meet).replace("{n}", d.name || "friend"), "say", 2400);
+    if (Math.random() < 0.4) pop("heart", 1300);
+  });
+  addEventListener("gz:folk-new", () => { if (running && S.state !== "trip") { say(fresh(LINES.folkNew), "say", 2400); pop("heart"); } });
+  addEventListener("gz:claw-win", () => { if (running && S.state !== "trip") { say(fresh(LINES.clawWin), "shout", 2200); pop("alert", 1100); } });
+  addEventListener("gz:pinned", () => { if (running && S.state !== "trip" && Math.random() < 0.8) say(fresh(LINES.pinned), "say", 2200); });
+  addEventListener("gz:hangar", () => { if (running && S.state !== "trip" && onScreen()) { say(fresh(LINES.hangar), "say", 2200); pop("alert", 1000); } });
   addEventListener("gz:scrub", () => { if (running && S.state !== "trip" && onScreen()) say(fresh(LINES.scrub), "say", 2200); });
   addEventListener("gz:open", (e) => {
     const id = String(e.detail || ""), list = LINES.open[id.startsWith("sec-") ? id.slice(4) : id] || (id.startsWith("p-") ? LINES.open.project : null);
@@ -614,6 +649,9 @@ void main(){
     if (!dozing && S.state !== "trip" && t - lastInput > 60000) {
       dozing = true; S.state = "talk"; S.until = Infinity; play("idle"); S.want = 0;
       say(fresh(LINES.zzz), "think", 600000); pop("zzz", 600000);
+    }
+    if (G.mode === "land" && S.state !== "trip" && !document.documentElement.classList.contains("lock")) {
+      if (!onScreen()) { S.lost += dt; if (S.lost > 4) { S.lost = 0; catchUp(); } } else S.lost = 0;
     }
     if (S.state === "trip") tripStep(dt, t);
     else if (S.state === "walk") {
@@ -655,8 +693,10 @@ void main(){
       if (S.mode === "kayak") rowPose((S.trip && S.trip.phase2) || 0);
       else if (rig && fishing) rodPose(t);
       else if (rig && umb.visible) holdPose();
+      else if (rig && shaking > t) shakePose(t);
     }
     placeDom();
+    window.gzJurek = { x: S.x, y: S.y, s: S.s, busy: S.state === "trip" || S.state === "walk", trip: S.state === "trip" || !!S.trip };
     renderer.render(scene, cam);
   }
 

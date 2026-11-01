@@ -42,9 +42,11 @@ export function snapshot(world, mapCanvas, box, scale = 1, read = false) {
   x.setTransform(scale, 0, 0, scale, -box.x * scale, -box.y * scale);
   x.fillStyle = "#fff";
   x.fillRect(box.x, box.y, box.w, box.h);
-  const mr = mapCanvas.getBoundingClientRect();
-  if (mapCanvas.width) x.drawImage(mapCanvas, mr.left, mr.top, mr.width, mr.height);
-  const items = [...world.querySelectorAll(".life-cloud, .wx-cloud, .spot .spr, .mural canvas")].map((e) => ({ e, z: parseInt((e.closest(".spot, .mural") || e).style.zIndex, 10) || 0 }));
+  world.querySelectorAll("canvas.map").forEach((m) => {
+    const mr = m.getBoundingClientRect();
+    if (m.width && mr.right > box.x && mr.left < box.x + box.w) x.drawImage(m, mr.left, mr.top, mr.width, mr.height);
+  });
+  const items = [...world.querySelectorAll(".life-cloud, .life-boat, .wx-cloud, .spot .spr, .mural canvas, .fk")].map((e) => ({ e, z: parseInt((e.closest(".spot, .mural") || e).style.zIndex, 10) || 0 }));
   items.sort((a, b) => a.z - b.z);
   for (const { e } of items) {
     const r = e.getBoundingClientRect();

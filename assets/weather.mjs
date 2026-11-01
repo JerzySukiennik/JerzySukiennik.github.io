@@ -55,12 +55,15 @@ export function createWeather({ world, mapCanvas }) {
     return { stops, css: `linear-gradient(180deg,${stops.map(([y, c]) => `${c} ${y}px`).join(",")})` };
   }
 
+  const vx = () => (world.parentNode && world.parentNode.scrollLeft) || 0;
+
   function drawBow() {
-    const tall = g.mode === "tall", cx = (tall ? 0.5 : 0.29) * g.W, rad = tall ? 0.42 * g.W : Math.min(0.37 * g.H, 0.3 * g.W);
+    const tall = g.mode === "tall", cx = (tall ? 0.5 : 0.29) * g.V, rad = tall ? 0.42 * g.V : Math.min(0.37 * g.H, 0.3 * g.V);
     const b = Math.max(2, Math.round(rad / p / 24)), outer = rad / p, inner = outer - b * BOW.length;
     const w = Math.ceil(outer * 2) + 2, h = Math.ceil(outer) + 1;
     bow.width = w; bow.height = h;
-    bow.style.left = cx - (w / 2) * p + "px"; bow.style.top = g.horizon - h * p + "px";
+    bow.dataset.x = cx - (w / 2) * p;
+    bow.style.left = bow.dataset.x + "px"; bow.style.top = g.horizon - h * p + "px";
     bow.style.width = w * p + "px"; bow.style.height = h * p + "px";
     const c = bow.getContext("2d"), im = c.createImageData(w, h), d = new Uint32Array(im.data.buffer);
     const cols = BOW.map((x) => rgba(...[1, 3, 5].map((i) => parseInt(x.slice(i, i + 2), 16)), 215));
@@ -86,13 +89,13 @@ export function createWeather({ world, mapCanvas }) {
 
   function rollIn() {
     if (storm.length || !g) return;
-    const tall = g.mode === "tall", f = g.W / 390;
+    const tall = g.mode === "tall", f = g.V / 390, x0 = vx();
     storm = STORM[g.mode].map(([name, fx, fy, k], i) => {
       const im = mk("img", "wx-cloud");
       im.src = `/assets/map/${name}.webp`;
       im.alt = "";
       const w = SPR[name][0] * g.s * k, h = SPR[name][1] * g.s * k;
-      im.style.cssText = `left:${fx * g.W - w / 2}px;top:${tall ? fy * f : fy * g.H}px;width:${w}px;height:${h}px;--from:${(fx < 0.5 ? -1 : 1) * (0.35 * g.W + w)}px;--dx:${(R(-0.05, 0.05) * g.W).toFixed(0)}px;transition-delay:${i * 0.22}s`;
+      im.style.cssText = `left:${x0 + fx * g.V - w / 2}px;top:${tall ? fy * f : fy * g.H}px;width:${w}px;height:${h}px;--from:${(fx < 0.5 ? -1 : 1) * (0.35 * g.V + w)}px;--dx:${(R(-0.05, 0.05) * g.V).toFixed(0)}px;transition-delay:${i * 0.22}s`;
       world.append(im);
       void im.offsetWidth;
       im.classList.add("on");
@@ -190,6 +193,7 @@ export function createWeather({ world, mapCanvas }) {
       tint(false);
       rollOut();
       bow.classList.remove("on");
+      bow.style.left = vx() + +bow.dataset.x + "px";
       void bow.offsetWidth;
       bow.classList.add("on");
       dispatch(false);
@@ -239,15 +243,16 @@ export function createWeather({ world, mapCanvas }) {
   }
 
   function step(dt, t, a, b, wr) {
-    const tall = g.mode === "tall", hz = g.horizon / p, river = g.river[0] / p;
-    let cl = 0, cr = cw, from = -1, shaft = null;
+    const tall = g.mode === "tall", hz = g.horizon / p, river = g.river[0] / p, seen = -wr.left / p;
+    let cl = Math.max(0, seen - 30), cr = Math.min(cw, seen + innerWidth / p + 10), from = -1, shaft = null;
     if (src && state === "rain" && t - t0 < 4600) {
       const r = src.getBoundingClientRect();
       if (r.width) {
         shaft = [(r.left - wr.left + r.width * 0.16) / p, (r.right - wr.left - r.width * 0.16) / p];
         from = (r.top - wr.top + r.height * 0.7) / p;
         const e = Math.max(0, Math.min(1, (t - t0 - 1500) / 3000)), ee = e * e * (3 - 2 * e);
-        cl = shaft[0] * (1 - ee); cr = shaft[1] + (cw - shaft[1]) * ee;
+        const L = Math.max(0, seen - 30), Rr = Math.min(cw, seen + innerWidth / p + 10);
+        cl = shaft[0] + (L - shaft[0]) * ee; cr = shaft[1] + (Rr - shaft[1]) * ee;
       }
     }
     const want = Math.round((amount * DENSITY * Math.max(0, cr - cl) * (b - a)) / 1000);

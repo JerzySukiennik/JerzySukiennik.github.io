@@ -58,6 +58,12 @@ const ICONS = {
     "..kwwwwwwwwwwk..", "..kwkkkkkkkkwk..", "..kwwwwwwwwwwk..", "..kwkkkkkkwwwk..", "..kwwwwwwwwwwk..", "..kkkkkkkkkkkk..", "................", "................"],
   note: ["................", ".....kkkkkkkkk..", ".....kkkkkkkkk..", ".....k.......k..", ".....k.......k..", ".....k.......k..", ".....k.......k..", ".....k.......k..",
     ".....k.......k..", "..kkkk....kkkk..", ".kkkkk...kkkkk..", ".kkkkk...kkkkk..", "..kkk.....kkk...", "................", "................", "................"],
+  person: ["................", ".....kkkkkk.....", "....kcccccck....", "....kckcckck....", "....kcccccck....", "....kcckkcck....", ".....kkkkkk.....", "......kbbk......",
+    "...kkkkkkkkkk...", "..kbbbbbbbbbbk..", "..kbbbbbbbbbbk..", "..kbkbbbbbbkbk..", "..kbkbbbbbbkbk..", "..kkkaaaaaakkk..", "....kaakkaak....", "....kkk..kkk...."],
+  pin: ["................", "kkkkkkkkkkkkkkkk", "krrrrrrrrrrrrrrk", "krcccccrrwwwwwrk", "krcckccrrwkkkwrk", "krcccccrrwwwwwrk", "krcckkcrrwkkwwrk", "krcccccrrwwwwwrk",
+    "krrrrrrrrrrrrrrk", "krreeeeerrrrrrrk", "krrekkeerrrrrrrk", "krreeeeerrrrrrrk", "krrrrrrrrrrrrrrk", "kkkkkkkkkkkkkkkk", "...kk......kk...", "...kk......kk..."],
+  claw: ["kkkkkkkkkkkkkkkk", "kcgcgcgcgcgcgcgk", "kkkkkkkkkkkkkkkk", "kbbbbbbkbbbbbbbk", "kbbbbbbkbbbbbbbk", "kbbbbbgggbbbbbbk", "kbbbbgbbbgbbbbbk", "kbbbbgbbbgbbbbbk",
+    "kbbbbbbbbbbbbbbk", "kbbcccbbebbrrrbk", "kbcccceeeerrrrbk", "kkkkkkkkkkkkkkkk", "kggggggggkkggggk", "kggkgggggkkggggk", "kggggggggggggggk", "kkkkkkkkkkkkkkkk"],
 };
 const PAL = { k: "#000000", w: "#ffffff", g: "#c0c0c0", d: "#808080", a: "#000080", b: "#008080", c: "#ffff00", e: "#008000", r: "#aa5500" };
 function rects(name) {
@@ -228,6 +234,9 @@ ${item('href="#" data-open="newest" role="menuitem"', "folder", "What is new")}
 ${item('href="#" data-open="reviews" role="menuitem"', "star", "Reviews")}
 ${item('href="#guestbook" data-open="guestbook" role="menuitem"', "book", "Guestbook")}
 ${item('href="#" data-wall role="menuitem"', "bricks", "The Wall")}
+${item('href="#" data-folks="index" role="menuitem"', "person", "Folks")}
+${item('href="#" data-board role="menuitem"', "pin", "Cork Board")}
+${item('href="#" data-claw role="menuitem"', "claw", "Claw Machine")}
 ${item('href="#" data-open="guide" role="menuitem"', "bubble", "Ask the Guide")}
 <li class="sep"></li>
 ${item(`href="/p/${esc(ring[0] || "")}/" data-nav data-ring='${esc(JSON.stringify(ring))}' role="menuitem"`, "globe", esc(ctx.site.webring), "<em>random</em>")}

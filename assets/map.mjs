@@ -6,8 +6,9 @@ export const SPR = {
   arcade: [315, 341], workshop: [262, 166], lab: [248, 277], launchpad: [174, 424], billboard: [206, 267], signpost: [129, 199], mailbox: [51, 88],
   wall: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
-  dock: [200, 60], water: [491, 56],
+  dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
 };
+export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
 export const FACE = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
 export const KAYAK = [120, 28];
 export const PLACE_SPRITE = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost" };
@@ -21,7 +22,7 @@ let images = null;
 export function loadSprites() {
   if (images) return images;
   const out = {};
-  images = Promise.all(Object.keys(SPR).filter((n) => n !== "wall").map((n) => new Promise((res) => {
+  images = Promise.all(Object.keys(SPR).filter((n) => !["wall", "hangar", "board", "claw", "booth", "sailboat"].includes(n)).map((n) => new Promise((res) => {
     const im = new Image();
     im.src = `/assets/map/${n}.webp`;
     im.decode().then(() => { out[n] = im; res(); }, () => res());
@@ -63,51 +64,65 @@ function sprite(name, cx, base, scale) {
   return { sprite: name, x: cx - (w * scale) / 2, y: base - h * scale, w: w * scale, h: h * scale, k: scale };
 }
 
-function land(W, H) {
-  const s = Math.min(H / 870, W / 1500);
-  const at = (name, fx, fy, k = 1) => sprite(name, fx * W, fy * H, s * k);
+function land(V, H) {
+  const W = 2 * V, s = Math.min(H / 870, V / 1500);
+  const at = (name, fx, fy, k = 1) => sprite(name, fx * V, fy * H, s * k);
   const places = {
     reviews: at("billboard", 0.105, 0.695, 0.9), printing: at("workshop", 0.28, 0.715, 0.92), games: at("arcade", 0.475, 0.715, 0.9),
     software: at("lab", 0.665, 0.715, 0.92), rockets: at("launchpad", 0.868, 0.72, 0.85), about: at("signpost", 0.052, 0.93, 0.78), guestbook: at("mailbox", 0.392, 0.88),
+    hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
   };
-  const wallW = Math.min(0.25 * W, 404 * s * 0.95), wall = sprite("wall", 0.71 * W, 0.928 * H, wallW / 404);
+  const wallW = Math.min(0.25 * V, 404 * s * 0.95), wall = sprite("wall", 0.71 * V, 0.928 * H, wallW / 404);
   const path = withLengths(spline([[-0.02, 0.742], [0.1, 0.74], [0.2, 0.737], [0.3, 0.741], [0.4, 0.743], [0.5, 0.739], [0.6, 0.742], [0.7, 0.74],
-    [0.8, 0.743], [0.9, 0.744], [1.02, 0.746]].map(([x, y]) => [x * W, y * H]), 12));
+    [0.8, 0.743], [0.9, 0.744], [1, 0.742], [1.1, 0.745], [1.2, 0.741], [1.3, 0.744], [1.4, 0.74], [1.5, 0.743], [1.6, 0.741], [1.7, 0.744], [1.8, 0.74],
+    [1.9, 0.743], [2.02, 0.745]].map(([x, y]) => [x * V, y * H]), 12));
   const props = [
     at("tree2", 0.012, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
     at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85),
+    at("pine", 1.075, 0.712, 0.8), at("dish", 1.455, 0.704, 0.75), at("lamp", 1.655, 0.716), at("lamp", 1.778, 0.716),
+    at("bush", 1.93, 0.714, 0.75), at("tree1", 1.975, 0.715, 0.9),
   ];
   return finish({
-    mode: "land", W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
+    mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
     sun: at("sun", 0.6, 0.2, 1.25), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
-      at("cloud1", 0.7, 0.4, 0.38)],
-    console: box(0.778 * W, 0.722 * H, 56 * s, 64 * s), garden: { x: 0.425 * W, y: 0.785 * H, w: 0.14 * W, h: 0.12 * H },
-    river_props: [at("dock", 0.37, 0.975, 0.95)], gull: at("gull", 0.955, 0.995, 0.64), kayaks: [kayak(0.48 * W, 0.975 * H, s * 1.15), kayak(0.585 * W, 0.98 * H, s * 1.15)],
-    spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * W, y * H]), lane: [0.16 * W, 0.88 * W], person: 92 * s, speed: 120 * s,
+      at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4)],
+    console: box(0.778 * V, 0.722 * H, 56 * s, 64 * s), garden: { x: 0.425 * V, y: 0.785 * H, w: 0.14 * V, h: 0.12 * H },
+    river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8)], gull: at("gull", 0.955, 0.995, 0.64),
+    kayaks: [kayak(0.48 * V, 0.975 * H, s * 1.15), kayak(0.585 * V, 0.98 * H, s * 1.15)],
+    spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * V, y * H]), lane: [0.16 * V, 0.88 * V], person: 92 * s, speed: 120 * s,
   });
 }
 
-function tall(W) {
-  const f = W / 390, s = 0.7 * f, X = (x) => x * f, Y = (y) => y * f;
+function tall(V) {
+  const f = V / 390, s = 0.7 * f, X = (x) => x * f, Y = (y) => y * f;
   const at = (name, x, y, k = 1) => sprite(name, X(x), Y(y), s * k);
   const places = {
     about: at("signpost", 300, 610), rockets: at("launchpad", 80, 900), printing: at("workshop", 280, 1140), games: at("arcade", 118, 1440),
     software: at("lab", 285, 1720), reviews: at("billboard", 100, 1990), guestbook: at("mailbox", 300, 2110),
+    hangar: at("hangar", 585, 800, 0.95), board: at("board", 505, 1100, 0.85), claw: at("claw", 662, 1400, 0.95), booth: at("booth", 522, 1700, 0.95),
   };
   const wall = sprite("wall", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
     [66, 1130], [90, 1166], [180, 1172], [280, 1172], [312, 1196], [318, 1300], [316, 1420], [290, 1466], [200, 1472], [100, 1472], [70, 1500], [64, 1600],
     [68, 1700], [92, 1746], [200, 1752], [282, 1752], [306, 1780], [310, 1880], [302, 1980], [270, 2018], [180, 2022], [100, 2024], [72, 2050], [76, 2110],
-    [110, 2140], [200, 2146], [300, 2146], [360, 2150], [405, 2152]].map(([x, y]) => [X(x), Y(y)]), 10));
+    [110, 2140], [200, 2146], [300, 2146], [360, 2150], [405, 2152], [480, 2152], [600, 2150], [690, 2146], [714, 2120], [716, 2060], [700, 2028],
+    [640, 2022], [540, 2022], [470, 2020], [440, 1995], [436, 1900], [436, 1790], [452, 1745], [520, 1733], [620, 1732], [690, 1730], [714, 1705],
+    [716, 1600], [716, 1490], [700, 1445], [640, 1434], [540, 1432], [470, 1430], [440, 1405], [436, 1300], [436, 1190], [452, 1146], [520, 1134],
+    [620, 1132], [690, 1130], [714, 1105], [716, 1000], [716, 890], [700, 846], [640, 834], [585, 832], [520, 832], [468, 834]].map(([x, y]) => [X(x), Y(y)]), 10));
   const props = [
     at("bush", 360, 900, 0.8), at("lamp", 150, 1015), at("windsock", 368, 1002, 0.9), at("lamp", 262, 1430), at("bush", 365, 1300, 0.7), at("tree3", 145, 1650, 0.8),
     at("lamp", 115, 1712), at("pine", 235, 1860, 0.8), at("bench", 230, 1940, 0.75), at("lamp", 360, 1930), at("bush", 180, 2110, 0.85), at("tree1", 240, 2100, 0.7),
+    at("lamp", 452, 815), at("pine", 640, 1085, 0.8), at("lamp", 735, 1115), at("bench", 520, 1395, 0.7), at("lamp", 452, 1418), at("tree1", 655, 1700, 0.75),
+    at("bush", 740, 1720, 0.6), at("dish", 640, 1995, 0.62), at("lamp", 452, 2008), at("bush", 520, 2120, 0.75), at("tree3", 650, 2115, 0.7),
+    at("tree2", 760, 1300, 0.7),
   ];
   return finish({
-    mode: "tall", W, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
-    sun: at("sun", 330, 410, 1.1), clouds: [at("cloud3", 92, 395, 0.7), at("cloud1", 250, 345, 0.6), at("cloud4", 330, 452, 0.4)],
+    mode: "tall", V, W: 2 * V, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
+    sun: at("sun", 330, 410, 1.1), clouds: [at("cloud3", 92, 395, 0.7), at("cloud1", 250, 345, 0.6), at("cloud4", 330, 452, 0.4), at("cloud2", 500, 370, 0.6),
+      at("cloud4", 700, 420, 0.45)],
     console: box(X(154), Y(905), 36 * s, 42 * s), garden: { x: X(234), y: Y(690), w: X(148), h: Y(140) },
-    river_props: [at("dock", 78, 2398, 0.8)], gull: at("gull", 372, 2432, 0.6), kayaks: [kayak(X(193), Y(2414), s * 1.2), kayak(X(302), Y(2420), s * 1.2)],
+    river_props: [at("dock", 78, 2398, 0.8)], boats: [at("sailboat", 600, 2420, 0.6)], gull: at("gull", 372, 2432, 0.6),
+    kayaks: [kayak(X(193), Y(2414), s * 1.2), kayak(X(302), Y(2420), s * 1.2)],
     spurDown: [[40, 2200], [37, 2290], [34, 2350]].map(([x, y]) => [X(x), Y(y)]), lane: [X(80), X(360)], person: 64 * f, speed: 80 * f,
   });
 }
@@ -162,41 +177,46 @@ function darker(im, amount) {
   return c;
 }
 
-function forest(c, g, img, r) {
+function plan(g, img) {
+  if (g.plan) return g.plan;
+  const r = rng(g.mode === "tall" ? 4421 : 8807), trees = [], rocks = [];
   const names = ["tree1", "tree2", "tree3", "tree1", "pine", "tree3"];
-  const rows = [[0.5, 0.42, 26], [0.62, 0.22, 34]];
-  rows.forEach(([scale, shade, step], row) => {
+  [[0.5, 0.42, 26], [0.62, 0.22, 34]].forEach(([scale, shade, step], row) => {
     for (let x = -30 + row * 13; x < g.W + 40; x += (step + r() * 14) * g.s * 1.6) {
-      const n = names[Math.floor(r() * names.length)], im = img[n];
+      const im = img[names[Math.floor(r() * names.length)]], k = g.s * scale * (0.85 + r() * 0.3), base = g.horizon + (row ? 4 : -6) * g.s + r() * 6 * g.s;
       if (!im) continue;
-      const k = g.s * scale * (0.85 + r() * 0.3), w = im.naturalWidth * k, h = im.naturalHeight * k;
-      const base = g.horizon + (row ? 4 : -6) * g.s + r() * 6 * g.s;
-      c.drawImage(darker(im, shade), x - w / 2, base - h, w, h);
+      const w = im.naturalWidth * k, h = im.naturalHeight * k;
+      trees.push({ im: darker(im, shade), x: x - w / 2, y: base - h, w, h });
     }
   });
+  for (let x = -10; x < g.W + 10; x += (18 + r() * 34) * g.s) {
+    const rw = (10 + r() * 16) * g.s;
+    rocks.push({ x, rw, rh: rw * (0.45 + r() * 0.2), y: g.river[0] + r() * 4 * g.s, moss: r() < 0.5 });
+  }
+  return (g.plan = { trees, rocks });
 }
 
-function ground(c, g, r) {
-  const k = g.k, top = Math.round(g.horizon), bot = Math.round(g.river[0]);
+function ground(c, g, r, x0, x1) {
+  const k = g.k, top = Math.round(g.horizon), bot = Math.round(g.river[0]), span = x1 - x0;
   const gr = c.createLinearGradient(0, top, 0, bot);
   gr.addColorStop(0, GRASS.top); gr.addColorStop(1, GRASS.bottom);
   c.fillStyle = gr;
-  c.fillRect(0, top, g.W, bot - top + 1);
+  c.fillRect(x0, top, span, bot - top + 1);
   const mask = document.createElement("canvas");
-  mask.width = Math.ceil(g.W / k); mask.height = Math.ceil(g.H / k);
+  mask.width = Math.ceil(span / k) + 1; mask.height = Math.ceil(g.H / k);
   const m = mask.getContext("2d");
   m.lineCap = "round"; m.lineJoin = "round";
   const lines = [[g.path.pts, 1], ...(g.spurs || []).map((sp) => [sp, 0.55])];
-  const trace = (pts) => { m.beginPath(); pts.forEach(([x, y], i) => (i ? m.lineTo(x / k, y / k) : m.moveTo(x / k, y / k))); };
+  const trace = (pts) => { m.beginPath(); pts.forEach(([x, y], i) => (i ? m.lineTo((x - x0) / k, y / k) : m.moveTo((x - x0) / k, y / k))); };
   lines.forEach(([pts, w]) => { trace(pts); m.strokeStyle = PATH.edge; m.lineWidth = (g.pathWidth * w + 4 * g.s) / k; m.stroke(); });
   lines.forEach(([pts, w]) => { trace(pts); m.strokeStyle = PATH.base; m.lineWidth = (g.pathWidth * w) / k; m.stroke(); });
   lines.forEach(([pts, w]) => { trace(pts); m.strokeStyle = PATH.light; m.lineWidth = (g.pathWidth * w * 0.35) / k; m.stroke(); });
   const md = m.getImageData(0, 0, mask.width, mask.height).data;
-  const onPath = (x, y) => md[(Math.floor(y / k) * mask.width + Math.floor(x / k)) * 4 + 3] > 0;
+  const onPath = (x, y) => md[(Math.floor(y / k) * mask.width + Math.floor((x - x0) / k)) * 4 + 3] > 0;
   const px = (x, y, col, w = 1, h = 1) => { c.fillStyle = col; c.fillRect(Math.floor(x / k) * k, Math.floor(y / k) * k, w * k, h * k); };
-  const area = g.W * (bot - top);
+  const area = span * (bot - top);
   for (let i = 0; i < area / (k * k * 26); i++) {
-    const x = r() * g.W, y = top + 6 + r() * (bot - top - 6);
+    const x = x0 + r() * span, y = top + 6 + r() * (bot - top - 6);
     if (onPath(x, y)) continue;
     const t = r();
     if (t < 0.55) { px(x, y, GRASS.dark, 1, 2); px(x + k, y + k, GRASS.dark); }
@@ -204,28 +224,29 @@ function ground(c, g, r) {
     else px(x, y, GRASS.darker, 2, 1);
   }
   for (let i = 0; i < area / (k * k * 520); i++) {
-    const x = r() * g.W, y = top + 14 + r() * (bot - top - 20);
+    const x = x0 + r() * span, y = top + 14 + r() * (bot - top - 20);
     if (onPath(x, y) || onPath(x + 3 * k, y)) continue;
     const col = FLOWERS[Math.floor(r() * FLOWERS.length)];
     px(x - k, y, col); px(x + k, y, col); px(x, y - k, col); px(x, y + k, col); px(x, y, "#ffd23a"); px(x, y + 2 * k, GRASS.darker);
   }
   c.imageSmoothingEnabled = false;
-  c.drawImage(mask, 0, 0, mask.width * k, mask.height * k);
+  c.drawImage(mask, x0, 0, mask.width * k, mask.height * k);
   c.imageSmoothingEnabled = true;
-  for (let i = 0; i < (g.path.total * 1.3) / (6 * k); i++) {
-    const x = r() * g.W, y = top + r() * (bot - top);
+  for (let i = 0; i < (g.path.total * 1.3 * (span / g.W)) / (6 * k); i++) {
+    const x = x0 + r() * span, y = top + r() * (bot - top);
     if (onPath(x, y) && onPath(x + 2 * k, y) && onPath(x - 2 * k, y)) px(x, y, r() < 0.7 ? PATH.pebble : PATH.light, r() < 0.5 ? 2 : 1, 1);
   }
 }
 
-function river(c, g, img, r) {
+function river(c, g, img, x0, x1) {
   const [top, bot] = g.river, h = bot - top, k = g.k;
   c.fillStyle = "#2f74d6";
-  c.fillRect(0, top, g.W, h);
+  c.fillRect(x0, top, x1 - x0, h);
   const im = img.water;
   if (im) {
     const cut = 4, sw = im.naturalWidth - cut * 2, sc = h / im.naturalHeight, tw = sw * sc;
-    for (let x = 0, i = 0; x < g.W; x += tw - 1, i++) {
+    for (let x = 0, i = 0; x < x1; x += tw - 1, i++) {
+      if (x + tw < x0) continue;
       c.save();
       if (i % 2) { c.translate(x + tw, top); c.scale(-1, 1); c.drawImage(im, cut, 0, sw, im.naturalHeight, 0, 0, tw, h); }
       else c.drawImage(im, cut, 0, sw, im.naturalHeight, x, top, tw, h);
@@ -233,49 +254,66 @@ function river(c, g, img, r) {
     }
   }
   c.fillStyle = GRASS.bank;
-  c.fillRect(0, top - k, g.W, k * 2);
-  for (let x = -10; x < g.W + 10; x += (18 + r() * 34) * g.s) {
-    const rw = (10 + r() * 16) * g.s, rh = rw * (0.45 + r() * 0.2), y = top + r() * 4 * g.s;
+  c.fillRect(x0, top - k, x1 - x0, k * 2);
+  for (const { x, y, rw, rh, moss } of g.plan.rocks) {
+    if (x + rw < x0 || x - rw > x1) continue;
     c.fillStyle = "#6f757d"; c.beginPath(); c.ellipse(x, y, rw / 2, rh / 2, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#9aa1a9"; c.beginPath(); c.ellipse(x - rw * 0.08, y - rh * 0.12, rw * 0.38, rh * 0.32, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#c3c8ce"; c.fillRect(Math.floor((x - rw * 0.22) / k) * k, Math.floor((y - rh * 0.3) / k) * k, k, k);
-    if (r() < 0.5) { c.fillStyle = GRASS.dark; c.fillRect(Math.floor((x + rw * 0.3) / k) * k, Math.floor((y - rh * 0.6) / k) * k, k, 2 * k); }
+    if (moss) { c.fillStyle = GRASS.dark; c.fillRect(Math.floor((x + rw * 0.3) / k) * k, Math.floor((y - rh * 0.6) / k) * k, k, 2 * k); }
   }
 }
 
-export async function drawMap(canvas, g, img, current = () => true) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1), off = document.createElement("canvas"), pause = () => new Promise((r) => setTimeout(r));
-  off.width = Math.round(g.W * dpr); off.height = Math.round(g.H * dpr);
+async function paintHalf(g, img, half, dpr, pause) {
+  const x0 = half * g.V, x1 = x0 + g.V, off = document.createElement("canvas");
+  off.width = Math.round(g.V * dpr); off.height = Math.round(g.H * dpr);
   const c = off.getContext("2d");
-  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.setTransform(dpr, 0, 0, dpr, -x0 * dpr, 0);
   c.imageSmoothingQuality = "high";
-  const r = rng(g.mode === "tall" ? 977 : 5381);
+  const r = rng((g.mode === "tall" ? 977 : 5381) + half * 7919);
   const band = g.horizon / SKY.length;
-  SKY.forEach((col, i) => { c.fillStyle = col; c.fillRect(0, Math.floor(i * band), g.W, Math.ceil(band) + 1); });
+  SKY.forEach((col, i) => { c.fillStyle = col; c.fillRect(x0, Math.floor(i * band), g.V, Math.ceil(band) + 1); });
   const k = g.k;
   for (let i = 1; i < SKY.length; i++) {
     const y = Math.floor(i * band);
     c.fillStyle = SKY[i - 1];
-    for (let x = (i % 2) * k; x < g.W; x += 2 * k) c.fillRect(x, y, k, k);
+    for (let x = x0 + (i % 2) * k; x < x1; x += 2 * k) c.fillRect(x, y, k, k);
   }
-  const draw = (o) => { const im = img[o.sprite]; if (im) c.drawImage(im, o.x, o.y, o.w, o.h); };
+  const hit = (o) => o.x < x1 && o.x + o.w > x0;
+  const draw = (o) => { const im = img[o.sprite]; if (im && hit(o)) c.drawImage(im, o.x, o.y, o.w, o.h); };
   draw(g.sun);
   c.fillStyle = "#7fb98a";
-  c.beginPath(); c.moveTo(0, g.horizon);
-  for (let x = 0; x <= g.W; x += 8) c.lineTo(x, g.horizon - (18 + Math.sin(x / g.W * 7) * 10 + Math.sin(x / g.W * 23) * 4) * g.s);
-  c.lineTo(g.W, g.horizon); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(x0, g.horizon);
+  for (let x = x0; x <= x1 + 8; x += 8) c.lineTo(x, g.horizon - (18 + Math.sin(x / g.V * 7) * 10 + Math.sin(x / g.V * 23) * 4) * g.s);
+  c.lineTo(x1 + 8, g.horizon); c.closePath(); c.fill();
+  g.plan.trees.forEach((t) => { if (hit(t)) c.drawImage(t.im, t.x, t.y, t.w, t.h); });
   await pause();
-  forest(c, g, img, r);
+  ground(c, g, r, x0, x1);
   await pause();
-  ground(c, g, r);
-  await pause();
-  river(c, g, img, r);
+  river(c, g, img, x0, x1);
   g.river_props.forEach(draw);
   g.props.slice().sort((a, b) => a.y + a.h - (b.y + b.h)).forEach(draw);
-  if (!current()) return;
+  return off;
+}
+
+function commit(canvas, off, g, half) {
   canvas.width = off.width; canvas.height = off.height;
-  canvas.style.width = g.W + "px"; canvas.style.height = g.H + "px";
+  canvas.style.width = g.V + "px"; canvas.style.height = g.H + "px";
+  canvas.style.left = half * g.V + "px";
   canvas.getContext("2d").drawImage(off, 0, 0);
+}
+
+export async function drawMap(canvases, g, img, current = () => true) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1), pause = () => new Promise((r) => setTimeout(r));
+  plan(g, img);
+  const left = await paintHalf(g, img, 0, dpr, pause);
+  if (!current()) return;
+  commit(canvases[0], left, g, 0);
+  (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(async () => {
+    if (!current()) return;
+    const right = await paintHalf(g, img, 1, dpr, pause);
+    if (current()) commit(canvases[1], right, g, 1);
+  }, { timeout: 700 });
 }
 
 const WALL_H = 147;
@@ -397,7 +435,7 @@ function wallLayer(x0, W, ends) {
 export function drawWall(canvas, w = SPR.wall[0]) {
   const key = "map" + w;
   if (!wallCache.has(key)) wallCache.set(key, wallLayer(0, w, { l: true, r: w === SPR.wall[0] }));
-  const art = wallCache.get(key), k = 4;
+  const art = wallCache.get(key), k = w > 1000 ? 2 : 4;
   canvas.width = art.width * k;
   canvas.height = art.height * k;
   const c = canvas.getContext("2d");

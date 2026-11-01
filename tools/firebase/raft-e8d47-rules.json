@@ -454,6 +454,75 @@
           }
         }
       },
+      "folks": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['n','p','c','o','t'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "l": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "p": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-v]{7}$/)"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-v]{7}$/)"
+          },
+          "o": {
+            ".validate": "newData.isString() && newData.val().length === 384 && newData.val().matches(/^[.x0-9a-v]+$/)"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "folksOn": {
+        ".indexOn": [
+          ".value"
+        ],
+        "$id": {
+          ".write": "newData.exists()",
+          ".validate": "newData.val() === now && root.child('plot/folks/' + $id).exists()"
+        }
+      },
+      "wear": {
+        "$id": {
+          ".write": "newData.exists()",
+          ".validate": "newData.isString() && newData.val().length <= 60 && newData.val().matches(/^([a-z]+(,[a-z]+)*)?$/) && root.child('plot/folks/' + $id).exists()"
+        }
+      },
+      "board": {
+        ".indexOn": [
+          "t"
+        ],
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['x','d','c','t']) && (newData.child('x').val().length > 0 || newData.child('d').val().length === 768)",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "x": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "d": {
+            ".validate": "newData.isString() && (newData.val().length === 0 || (newData.val().length === 768 && newData.val().matches(/^[.0-7]+$/) && newData.val().matches(/[0-7]/)))"
+          },
+          "c": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
       "$other": {
         ".validate": false
       }
@@ -499,6 +568,75 @@
           },
           "c": {
             ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 250"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "folks": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['n','p','c','o','t'])",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "l": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "p": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-v]{7}$/)"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-v]{7}$/)"
+          },
+          "o": {
+            ".validate": "newData.isString() && newData.val().length === 384 && newData.val().matches(/^[.x0-9a-v]+$/)"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "folksOn": {
+        ".indexOn": [
+          ".value"
+        ],
+        "$id": {
+          ".write": "newData.exists()",
+          ".validate": "newData.val() === now && root.child('plotDev/folks/' + $id).exists()"
+        }
+      },
+      "wear": {
+        "$id": {
+          ".write": "newData.exists()",
+          ".validate": "newData.isString() && newData.val().length <= 60 && newData.val().matches(/^([a-z]+(,[a-z]+)*)?$/) && root.child('plotDev/folks/' + $id).exists()"
+        }
+      },
+      "board": {
+        ".indexOn": [
+          "t"
+        ],
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['x','d','c','t']) && (newData.child('x').val().length > 0 || newData.child('d').val().length === 768)",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 16"
+          },
+          "x": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "d": {
+            ".validate": "newData.isString() && (newData.val().length === 0 || (newData.val().length === 768 && newData.val().matches(/^[.0-7]+$/) && newData.val().matches(/[0-7]/)))"
+          },
+          "c": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
           },
           "t": {
             ".validate": "newData.val() === now"

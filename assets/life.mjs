@@ -116,10 +116,18 @@ export function createLife(world) {
     for (let i = 0; i < Math.round(g.W / 90); i++) {
       make("life-glint", `left:${R(0, g.W).toFixed(0)}px;top:${(top + rh * R(0.25, 0.85)).toFixed(0)}px;width:${(R(5, 12) * k).toFixed(0)}px;z-index:${Math.round(top)};--d:${R(2.6, 5).toFixed(2)}s;--dl:${(-R(0, 5)).toFixed(2)}s`);
     }
+    (g.boats || []).forEach((b) => {
+      const im = new Image();
+      im.src = `/assets/map/${b.sprite}.webp`;
+      im.alt = "";
+      im.className = "life-boat lv";
+      im.style.cssText = `left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;z-index:${Math.round(b.y + b.h)}`;
+      root.append(im);
+    });
     const gl = g.gull;
     const gull = make("life-gull", `left:${gl.x}px;top:${gl.y}px;width:${gl.w}px;height:${gl.h}px;z-index:${Math.round(gl.y + gl.h)}`);
     gull.style.background = "url(/assets/map/gull.webp) center/100% 100%";
-    const fl = g.mode === "tall" ? [[250, 1075], [150, 2075]].map(([x, y]) => [x * g.W / 390, y * g.W / 390]) : [[0.205 * g.W, 0.875 * g.H], [0.49 * g.W, 0.905 * g.H]];
+    const fl = g.mode === "tall" ? [[250, 1075], [150, 2075], [600, 1250], [540, 1880]].map(([x, y]) => [x * g.V / 390, y * g.V / 390]) : [[0.205 * g.V, 0.875 * g.H], [0.49 * g.V, 0.905 * g.H], [1.42 * g.V, 0.79 * g.H], [1.66 * g.V, 0.82 * g.H]];
     fl.forEach(([x, y], i) => make("life-fly", `left:${x}px;top:${y}px;z-index:${Math.round(y)};--d:${11 + i * 4}s;--dl:${-i * 3}s;--fly:${i ? FLY("#ffd84a", "#c98a12") : FLY("#ffffff", "#9aa6b2")}`, "<i></i>"));
     g.kayaks.forEach((kb, n) => {
       const b = kayaks[n];
@@ -133,8 +141,9 @@ export function createLife(world) {
 
   function visible(el) {
     const r = el.getBoundingClientRect();
-    return r.bottom > 0 && r.top < innerHeight;
+    return r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth;
   }
+  const vx = () => (world.parentNode && world.parentNode.scrollLeft) || 0;
 
   function fish() {
     fishT = setTimeout(fish, R(7000, 16000));
@@ -142,7 +151,7 @@ export function createLife(world) {
     const [top, bot] = g.river, dock = g.river_props[0];
     let x = 0;
     for (let i = 0; i < 6; i++) {
-      x = R(0.05, 0.9) * g.W;
+      x = vx() + R(0.05, 0.9) * g.V;
       const clear = (x < dock.x - 30 || x > dock.x + dock.w + 30) && g.kayaks.every((kb) => x < kb.x - 30 || x > kb.x + kb.w + 30) && (x < g.gull.x - 30 || x > g.gull.x + g.gull.w + 30);
       if (clear) break;
     }

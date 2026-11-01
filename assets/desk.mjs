@@ -8,15 +8,22 @@ import { createWeather } from "/assets/weather.mjs";
 import { createLaunch } from "/assets/rocket.mjs";
 import { createGarden } from "/assets/garden.mjs";
 import { createFishing } from "/assets/fishing.mjs";
+import { createHangar } from "/assets/hangar.mjs";
+import { createBoard } from "/assets/board.mjs";
+import { createClaw } from "/assets/claw.mjs";
+import { createFolks } from "/assets/folks.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
 const root = document.documentElement;
 const desk = document.getElementById("desk");
+const pan = document.getElementById("pan");
 const world = document.getElementById("world");
+const panBtn = desk.querySelector("[data-pan]");
 const wins = document.getElementById("wins");
 const mapCanvas = world.querySelector("canvas.map");
+const maps = [...world.querySelectorAll("canvas.map")];
 const muralEl = world.querySelector("[data-mural]");
 const startBtn = desk.querySelector("[data-start]");
 const startMenu = document.getElementById("start-menu");
@@ -63,10 +70,15 @@ function layout() {
     lockForWindows();
     renderTasks();
   }
-  const W = world.clientWidth;
-  geo = geometry(mode, W, mode === "tall" ? 0 : world.clientHeight);
+  const was = geo ? pan.scrollLeft / geo.V : 0, V = pan.clientWidth || innerWidth || 1024;
+  geo = geometry(mode, V, mode === "tall" ? 0 : pan.clientHeight);
   world.style.height = mode === "tall" ? geo.H + "px" : "";
+  world.style.width = geo.W + "px";
   world.style.setProperty("--s", geo.s.toFixed(3));
+  world.style.setProperty("--V", V + "px");
+  world.querySelectorAll(".snap").forEach((e) => e.remove());
+  if (mode === "tall") [0, 1].forEach((n) => { const e = document.createElement("i"); e.className = "snap"; e.style.left = n * V + "px"; world.append(e); });
+  pan.scrollLeft = Math.round(was) * V;
   world.querySelectorAll(".spot").forEach((s) => {
     const b = s.dataset.place === "mural" ? geo.run : geo.places[s.dataset.place];
     if (!b) return;
@@ -79,18 +91,24 @@ function layout() {
   launch.layout(geo);
   garden.layout(geo);
   fishing.layout(geo);
+  hangar.layout(geo);
+  board.layout(geo);
+  claw.layout(geo);
+  folks.layout(geo);
   const art = world.querySelector("[data-wall-art]");
   art.parentNode.style.setProperty("--lx", (geo.mural.w / 2).toFixed(1) + "px");
   drawWall(art, Math.ceil(geo.run.w / geo.run.k));
   placeBox(muralEl, { x: geo.face.x, y: geo.face.y, w: geo.run.x + geo.run.w - geo.face.x, h: geo.face.h });
   muralEl.style.setProperty("--fw", geo.face.w.toFixed(2) + "px");
   muralEl.style.zIndex = Math.round(geo.mural.y + geo.mural.h) + 1;
+  mural.span(Math.ceil((geo.run.x + geo.run.w - geo.face.x) / geo.face.w));
   mural.resize();
   const g = geo;
-  mapReady = loadSprites().then((img) => (g === geo ? drawMap(mapCanvas, g, img, () => g === geo) : null));
+  mapReady = loadSprites().then((img) => (g === geo ? drawMap(maps, g, img, () => g === geo) : null));
+  panned();
   if (mode === "land") wins.querySelectorAll(".win:not([hidden])").forEach(keepInside);
-  window.gzMap = { geo, world };
-  window.dispatchEvent(new CustomEvent("gz:map", { detail: { geo, world } }));
+  window.gzMap = { geo, world, pan };
+  window.dispatchEvent(new CustomEvent("gz:map", { detail: { geo, world, pan } }));
 }
 
 function position(el) {
@@ -283,7 +301,9 @@ document.addEventListener("click", (e) => {
   }
   const o = t.closest("[data-open]");
   if (o) { e.preventDefault(); openExtra(o.dataset.open); return; }
-  if (t.closest("[data-wall]")) { e.preventDefault(); enterWall(); return; }
+  const wall = t.closest("[data-wall]");
+  if (wall) { e.preventDefault(); enterWall(wallPanel(e.clientX)); return; }
+  if (t.closest("[data-pan]")) { glide(pan.scrollLeft < geo.V / 2 ? geo.V : 0); return; }
   if (t.closest("[data-start]")) { toggleStart(); return; }
   const rk = t.closest("[data-rocket]");
   if (rk) { openRocket(rk.dataset.rocket); return; }
@@ -331,10 +351,57 @@ document.addEventListener("keydown", (e) => {
   if (top && !e.target.closest("input, textarea")) close(top);
 });
 
+window.gzDesk = {
+  open(spec) {
+    closeStart();
+    if (painting) exitWall();
+    const el = winById(spec.id) || create(spec);
+    show(el);
+    return el;
+  },
+  close(id) { const el = winById(id); if (el) close(el); },
+  find: winById,
+};
+
 const mural = createMural(muralEl, { onExit: () => exitWall() });
 const life = createLife(world);
 const weather = createWeather({ world, mapCanvas });
 const launch = createLaunch(world), garden = createGarden(world), fishing = createFishing(world);
+const hangar = createHangar(world), board = createBoard(world), claw = createClaw(world), folks = createFolks(world);
+let wallP = 0, panT = 0;
+
+function wallPanel(x) {
+  const r = muralEl.getBoundingClientRect();
+  return Math.max(0, Math.floor((x - r.left) / geo.face.w));
+}
+
+function panned() {
+  panT = 0;
+  if (!geo) return;
+  const right = pan.scrollLeft > geo.V / 2;
+  panBtn.hidden = painting;
+  panBtn.dataset.dir = right ? "l" : "r";
+  panBtn.setAttribute("aria-label", right ? "Walk back to the start of the plot" : "Walk to the other half of the plot");
+}
+pan.addEventListener("scroll", () => { if (!panT) panT = requestAnimationFrame(panned); }, { passive: true });
+
+function glide(x) {
+  try { localStorage.setItem("gl-panned", "1"); } catch (e) {}
+  panBtn.classList.add("is-known");
+  pan.scrollTo({ left: x, behavior: calm ? "auto" : "smooth" });
+}
+
+pan.addEventListener("wheel", (e) => {
+  if (mode !== "land" || painting || e.ctrlKey || Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+  e.preventDefault();
+  pan.scrollLeft += e.deltaY * (e.deltaMode === 1 ? 32 : 1);
+}, { passive: false });
+
+document.addEventListener("keydown", (e) => {
+  if (painting || (e.key !== "ArrowRight" && e.key !== "ArrowLeft") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest && e.target.closest("input, textarea, select, .win")) return;
+  pan.scrollBy({ left: (e.key === "ArrowRight" ? 1 : -1) * geo.V * 0.4, behavior: calm ? "auto" : "smooth" });
+});
 
 function aim() {
   if (mode === "tall") return;
@@ -343,23 +410,26 @@ function aim() {
   world.style.transform = "none";
   const wr = world.getBoundingClientRect();
   const f = mural.frame(hole), s = (f.k * 1000) / m.w;
-  const tx = hole.left + f.left - wr.left - m.x * s;
+  const tx = hole.left + f.left - wr.left - (m.x + wallP * m.w) * s;
   const ty = hole.top + f.top - wr.top - m.y * s;
   void world.offsetWidth;
   world.style.transition = calm ? "none" : "";
   world.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
 }
 
-function enterWall() {
+function enterWall(p = 0) {
   if (painting) return;
   closeStart();
+  wallP = p;
   painting = true;
+  panBtn.hidden = true;
   root.classList.add("lock");
   desk.classList.add("is-painting");
   life.pause(true);
+  folks.pause(true);
   weather.stop();
   aim();
-  setTimeout(() => { if (painting) { mural.enter(); mural.resize(); } }, calm ? 0 : 680);
+  setTimeout(() => { if (painting) { mural.enter(wallP); mural.resize(); } }, calm ? 0 : 680);
 }
 
 function exitWall() {
@@ -367,10 +437,12 @@ function exitWall() {
   painting = false;
   mural.exit();
   life.pause(false);
+  folks.pause(false);
   if (mural.made()) setTimeout(() => window.dispatchEvent(new CustomEvent("gz:painted")), 900);
   world.style.transform = "";
   desk.classList.remove("is-painting");
   root.classList.remove("lock");
+  panned();
   setTimeout(() => mural.resize(), 700);
 }
 
@@ -434,6 +506,7 @@ function billboard() {
 
 function init() {
   layout();
+  try { if (localStorage.getItem("gl-panned") === "1") panBtn.classList.add("is-known"); } catch (e) {}
   playBoot({ world, mapCanvas, ready: mapReady, desk });
   billboard();
   wins.querySelectorAll(".win:not([hidden])").forEach((w) => { position(w); focus(w); });
