@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "ghostbusters",
+      "name": "Ghostbusters",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "ghostbusters.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/ghostbusters",
+      "blurb": "Suit up at the back of the Ecto-1, blast a greedy ghost, wrangle it with the stream and drag it into the trap.",
+      "body": [
+        "Phase one of a Ghostbusters game: one bust on a wet New York corner at night. The Ecto-1 waits at the kerb, its rear door swings open, a tray slides out with four proton packs and you strap one on. Down the street Onionhead, a greedy green ghost, is eating the hot dog cart.",
+        "Catching works like in the old games. Weaken the ghost with the stream until it can be held, then wrangle it while it pulls in every direction: fight the pull with the mouse, slam it into the asphalt, throw the trap, stomp the pedal and drag it into the cone of light. Watch the heat, vent the pack, and try not to wreck the whole block, because the city gets the bill.",
+        "Press V to switch between two looks: a modern one with white hot plasma, sparks and heat haze, and a 1984 film look with hand drawn streams, optical glow and grain. The Ecto-1, the packs and the trap are modelled by Blender scripts from photos and blueprints, the street is built in code on CC0 textures, and the sounds come from real recordings.",
+        "Desktop only, mouse and keyboard. You can also take the Ecto-1 around the block with the siren on (F to drive, H for the siren). Co-op for up to four and a whole city come in phase two."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "Web Audio",
+        "Blender"
+      ],
+      "image": "project-images/ghostbusters.webp"
+    },
+    {
+      "hidden": false,
       "slug": "instalator",
       "name": "Instalator",
       "category": "Game",

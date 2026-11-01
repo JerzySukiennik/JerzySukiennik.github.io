@@ -1,0 +1,1 @@
+{"wait":2000,"steps":[{"eval":"new Promise((r) => { const t0 = Date.now(); const c = () => (window.__ready || Date.now() - t0 > 150000) ? r(!!window.__ready) : setTimeout(c, 400); c(); })"},{"wait":6000}]}
