@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "odd-herd",
+      "name": "Odd Herd",
+      "category": "Game",
+      "status": "building",
+      "year": "2026",
+      "url": "odd-herd.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/odd-herd",
+      "blurb": "A pixel art co-op platformer for 1 to 4 players online: pick one of ten animals and get the whole herd through the door.",
+      "body": [
+        "Odd Herd is a 2D co-op platformer you play online, each player on their own computer. Pick a frog, stork, beaver, hedgehog, boar, octopus, kangaroo, elephant, penguin or crab. Every animal moves differently and has one power, from the frog tongue that pulls in keys and friends to the elephant trunk that puts out fires and waters sprouts into climbing vines.",
+        "Every level can be beaten by any team, even four of the same animal. The main path is jumps, standing on each other's heads, pushing crates and holding plates, and the powers open shortcuts and secrets for everyone. Plates, crates and heavy boulders scale to the number of players, so one level works solo and with four. The camera is shared, a fallen player turns into a bubble until a friend pops it, and the key has to reach the door before anyone can leave.",
+        "Players meet on a public map of Gzowo and form a team at a level door, then the room votes on one of four looks: 16-bit, a smooth HD style, 8-bit or ASCII. The first world, the meadows and orchards of Gzowo, is ready to play, and three more worlds by the Narew, in winter and in an amusement park are on the way."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas 2D",
+        "Firebase Realtime Database",
+        "GitHub Pages"
+      ],
+      "image": "project-images/odd-herd.webp"
+    },
+    {
+      "hidden": false,
       "slug": "ghostbusters",
       "name": "Ghostbusters",
       "category": "Game",

@@ -1,0 +1,1 @@
+{"wait":6000,"steps":[{"wait":2500}],"note":"Animal picker is the hero frame (title plus all ten animals). Shoot https://odd-herd.gzowo.fun/ with frames, take frame-2, crop the black letterbox bars (bbox of pixels brighter than 30), then shot.mjs set --frame the crop. Gameplay without remote players is one lonely animal."}
