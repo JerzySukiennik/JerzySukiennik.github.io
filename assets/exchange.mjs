@@ -2,7 +2,7 @@
    GZM and GZF are bought and sold for szyszki, with the price chart and the real things that moved the price. */
 
 import { TICKER } from "/assets/map.mjs";
-import { api, ensure, me, pulse, cone } from "/assets/bank.mjs";
+import { api, ensure, me, pulse, poll, cone } from "/assets/bank.mjs";
 import { esc } from "/assets/folks.mjs";
 
 const COIN = {
@@ -20,7 +20,7 @@ const FONT = {
 };
 const UP = "#52ff7a", DOWN = "#ffb21e", FLAT = "#f4f4f4";
 
-let state = { coin: "gzm", range: "day", market: null, side: "buy" };
+let state = { coin: "gzm", range: "day", market: null, side: "buy", busy: false };
 const fmt = (n) => Math.floor(n).toLocaleString("en-US");
 const pct = (v) => `${v > 0 ? "+" : ""}${v.toFixed(2)}%`;
 
@@ -99,7 +99,7 @@ export function createExchange(world) {
     build(e.detail);
     draw();
     const win = window.gzDesk && window.gzDesk.find("exchange");
-    if (win && !win.hidden) refreshPrices(win);
+    if (win && !win.hidden) { refreshPrices(win); if (!state.busy) load(win); }
   });
   build(pulse());
 
@@ -174,7 +174,16 @@ function refreshPrices(win) {
 }
 
 function render(win) {
+  const f0 = win.querySelector("[data-ex-form]"), n0 = win.querySelector("[data-note]");
+  const keep = f0 ? { v: f0.amount.value, focus: f0.contains(document.activeElement), note: n0 ? n0.textContent : "" } : null;
   win.querySelector(".wb").innerHTML = body();
+  const f1 = win.querySelector("[data-ex-form]");
+  if (keep && f1) {
+    f1.amount.value = keep.v;
+    if (keep.focus) f1.amount.focus({ preventScroll: true });
+    const n1 = f1.querySelector("[data-note]") || win.querySelector("[data-note]");
+    if (n1) n1.textContent = keep.note;
+  }
   const cv = win.querySelector("[data-ex-chart]");
   if (state.market) requestAnimationFrame(() => chart(cv, state.market.hist, state.coin));
   const p = pulse();
@@ -237,11 +246,14 @@ document.addEventListener("submit", async (e) => {
   try {
     await ensure();
     const w = me(), all = state.side === "sell" && Math.abs(+f.amount.value - w[state.coin]) < 1e-6;
+    state.busy = true;
     const j = await api("/trade", { coin: state.coin, side: state.side, amount: all ? "all" : +f.amount.value });
     note.textContent = state.side === "buy" ? `Bought ${j.coins.toFixed(3)} ${COIN[state.coin].tag} at ${j.price.toFixed(2)}.` : `Sold for ${fmt(j.szy)} szyszki at ${j.price.toFixed(2)}.`;
+    await poll();
     await load(win);
     win.querySelector("[data-note]").textContent = note.textContent;
   } catch (err) { note.textContent = err.message; }
+  state.busy = false;
   if (btn.isConnected) btn.disabled = false;
 });
 

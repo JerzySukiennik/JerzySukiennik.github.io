@@ -360,7 +360,7 @@ async function market(env) {
   return {
     now: { gzm: p.gzm, gzf: p.gzf, pressure: { gzm: r2(p.p.gzm), gzf: r2(p.p.gzf) } },
     hist: rows.map((r) => [r.t, r.gzm, r.gzf]),
-    why: last ? JSON.parse(last.why) : null, at: last ? last.t : null,
+    why: last ? JSON.parse(last.why) : null, at: last ? JSON.parse(last.why).at || last.t : null,
     volume: { trades: vol.n, szy: vol.v }, holders,
   };
 }
@@ -515,8 +515,8 @@ async function count(path) {
 }
 
 async function tick(env) {
-  const now = Date.now();
-  const lock = await env.DB.prepare("INSERT INTO kv (k, v) VALUES ('tick', ?1) ON CONFLICT(k) DO UPDATE SET v = ?1 WHERE v < ?2").bind(now, now - 10 * 60000).run();
+  const now = Date.now(), slot = Math.floor(now / 900000) * 900000;
+  const lock = await env.DB.prepare("INSERT INTO kv (k, v) VALUES ('tick', ?1) ON CONFLICT(k) DO UPDATE SET v = ?1 WHERE v < ?2").bind(now, slot).run();
   if (!lock.meta.changes) return;
   const kv = await kvGet(env, ["f_gzm", "f_gzf", "p_gzm", "p_gzf", "narew", "push7", "repos30", "wind", "rain"]);
 
@@ -580,9 +580,8 @@ async function tick(env) {
       { k: "rain", label: "Rain in Gzowo", value: r2(rain) + " mm", pct: pct(fRain) },
       { k: "trade", label: "Player trading", value: r2(p.gzf) + "x", pct: pct(p.gzf) },
     ],
-    parts: d, tot: totals,
+    parts: d, tot: totals, at: now,
   };
-  const slot = Math.floor(now / 900000) * 900000;
   await env.DB.batch([
     kvSet(env, "f_gzm", f.gzm), kvSet(env, "f_gzf", f.gzf), kvSet(env, "p_gzm", p.gzm), kvSet(env, "p_gzf", p.gzf),
     kvSet(env, "narew", narew), kvSet(env, "push7", push7), kvSet(env, "repos30", repos30), kvSet(env, "wind", wind), kvSet(env, "rain", rain),
