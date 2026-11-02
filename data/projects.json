@@ -14,14 +14,16 @@
       "body": [
         "Beam turns a projector and a wall into a platformer. You mark where the projector's light lands, line four crosshairs up with the corners of something whose size you know, and trace the real things on the wall: frames, shelves, a vase, a lamp. Every shape gets a type. A frame becomes a solid platform, the gap between two pictures fills with water, a small picture turns into a lucky block, a lampshade becomes a trampoline and another frame plays animated space. Then a little neon character runs and jumps across your real wall.",
         "Everything is measured in real centimetres. The four calibration points give a homography from the wall to the projector, so outlines stay square on the wall and the character keeps its size whatever the projector's angle. The game is drawn straight into projector pixels with three.js and a neon bloom, physics runs in Rapier 2D, and shapes combine with booleans, so a frame is just a rectangle with a rectangle cut out of it. Movement switches between tight, Mario-style controls and a rubbery ragdoll that wobbles, falls over and grabs ledges.",
-        "This first version runs without a projector: three wall photos stand in for the room, a simulated beam lights them, and you can upload a photo of your own wall. Try this first: pick the Biurko (desk) wall, open step 5 (Gra) and collect the coins with the arrow keys and Space, then switch to Gumowy (rubbery) and bounce off the lampshade. Two players can share one keyboard. The interface is in Polish for now, and you need a computer with a keyboard."
+        "It runs on a real projector over HDMI. The projector window finds the second screen on its own (in Chrome, after one permission prompt), and you calibrate on a sheet of A4 and draw the shapes with the mouse right on the wall. Without a projector, three wall photos stand in for the room, a simulated beam lights them, and you can upload a photo of your own wall.",
+        "Phones join through a QR code in the corner of the wall. Each one becomes a gamepad for its own character, up to eight at once, or a touch editor of the wall: the projector shows four coloured dots, the phone takes a photo, finds them and lines the picture up with the wall, so you trace objects right on the photo. Try this first: pick the Biurko (desk) wall, open step 5 (Gra), collect the coins with the arrow keys and Space, then click Telefony at the top right and scan the code to play together. The interface is in Polish for now."
       ],
       "stack": [
         "three.js",
         "Rapier 2D",
         "Clipper",
         "Homography",
-        "IndexedDB"
+        "WebRTC",
+        "Firebase"
       ],
       "image": "project-images/beam.webp"
     },
