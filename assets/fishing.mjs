@@ -215,7 +215,8 @@ export function createFishing(world) {
       if (!n || bad(n) || !/^[\p{L}\p{N} ._'-]+$/u.test(n)) { note.textContent = "Pick a different name."; return; }
       e.target.querySelector("button").disabled = true;
       fetch(`${DB}/${PLOT}/fish.json`, { method: "POST", body: JSON.stringify({ n, s: sp[0], c: cm, t: { ".sv": "timestamp" } }) })
-        .then((r) => { if (!r.ok) throw r.status; return records(); })
+        .then((r) => { if (!r.ok) throw r.status; return r.json(); })
+        .then((d) => { if (d && d.name) dispatchEvent(new CustomEvent("gz:fish-saved", { detail: { id: d.name } })); return records(); })
         .catch(() => { note.textContent = "The records are offline, try later."; e.target.querySelector("button").disabled = false; });
     });
   }

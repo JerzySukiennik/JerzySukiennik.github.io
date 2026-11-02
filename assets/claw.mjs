@@ -7,6 +7,7 @@ const W = 120, H = 150, FLOOR = 138, RAIL = 12, CHUTE = 14, TRIES = 3, AIM = 20;
 const CAPS = ["#ff7eb6", "#4cc3ff", "#ffd23f", "#8bd346", "#7d4cdb", "#ff8c1a", "#1fb5a8"];
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
 const used = () => { const s = store.get("gl-claw", {}); return s && s.d === today() ? s.n || 0 : 0; };
+const tries = () => { const m = window.gzBank && window.gzBank.me(); return TRIES + ((m && m.clawExtra) || 0); };
 
 function pile() {
   const out = [];
@@ -16,7 +17,7 @@ function pile() {
 }
 
 function prize() {
-  const have = new Set(wardrobe()), pool = ITEMS.filter((i) => !have.has(i[0])), list = pool.length ? pool : ITEMS;
+  const have = new Set(wardrobe()), pool = ITEMS.filter((i) => i[3] > 0 && !have.has(i[0])), list = pool.length ? pool : ITEMS.filter((i) => i[3] > 0);
   let r = Math.random() * list.reduce((a, i) => a + i[3], 0);
   return (list.find((i) => (r -= i[3]) < 0) || list[0])[0];
 }
@@ -31,7 +32,7 @@ export function createClaw(world) {
   spot.innerHTML = `<img class="spr" src="/assets/map/claw.webp" alt="" draggable="false"><span class="spot-l"><b>Claw machine</b><em></em></span>`;
   spots.append(spot);
   const sub = spot.querySelector(".spot-l em");
-  const label = () => { const n = TRIES - used(); sub.textContent = n > 0 ? `${n} ${n === 1 ? "try" : "tries"} left today` : "come back tomorrow"; };
+  const label = () => { const n = tries() - used(); sub.textContent = n > 0 ? `${n} ${n === 1 ? "try" : "tries"} left today` : "one more for 15 szyszki"; };
   label();
 
   let el = null, cv = null, c = null, raf = 0, last = 0, S = null;
@@ -91,10 +92,11 @@ export function createClaw(world) {
 
   function ui() {
     if (!el) return;
-    const n = TRIES - used(), st = S.state;
+    const n = tries() - used(), st = S.state;
     el.querySelector("[data-tries]").textContent = String(n);
     el.querySelector("[data-time]").textContent = st === "aim" ? String(Math.ceil(S.time)) : "-";
     el.querySelector("[data-coin]").disabled = n <= 0 || (st !== "idle" && st !== "won" && st !== "lost");
+    el.querySelector("[data-claw-buy]").hidden = n > 0;
     el.querySelectorAll("[data-move],[data-drop]").forEach((b) => { b.disabled = st !== "aim"; });
     label();
   }
@@ -102,7 +104,7 @@ export function createClaw(world) {
   function msg(t) { if (el) el.querySelector("[data-msg]").innerHTML = t; }
 
   function coin() {
-    if (used() >= TRIES || !(S.state === "idle" || S.state === "won" || S.state === "lost")) return;
+    if (used() >= tries() || !(S.state === "idle" || S.state === "won" || S.state === "lost")) return;
     store.set("gl-claw", { d: today(), n: used() + 1 });
     if (S.caps.length < 8) S.caps = pile();
     S = { ...fresh(), caps: S.caps, state: "aim" };
@@ -186,7 +188,7 @@ export function createClaw(world) {
 
   function end(text) {
     S.open = 1;
-    msg(`${text} ${used() < TRIES ? "Insert another coin?" : "No tries left today, come back tomorrow."}`);
+    msg(`${text} ${used() < tries() ? "Insert another coin?" : "No free tries left today. One more costs 15 szyszki."}`);
     ui();
   }
 
@@ -223,9 +225,9 @@ export function createClaw(world) {
 `<div class="cm"><canvas class="cm-cv" width="${W}" height="${H}" aria-label="Claw machine"></canvas><div class="cm-side">
 <p class="cm-stat"><span>Tries today <b data-tries>3</b></span><span>Time <b data-time>-</b></span></p>
 <div class="cm-pad"><button class="btn" type="button" data-move="-1" aria-label="Move left">&#9664;</button><button class="btn go" type="button" data-drop>Drop</button><button class="btn" type="button" data-move="1" aria-label="Move right">&#9654;</button></div>
-<p class="cm-msg" data-msg role="status">Three tries a day. Win wearable prizes for your folk.</p>
+<p class="cm-msg" data-msg role="status">Three free tries a day. Win wearable prizes for your folk.</p>
 <div class="cm-prize" data-prize hidden><canvas></canvas><b></b><button class="btn" type="button" data-folks="index">Dress up your folk</button></div>
-<p><button class="btn go" type="button" data-coin>Insert coin</button></p></div></div>`,
+<p class="bk-row"><button class="btn go" type="button" data-coin>Insert coin</button><button class="btn" type="button" data-claw-buy hidden>Buy a try, 15 szyszki</button></p></div></div>`,
       status: `<span>${ITEMS.length} prizes to collect</span><span data-own></span>` });
     el.querySelector("[data-own]").textContent = `You have ${wardrobe().length}`;
     if (!el.dataset.ready) {
@@ -241,6 +243,7 @@ export function createClaw(world) {
       el.addEventListener("click", (e) => {
         if (e.target.closest("[data-coin]")) coin();
         else if (e.target.closest("[data-drop]")) drop();
+        else if (e.target.closest("[data-claw-buy]")) extra(e.target.closest("[data-claw-buy]"));
       });
     }
     ui();
@@ -256,6 +259,16 @@ export function createClaw(world) {
   }, true);
   addEventListener("keyup", (e) => { if (S && (e.key === "ArrowLeft" || e.key === "ArrowRight")) S.dir = 0; }, true);
 
+  async function extra(btn) {
+    if (!window.gzBank) return;
+    btn.disabled = true;
+    try { await window.gzBank.buy("claw"); msg("One more try bought. Insert coin!"); }
+    catch (err) { msg(err.message); }
+    btn.disabled = false;
+    if (S) ui(); else label();
+  }
+
+  addEventListener("gz:wallet", () => { if (el && S) ui(); else label(); });
   spot.addEventListener("click", (e) => { e.preventDefault(); open(); });
   document.addEventListener("click", (e) => { if (e.target.closest("[data-claw]")) { e.preventDefault(); open(); } });
 

@@ -1,13 +1,17 @@
 /* Gzowo Labs map: the plot in Gzowo built from Jurek's pixel art sprites over a pixel background drawn in code.
    Wide screens get one street with the buildings behind it and small things in front, phones a path that winds down past every door.
-   The brick wall is drawn pixel by pixel so it stays sharp when the camera flies in to paint. */
+   The brick wall is drawn pixel by pixel so it stays sharp when the camera flies in to paint. The third column is Gzowo Street,
+   with the exchange, the museum, the store and the coaster station. */
 
 export const SPR = {
   arcade: [315, 341], workshop: [262, 166], lab: [248, 277], launchpad: [174, 424], billboard: [206, 267], signpost: [129, 199], mailbox: [51, 88],
   wall: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
   dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
+  exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300],
 };
+export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
+const DOM = ["wall", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
 export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
 export const FACE = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
 export const KAYAK = [120, 28];
@@ -22,7 +26,7 @@ let images = null;
 export function loadSprites() {
   if (images) return images;
   const out = {};
-  images = Promise.all(Object.keys(SPR).filter((n) => !["wall", "hangar", "board", "claw", "booth", "sailboat"].includes(n)).map((n) => new Promise((res) => {
+  images = Promise.all(Object.keys(SPR).filter((n) => !DOM.includes(n)).map((n) => new Promise((res) => {
     const im = new Image();
     im.src = `/assets/map/${n}.webp`;
     im.decode().then(() => { out[n] = im; res(); }, () => res());
@@ -65,31 +69,37 @@ function sprite(name, cx, base, scale) {
 }
 
 function land(V, H) {
-  const W = 2 * V, s = Math.min(H / 870, V / 1500);
+  const W = 3 * V, s = Math.min(H / 870, V / 1500);
   const at = (name, fx, fy, k = 1) => sprite(name, fx * V, fy * H, s * k);
   const places = {
     reviews: at("billboard", 0.105, 0.695, 0.9), printing: at("workshop", 0.28, 0.715, 0.92), games: at("arcade", 0.475, 0.715, 0.9),
     software: at("lab", 0.665, 0.715, 0.92), rockets: at("launchpad", 0.868, 0.72, 0.85), about: at("signpost", 0.052, 0.93, 0.78), guestbook: at("mailbox", 0.392, 0.88),
     hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
+    exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
   };
   const wallW = Math.min(0.25 * V, 404 * s * 0.95), wall = sprite("wall", 0.71 * V, 0.928 * H, wallW / 404);
   const path = withLengths(spline([[-0.02, 0.742], [0.1, 0.74], [0.2, 0.737], [0.3, 0.741], [0.4, 0.743], [0.5, 0.739], [0.6, 0.742], [0.7, 0.74],
     [0.8, 0.743], [0.9, 0.744], [1, 0.742], [1.1, 0.745], [1.2, 0.741], [1.3, 0.744], [1.4, 0.74], [1.5, 0.743], [1.6, 0.741], [1.7, 0.744], [1.8, 0.74],
-    [1.9, 0.743], [2.02, 0.745]].map(([x, y]) => [x * V, y * H]), 12));
+    [1.9, 0.743], [2, 0.742], [2.1, 0.744], [2.2, 0.741], [2.3, 0.743], [2.4, 0.74], [2.5, 0.743], [2.6, 0.741], [2.7, 0.744], [2.8, 0.741], [2.9, 0.743],
+    [3.02, 0.742]].map(([x, y]) => [x * V, y * H]), 12));
   const props = [
     at("tree2", 0.012, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
     at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85),
     at("pine", 1.075, 0.712, 0.8), at("dish", 1.455, 0.704, 0.75), at("lamp", 1.655, 0.716), at("lamp", 1.778, 0.716),
     at("bush", 1.93, 0.714, 0.75), at("tree1", 1.975, 0.715, 0.9),
+    at("pine", 2.035, 0.712, 0.75), at("lamp", 2.075, 0.716), at("lamp", 2.335, 0.716), at("bush", 2.355, 0.714, 0.6), at("lamp", 2.645, 0.716),
+    at("lamp", 2.81, 0.716), at("tree3", 2.97, 0.714, 0.85),
   ];
   return finish({
     mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
     sun: at("sun", 0.6, 0.2, 1.25), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
-      at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4)],
+      at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4),
+      at("cloud4", 2.15, 0.45, 0.45), at("cloud1", 2.7, 0.44, 0.4)],
     console: box(0.778 * V, 0.722 * H, 56 * s, 64 * s), garden: { x: 0.425 * V, y: 0.785 * H, w: 0.14 * V, h: 0.12 * H },
-    river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8)], gull: at("gull", 0.955, 0.995, 0.64),
+    river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8), at("sailboat", 2.62, 0.99, 0.65)], gull: at("gull", 0.955, 0.995, 0.64),
     kayaks: [kayak(0.48 * V, 0.975 * H, s * 1.15), kayak(0.585 * V, 0.98 * H, s * 1.15)],
     spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * V, y * H]), lane: [0.16 * V, 0.88 * V], person: 92 * s, speed: 120 * s,
+    sky: { x: 2.02 * V, y: 0.045 * H, w: 0.96 * V, h: 0.37 * H },
   });
 }
 
@@ -100,6 +110,7 @@ function tall(V) {
     about: at("signpost", 300, 610), rockets: at("launchpad", 80, 900), printing: at("workshop", 280, 1140), games: at("arcade", 118, 1440),
     software: at("lab", 285, 1720), reviews: at("billboard", 100, 1990), guestbook: at("mailbox", 300, 2110),
     hangar: at("hangar", 585, 800, 0.95), board: at("board", 505, 1100, 0.85), claw: at("claw", 662, 1400, 0.95), booth: at("booth", 522, 1700, 0.95),
+    coaster: at("station", 1062, 585, 0.95), exchange: at("exchange", 960, 995, 0.95), museum: at("museum", 985, 1335, 0.95), store: at("store", 975, 1655, 0.95),
   };
   const wall = sprite("wall", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
@@ -108,22 +119,28 @@ function tall(V) {
     [110, 2140], [200, 2146], [300, 2146], [360, 2150], [405, 2152], [480, 2152], [600, 2150], [690, 2146], [714, 2120], [716, 2060], [700, 2028],
     [640, 2022], [540, 2022], [470, 2020], [440, 1995], [436, 1900], [436, 1790], [452, 1745], [520, 1733], [620, 1732], [690, 1730], [714, 1705],
     [716, 1600], [716, 1490], [700, 1445], [640, 1434], [540, 1432], [470, 1430], [440, 1405], [436, 1300], [436, 1190], [452, 1146], [520, 1134],
-    [620, 1132], [690, 1130], [714, 1105], [716, 1000], [716, 890], [700, 846], [640, 834], [585, 832], [520, 832], [468, 834]].map(([x, y]) => [X(x), Y(y)]), 10));
+    [620, 1132], [690, 1130], [714, 1105], [716, 1000], [716, 890], [700, 846], [640, 834], [585, 832], [520, 832], [468, 834], [442, 800], [436, 700],
+    [446, 618], [490, 590], [580, 584], [700, 584], [800, 586], [900, 592], [1000, 594], [1090, 600], [1128, 640], [1134, 760], [1130, 900], [1105, 992],
+    [1000, 1002], [900, 1004], [842, 1030], [834, 1150], [836, 1290], [860, 1336], [960, 1342], [1060, 1342], [1118, 1370], [1126, 1500], [1124, 1610],
+    [1100, 1656], [1000, 1662], [900, 1662], [846, 1690], [838, 1800], [840, 1930], [870, 1975], [980, 1982], [1080, 1984], [1130, 2000]].map(([x, y]) => [X(x), Y(y)]), 10));
   const props = [
     at("bush", 360, 900, 0.8), at("lamp", 150, 1015), at("windsock", 368, 1002, 0.9), at("lamp", 262, 1430), at("bush", 365, 1300, 0.7), at("tree3", 145, 1650, 0.8),
     at("lamp", 115, 1712), at("pine", 235, 1860, 0.8), at("bench", 230, 1940, 0.75), at("lamp", 360, 1930), at("bush", 180, 2110, 0.85), at("tree1", 240, 2100, 0.7),
     at("lamp", 452, 815), at("pine", 640, 1085, 0.8), at("lamp", 735, 1115), at("bench", 520, 1395, 0.7), at("lamp", 452, 1418), at("tree1", 655, 1700, 0.75),
     at("bush", 740, 1720, 0.6), at("dish", 640, 1995, 0.62), at("lamp", 452, 2008), at("bush", 520, 2120, 0.75), at("tree3", 650, 2115, 0.7),
     at("tree2", 760, 1300, 0.7),
+    at("lamp", 820, 980), at("lamp", 1100, 1320), at("bush", 830, 1320, 0.7), at("pine", 1110, 1180, 0.75), at("lamp", 860, 1640), at("tree1", 1110, 1640, 0.75),
+    at("bench", 960, 1960, 0.75), at("lamp", 1080, 1965), at("tree3", 880, 2120, 0.75), at("bush", 1050, 2140, 0.8), at("pine", 1120, 2232, 0.7),
   ];
   return finish({
-    mode: "tall", V, W: 2 * V, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
+    mode: "tall", V, W: 3 * V, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,
     sun: at("sun", 330, 410, 1.1), clouds: [at("cloud3", 92, 395, 0.7), at("cloud1", 250, 345, 0.6), at("cloud4", 330, 452, 0.4), at("cloud2", 500, 370, 0.6),
-      at("cloud4", 700, 420, 0.45)],
+      at("cloud4", 700, 420, 0.45), at("cloud2", 1120, 455, 0.5)],
     console: box(X(154), Y(905), 36 * s, 42 * s), garden: { x: X(234), y: Y(690), w: X(148), h: Y(140) },
-    river_props: [at("dock", 78, 2398, 0.8)], boats: [at("sailboat", 600, 2420, 0.6)], gull: at("gull", 372, 2432, 0.6),
+    river_props: [at("dock", 78, 2398, 0.8)], boats: [at("sailboat", 600, 2420, 0.6), at("sailboat", 1000, 2424, 0.5)], gull: at("gull", 372, 2432, 0.6),
     kayaks: [kayak(X(193), Y(2414), s * 1.2), kayak(X(302), Y(2420), s * 1.2)],
     spurDown: [[40, 2200], [37, 2290], [34, 2350]].map(([x, y]) => [X(x), Y(y)]), lane: [X(80), X(360)], person: 64 * f, speed: 80 * f,
+    sky: { x: X(792), y: Y(40), w: X(372), h: Y(330) },
   });
 }
 
@@ -309,11 +326,13 @@ export async function drawMap(canvases, g, img, current = () => true) {
   const left = await paintHalf(g, img, 0, dpr, pause);
   if (!current()) return;
   commit(canvases[0], left, g, 0);
-  (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(async () => {
-    if (!current()) return;
-    const right = await paintHalf(g, img, 1, dpr, pause);
-    if (current()) commit(canvases[1], right, g, 1);
-  }, { timeout: 700 });
+  const rest = async (half) => {
+    if (!current() || !canvases[half]) return;
+    const off = await paintHalf(g, img, half, dpr, pause);
+    if (current()) commit(canvases[half], off, g, half);
+    if (half < 2) (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => rest(half + 1), { timeout: 900 });
+  };
+  (window.requestIdleCallback || ((f) => setTimeout(f, 200)))(() => rest(1), { timeout: 700 });
 }
 
 const WALL_H = 147;

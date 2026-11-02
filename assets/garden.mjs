@@ -189,7 +189,7 @@ export function createGarden(world) {
     render();
     dispatchEvent(new CustomEvent("gz:plant", { detail: k }));
     fetch(`${DB}/${PLOT}/garden/${id}.json`, { method: "PUT", body: JSON.stringify({ k, u, v, t: { ".sv": "timestamp" } }) })
-      .then((r) => { if (!r.ok) throw r.status; })
+      .then((r) => { if (!r.ok) throw r.status; dispatchEvent(new CustomEvent("gz:planted", { detail: { id } })); })
       .catch(() => { plants.delete(id); render(); flash("the garden is offline, try later"); });
   }
 

@@ -28,6 +28,11 @@ const cdnPoster = (url) => url.replace("/video/upload/", "/video/upload/so_1,w_7
 const PLAY = "&#9654;&#xFE0E;";
 
 const ICONS = {
+  cone: ["................", "......eeee......", ".......ee.......", ".....kkkkkk.....", "....krrrkrrk....", "...krrkrrkrrk...", "...kkkrkkrkkk...", "...krrrkrrrrk...", "...krkkrkkkrk...", "....krrrkrrk....", "....kkkrkkkk....", ".....krrrrk.....", ".....kkrrkk.....", "......krrk......", ".......kk.......", "................"],
+  bank: ["................", ".......kk.......", ".....kkggkk.....", "...kkggggggkk...", ".kkggggggggggkk.", ".kkkkkkkkkkkkkk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", "kkkkkkkkkkkkkkkk", "kggggggggggggggk", "kkkkkkkkkkkkkkkk", "................"],
+  frame: ["................", "kkkkkkkkkkkkkkkk", "krrrrrrrrrrrrrrk", "krkkkkkkkkkkkkrk", "krkbbbbbbbbccbrk", "krkbbbbbbbbccbrk", "krkbbbbbbbbbbbrk", "krkbbbbebbbbbbrk", "krkbbbeeebbbbbrk", "krkbbeeeeebbebrk", "krkeeeeeeeeeeerk", "krkeeeeeeeeeeerk", "krkkkkkkkkkkkkrk", "krrrrrrrrrrrrrrk", "kkkkkkkkkkkkkkkk", "................"],
+  store: ["................", "..kkkkkkkkkkkk..", ".kcwcwcwcwcwcwk.", "kcwcwcwcwcwcwcwk", "kkkkkkkkkkkkkkkk", ".kr..........rk.", ".kr..........rk.", ".kr.c..e..a..rk.", ".krkkkkkkkkkkrk.", ".krrrrrrrrrrrrk.", ".krkrkrkrkrkrrk.", ".krrrrrrrrrrrrk.", ".kkkkkkkkkkkkkk.", "................", "................", "................"],
+  coaster: ["................", ".....kkkkkk.....", "...kkddddddkk...", "..kdd......ddk..", ".kd..........dk.", ".kd..........dk.", "kd............dk", "kd............dk", "kd............dk", ".kd..........dk.", ".kd...kaak...dk.", "..kdd.kaak.ddk..", "kkkkkkkkkkkkkkkk", "dddddddddddddddd", "................", "................"],
   rocket: [".......kk.......", "......kaak......", ".....kaaaak.....", ".....kwwwwk.....", ".....kwbbwk.....", ".....kwbbwk.....", ".....kwwwwk.....", ".....kwwwwk.....",
     "....kkwwwwkk....", "...kakwwwwkak...", "..kaakwwwwkaak..", "..kaakkkkkkaak..", "..kkk.kcck.kkk..", "......kcck......", ".......cc.......", "................"],
   printer: ["kkkkkkkkkkkkkkkk", "kggggggggggggggk", "kgkkkkkkkkkkkkgk", "kgk..........kgk", "kgk.kkkkkk...kgk", "kgk....kk....kgk", "kgk....kk....kgk", "kgk.....c....kgk",
@@ -237,6 +242,12 @@ ${item('href="#" data-wall role="menuitem"', "bricks", "The Wall")}
 ${item('href="#" data-folks="index" role="menuitem"', "person", "Folks")}
 ${item('href="#" data-board role="menuitem"', "pin", "Cork Board")}
 ${item('href="#" data-claw role="menuitem"', "claw", "Claw Machine")}
+<li class="sep"></li>
+${item('href="#" data-wallet role="menuitem"', "cone", "Wallet")}
+${item('href="#" data-exchange role="menuitem"', "bank", "Gzowo Street Exchange")}
+${item('href="#" data-museum role="menuitem"', "frame", "Museum")}
+${item('href="#" data-store role="menuitem"', "store", "Store")}
+${item('href="#" data-coaster role="menuitem"', "coaster", "Coaster")}
 ${item('href="#" data-open="guide" role="menuitem"', "bubble", "Ask the Guide")}
 <li class="sep"></li>
 ${item(`href="/p/${esc(ring[0] || "")}/" data-nav data-ring='${esc(JSON.stringify(ring))}' role="menuitem"`, "globe", esc(ctx.site.webring), "<em>random</em>")}
@@ -253,7 +264,7 @@ export function taskbar(ctx) {
   return `<footer class="taskbar"><button class="start" type="button" data-start aria-expanded="false" aria-controls="start-menu">${icon("rocket")}<b>Start</b></button>
 <span class="ql"><a href="/" data-nav title="Show the map">${icon("computer")}</a><a href="#" data-open="guide" title="Ask the Guide">${icon("bubble")}</a></span>
 <div class="tasks" data-tasks></div>
-<div class="tray"><button class="tray-b" type="button" data-midi title="Play ${esc(ctx.site.nowPlaying)}" aria-pressed="false">${icon("note")}</button><span class="tray-n" data-counter title="Visitors">00000000</span><time class="tray-c" data-clock></time></div></footer>`;
+<div class="tray"><button class="tray-w" type="button" data-wallet title="Your wallet">${icon("cone")}<span data-szy>Wallet</span></button><button class="tray-b" type="button" data-midi title="Play ${esc(ctx.site.nowPlaying)}" aria-pressed="false">${icon("note")}</button><span class="tray-n" data-counter title="Visitors">00000000</span><time class="tray-c" data-clock></time></div></footer>`;
 }
 
 export const PLACES = [

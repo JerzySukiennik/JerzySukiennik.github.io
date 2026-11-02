@@ -174,13 +174,14 @@ export function createBoard(world) {
       try {
         const r = await fetch(`${DB}/${PLOT}/board.json`, { method: "POST", body: JSON.stringify(rec) });
         if (!r.ok) throw r.status;
+        const made = await r.json().catch(() => null);
         store.set("gl-board-at", Date.now());
         pic = ".".repeat(DW * DH);
         store.set("gl-board-draft", pic);
         ta.value = ""; count.textContent = "120";
         note.textContent = "Pinned! It stays up for a week.";
         render();
-        dispatchEvent(new CustomEvent("gz:pinned"));
+        dispatchEvent(new CustomEvent("gz:pinned", { detail: { id: made && made.name } }));
         await load();
         list(el);
       } catch (err) { note.textContent = "The board is offline, try later."; }

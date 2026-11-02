@@ -35,13 +35,12 @@ export function softGL() {
   return soft;
 }
 
-export function snapshot(world, mapCanvas, box, scale = 1, read = false) {
+export function snapshot(world, mapCanvas, box, scale = 1, read = false, bg = "#fff") {
   const c = document.createElement("canvas");
   c.width = Math.round(box.w * scale); c.height = Math.round(box.h * scale);
   const x = c.getContext("2d", read ? { willReadFrequently: true } : undefined);
   x.setTransform(scale, 0, 0, scale, -box.x * scale, -box.y * scale);
-  x.fillStyle = "#fff";
-  x.fillRect(box.x, box.y, box.w, box.h);
+  if (bg) { x.fillStyle = bg; x.fillRect(box.x, box.y, box.w, box.h); }
   world.querySelectorAll("canvas.map").forEach((m) => {
     const mr = m.getBoundingClientRect();
     if (m.width && mr.right > box.x && mr.left < box.x + box.w) x.drawImage(m, mr.left, mr.top, mr.width, mr.height);

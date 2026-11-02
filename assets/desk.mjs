@@ -12,6 +12,11 @@ import { createHangar } from "/assets/hangar.mjs";
 import { createBoard } from "/assets/board.mjs";
 import { createClaw } from "/assets/claw.mjs";
 import { createFolks } from "/assets/folks.mjs";
+import { createBank } from "/assets/bank.mjs";
+import { createExchange } from "/assets/exchange.mjs";
+import { createMuseum } from "/assets/museum.mjs";
+import { createCoaster } from "/assets/coaster.mjs";
+import "/assets/paint.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
@@ -77,7 +82,7 @@ function layout() {
   world.style.setProperty("--s", geo.s.toFixed(3));
   world.style.setProperty("--V", V + "px");
   world.querySelectorAll(".snap").forEach((e) => e.remove());
-  if (mode === "tall") [0, 1].forEach((n) => { const e = document.createElement("i"); e.className = "snap"; e.style.left = n * V + "px"; world.append(e); });
+  if (mode === "tall") [0, 1, 2].forEach((n) => { const e = document.createElement("i"); e.className = "snap"; e.style.left = n * V + "px"; world.append(e); });
   pan.scrollLeft = Math.round(was) * V;
   world.querySelectorAll(".spot").forEach((s) => {
     const b = s.dataset.place === "mural" ? geo.run : geo.places[s.dataset.place];
@@ -95,6 +100,10 @@ function layout() {
   board.layout(geo);
   claw.layout(geo);
   folks.layout(geo);
+  bank.layout(geo);
+  exchange.layout(geo);
+  museum.layout(geo);
+  coaster.layout(geo);
   const art = world.querySelector("[data-wall-art]");
   art.parentNode.style.setProperty("--lx", (geo.mural.w / 2).toFixed(1) + "px");
   drawWall(art, Math.ceil(geo.run.w / geo.run.k));
@@ -303,7 +312,7 @@ document.addEventListener("click", (e) => {
   if (o) { e.preventDefault(); openExtra(o.dataset.open); return; }
   const wall = t.closest("[data-wall]");
   if (wall) { e.preventDefault(); enterWall(wallPanel(e.clientX)); return; }
-  if (t.closest("[data-pan]")) { glide(pan.scrollLeft < geo.V / 2 ? geo.V : 0); return; }
+  if (t.closest("[data-pan]")) { const c = Math.round(pan.scrollLeft / geo.V); glide(c >= 2 ? 0 : (c + 1) * geo.V); return; }
   if (t.closest("[data-start]")) { toggleStart(); return; }
   const rk = t.closest("[data-rocket]");
   if (rk) { openRocket(rk.dataset.rocket); return; }
@@ -361,6 +370,7 @@ window.gzDesk = {
   },
   close(id) { const el = winById(id); if (el) close(el); },
   find: winById,
+  hideStart() { closeStart(); },
 };
 
 const mural = createMural(muralEl, { onExit: () => exitWall() });
@@ -368,6 +378,7 @@ const life = createLife(world);
 const weather = createWeather({ world, mapCanvas });
 const launch = createLaunch(world), garden = createGarden(world), fishing = createFishing(world);
 const hangar = createHangar(world), board = createBoard(world), claw = createClaw(world), folks = createFolks(world);
+const bank = createBank(world), exchange = createExchange(world), museum = createMuseum(world), coaster = createCoaster(world, { riders: () => folks.riders() });
 let wallP = 0, panT = 0;
 
 function wallPanel(x) {
@@ -378,10 +389,10 @@ function wallPanel(x) {
 function panned() {
   panT = 0;
   if (!geo) return;
-  const right = pan.scrollLeft > geo.V / 2;
+  const c = Math.round(pan.scrollLeft / geo.V);
   panBtn.hidden = painting;
-  panBtn.dataset.dir = right ? "l" : "r";
-  panBtn.setAttribute("aria-label", right ? "Walk back to the start of the plot" : "Walk to the other half of the plot");
+  panBtn.dataset.dir = c >= 2 ? "l" : "r";
+  panBtn.setAttribute("aria-label", ["Walk to the other half of the plot", "Walk on to Gzowo Street", "Walk back to the start of the plot"][Math.min(2, c)]);
 }
 pan.addEventListener("scroll", () => { if (!panT) panT = requestAnimationFrame(panned); }, { passive: true });
 

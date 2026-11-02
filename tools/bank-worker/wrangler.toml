@@ -1,0 +1,12 @@
+name = "gzowo-bank"
+main = "src/index.mjs"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "gzowo-bank"
+database_id = "2acc83d3-b51f-49d1-a718-4b6f58c0f363"
+
+[triggers]
+crons = ["*/15 * * * *"]

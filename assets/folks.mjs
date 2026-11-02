@@ -44,6 +44,8 @@ export const ITEMS = [
   ["party", "Party hat", "head", 12], ["headphones", "Headphones", "head", 10], ["shades", "Sunglasses", "face", 12], ["monocle", "Monocle", "face", 6],
   ["mustache", "Mustache", "face", 10], ["bowtie", "Bow tie", "neck", 12], ["medal", "GSP medal", "neck", 6], ["scarf", "Scarf", "neck", 10],
   ["cape", "Cape", "back", 8], ["jetpack", "Jetpack", "back", 6], ["wings", "Wings", "back", 5],
+  ["cone", "Pine cone hat", "head", 0], ["halo", "Halo", "head", 0], ["pirate", "Pirate hat", "head", 0], ["antenna", "Alien antenna", "head", 0],
+  ["parrot", "Parrot", "pet", 0], ["chain", "Gold chain", "neck", 0],
 ];
 export const itemOf = (id) => ITEMS.find((i) => i[0] === id);
 const SLEEVE = [1, 2, 2, 1, 2, 1, 0, 1];
@@ -67,7 +69,7 @@ export function parse(v) {
     w: [],
   };
 }
-export const parseWear = (s) => (typeof s === "string" ? s.split(",").filter((x) => itemOf(x)).slice(0, 4) : []);
+export const parseWear = (s) => (typeof s === "string" ? s.split(",").filter((x) => itemOf(x)).slice(0, 5) : []);
 
 export function randomSpec() {
   const p = LAYERS.map(([k, , list]) => CH[Math.floor(Math.random() * (k === "hat" && Math.random() < 0.5 ? 1 : list.length))]).join("");
@@ -164,6 +166,12 @@ function body(spec) {
   if (wear.has("bowtie")) { r(5, 12, 6, 13, "#2f6fde"); r(9, 12, 10, 13, "#2f6fde"); r(7, 12, 8, 13, "#1d2b6b"); }
   if (wear.has("medal")) { pts([[6, 12], [9, 12], [6, 13], [9, 13]], "#2f6fde"); r(7, 14, 8, 15, "#ffd23f"); pts([[8, 15]], "#c99a1a"); }
   if (wear.has("scarf")) { r(3, 12, 12, 12, "#ff8c1a"); r(9, 13, 10, 15, "#ff8c1a"); pts([[9, 14], [10, 12]], "#ffd23f"); }
+  if (wear.has("chain")) { pts([[5, 12], [6, 13], [7, 14], [8, 14], [9, 13], [10, 12]], "#ffd23f"); pts([[7, 15], [8, 15]], "#8d5524"); pts([[7, 16]], "#5c3a21"); }
+  if (wear.has("cone")) { r(7, 0, 8, 0, "#2e9e44"); r(6, 1, 9, 1, "#5c3a21"); r(5, 2, 10, 2, "#8d5524"); r(4, 3, 11, 3, "#5c3a21"); r(4, 4, 11, 4, "#8d5524"); pts([[6, 2], [9, 2], [5, 3], [8, 3], [11, 3], [6, 4], [9, 4]], "#b5651d"); }
+  if (wear.has("halo")) { r(5, 0, 10, 0, "#ffd23f"); pts([[4, 1], [11, 1]], "#ffd23f"); r(5, 2, 10, 2, "#e8c15a"); pts([[6, 0]], "#fff6c2"); }
+  if (wear.has("pirate")) { r(5, 1, 10, 1, "#1b1b1f"); r(3, 2, 12, 3, "#1b1b1f"); r(2, 4, 13, 4, "#1b1b1f"); r(3, 5, 12, 5, "#ffd23f"); pts([[7, 2], [8, 2], [7, 3]], "#ffffff"); pts([[2, 3], [13, 3]], "#1b1b1f"); }
+  if (wear.has("antenna")) { pts([[4, 0], [11, 0]], "#8bd346"); pts([[5, 1], [10, 1], [5, 2], [10, 2]], "#3a3a3a"); r(4, 3, 11, 3, "#3a3a3a"); pts([[4, 0]], "#a8f0c8"); }
+  if (wear.has("parrot")) { pts([[13, 10], [14, 10]], "#4cc3ff"); pts([[15, 11]], "#3a3a3a"); pts([[14, 11]], "#111111"); r(12, 11, 13, 13, "#2f6fde"); pts([[12, 12], [12, 13]], "#ffd23f"); pts([[13, 14], [13, 15]], "#1d4fae"); }
   return { g, S, T, sleeve: shirt === 6 ? 0 : SLEEVE[shirt] };
 }
 
@@ -247,7 +255,7 @@ export function itemArt(cv, id, k = 2) {
   const spec = { p: "0000000", c: "0000000", o: ".".repeat(N), w: [id] };
   const b = body(spec), base = body({ ...spec, w: [] });
   cv.width = FW * k; cv.height = 14 * k;
-  const c = cv.getContext("2d"), y0 = itemOf(id)[2] === "back" ? 9 : itemOf(id)[2] === "neck" ? 10 : itemOf(id)[2] === "face" ? 4 : 0;
+  const c = cv.getContext("2d"), y0 = { back: 9, neck: 10, face: 4, pet: 6 }[itemOf(id)[2]] || 0;
   for (let i = 0; i < N; i++) {
     const x = i % GW, y = (i / GW) | 0;
     if (!b.g[i] || b.g[i] === base.g[i] || y < y0 || y >= y0 + 14) continue;
@@ -735,6 +743,7 @@ export function createFolks(world) {
         typed = ["", ""];
         window.gzDesk.close("folk-make");
         dispatchEvent(new CustomEvent("gz:folk-new", { detail: n }));
+        dispatchEvent(new CustomEvent("gz:folk-made", { detail: { id } }));
         poll();
       } catch (err) {
         note.textContent = "The booth is offline, try again later.";
@@ -864,5 +873,6 @@ export function createFolks(world) {
     },
     open: openEditor,
     index: openIndex,
+    riders: () => [...walkers.values()].map((F) => ({ n: F.rec.n, sh: F.sh })),
   };
 }
