@@ -321,6 +321,52 @@ html.tall .pt-sizes{flex-direction:row;margin:0;padding:2px}
 html.tall .pt-s{width:30px;height:32px}
 html.tall .pt-cs{grid-template-columns:repeat(15,minmax(0,1fr))}
 html.tall .paint>.stb>span:first-child{display:none}
+.wv-ov,.wv-tl{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.wv-ov{z-index:60}
+.wv-ov.lift{animation:stencil-lift .42s ease-in forwards}
+@keyframes stencil-lift{to{opacity:0;transform:translate(10px,-18px) scale(1.04)}}
+.wv-tl{z-index:70;transition:opacity .6s ease}
+.wv-tl.out{opacity:0}
+.wv.tl .wv-l>canvas+canvas,.wv.tl .wv-ov{visibility:hidden}
+.pt-acts{position:absolute;left:8px;top:8px;z-index:80;display:flex;flex-wrap:wrap;gap:6px;pointer-events:none}
+.pt-acts .btn{min-width:0;pointer-events:auto}
+.pt-lapse{position:absolute;left:50%;bottom:10px;z-index:80;display:flex;align-items:center;gap:8px;max-width:calc(100% - 16px);padding:4px 6px;background:var(--face);box-shadow:var(--raised);transform:translateX(-50%);pointer-events:auto;white-space:nowrap}
+.pt-lapse-d{min-width:142px}
+.pt-bar{flex:none;width:180px;height:18px;padding:2px;background:#fff;box-shadow:var(--sunken)}
+.pt-bar i{display:block;width:0;height:100%;background:repeating-linear-gradient(90deg,var(--navy) 0 9px,transparent 9px 11px)}
+.pt-lapse .btn{min-width:0}
+.pt-pick{position:absolute;left:70px;top:58px;z-index:90;display:flex;flex-direction:column;width:min(372px,calc(100% - 84px));padding:3px;background:var(--face);box-shadow:var(--raised)}
+.pt-pick-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:2px;max-height:min(340px,52vh);margin-top:3px;padding:4px;overflow:auto;background:#fff;box-shadow:var(--sunken)}
+.pt-pk{position:relative;min-width:0}
+.pt-pk>button:first-child{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;padding:5px 2px 4px;border:0;background:none;cursor:pointer}
+.pt-pk>button:first-child span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pt-pk>button:first-child:hover span,.pt-pk>button:first-child:focus-visible span{color:#fff;background:var(--sel)}
+.pt-pk>button:first-child:focus-visible{outline:1px dotted #000;outline-offset:-2px}
+.pt-pk canvas{display:block;width:48px;height:48px;background:#a4503a;box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+.pt-pk-del{position:absolute;right:2px;top:2px;width:16px;height:14px;padding:0;border:0;font-size:10px;line-height:1;background:var(--face);box-shadow:var(--raised);cursor:pointer}
+.pt-pick-a{display:flex;justify-content:flex-end;margin:4px 2px 2px}
+.pt-cut{position:absolute;inset:0;z-index:95;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.28)}
+.pt-cut-w{display:flex;flex-direction:column;max-width:calc(100% - 16px);max-height:calc(100% - 16px);padding:3px;background:var(--face);box-shadow:var(--raised)}
+.pt-cut-b{display:flex;gap:10px;padding:8px;overflow:auto}
+.pt-cut-tools{display:grid;grid-template-columns:26px;align-content:start;gap:2px}
+.pt-cut-tools .pt-sizes{margin-top:6px}
+.pt-cut-board{flex:none;align-self:flex-start;padding:8px;background:#2f6b4e;background-image:linear-gradient(rgba(255,255,255,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.16) 1px,transparent 1px);background-size:16px 16px;box-shadow:var(--sunken)}
+.pt-cut-board canvas{display:block;width:320px;height:320px;box-shadow:3px 4px 0 rgba(0,0,0,.35);touch-action:none;cursor:crosshair}
+.pt-cut-side{display:flex;flex-direction:column;gap:8px;width:176px}
+.pt-cut-side label{display:flex;flex-direction:column;gap:2px}
+.pt-cut-side input{padding:3px 5px;border:0;background:#fff;box-shadow:var(--sunken)}
+.pt-cut-hint{min-height:58px;margin:0;padding:5px 6px;background:var(--tip);border:1px solid #000}
+.pt-cut-row{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+.pt-cut-row .btn{flex:1;min-width:0;padding:0 8px}
+html.tall .pt-pick{left:8px;right:8px;top:auto;bottom:8px;width:auto}
+html.tall .pt-cut-b{flex-direction:column;align-items:center}
+html.tall .pt-cut-tools{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+html.tall .pt-cut-tools .pt-sizes{margin:0}
+html.tall .pt-cut-board{align-self:center;padding:6px}
+html.tall .pt-cut-board canvas{width:min(300px,calc(100vw - 64px));height:min(300px,calc(100vw - 64px))}
+html.tall .pt-cut-side{width:100%}
+html.tall .pt-lapse-d{min-width:0}
+html.tall .pt-bar{width:96px}
 
 .psx{position:absolute;left:0;top:0;pointer-events:none;opacity:0;transition:opacity .4s;will-change:transform}
 .psx.on{opacity:1}

@@ -21,7 +21,7 @@ fi
 
 git commit -q -m "$msg
 
-Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 git pull --rebase -q
 git push -q
 echo "Pushed $(git rev-parse --short HEAD)."
