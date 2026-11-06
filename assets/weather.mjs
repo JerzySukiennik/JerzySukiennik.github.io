@@ -58,7 +58,7 @@ export function createWeather({ world, mapCanvas }) {
   const vx = () => (world.parentNode && world.parentNode.scrollLeft) || 0;
 
   function drawBow() {
-    const tall = g.mode === "tall", cx = (tall ? 0.5 : 0.29) * g.V, rad = tall ? 0.42 * g.V : Math.min(0.37 * g.H, 0.3 * g.V);
+    const tall = g.mode === "tall", cx = (tall ? 0.5 : 0.29) * g.V, rad = tall ? 0.42 * g.V : Math.min(g.horizon - 0.025 * g.H, 0.42 * g.V);
     const b = Math.max(2, Math.round(rad / p / 24)), outer = rad / p, inner = outer - b * BOW.length;
     const w = Math.ceil(outer * 2) + 2, h = Math.ceil(outer) + 1;
     bow.width = w; bow.height = h;
@@ -243,7 +243,7 @@ export function createWeather({ world, mapCanvas }) {
   }
 
   function step(dt, t, a, b, wr) {
-    const tall = g.mode === "tall", hz = g.horizon / p, river = g.river[0] / p, seen = -wr.left / p;
+    const tall = g.mode === "tall", hz = (tall || !g.mural ? g.horizon : Math.max(g.horizon, g.mural.y + g.mural.h)) / p, river = g.river[0] / p, seen = -wr.left / p;
     let cl = Math.max(0, seen - 30), cr = Math.min(cw, seen + innerWidth / p + 10), from = -1, shaft = null;
     if (src && state === "rain" && t - t0 < 4600) {
       const r = src.getBoundingClientRect();

@@ -234,8 +234,9 @@ function start() {
     g.add(box(10, 0.24, THICK + 0.12, capMat, p * 10 + 5, top + 0.12, -THICK / 2));
     if (p === 0) { const end = new THREE.Mesh(new THREE.PlaneGeometry(THICK, WALL_H), backMat); end.rotation.y = -Math.PI / 2; end.position.set(0, WALL_H / 2, -THICK / 2); g.add(end); g.add(box(0.12, 0.24, THICK + 0.12, capMat, -0.04, top + 0.12, -THICK / 2)); }
     for (let x = 1.4 + 7.2 * Math.ceil((p * 10 - 1.4) / 7.2); x < p * 10 + 10; x += 7.2) {
-      g.add(box(0.05, 0.05, 0.22, lampMat.arm, x, 3.18, 0.11), box(0.22, 0.07, 0.16, lampMat.shade, x, 3.12, 0.2), box(0.14, 0.03, 0.1, lampMat.bulb, x, 3.075, 0.2));
-      const gl = new THREE.Sprite(lampGlow); gl.scale.set(0.9, 0.9, 1); gl.position.set(x, 2.95, 0.12); g.add(gl);
+      const ly = top - 0.12;
+      g.add(box(0.05, 0.05, 0.22, lampMat.arm, x, ly, 0.11), box(0.22, 0.07, 0.16, lampMat.shade, x, ly - 0.06, 0.2), box(0.14, 0.03, 0.1, lampMat.bulb, x, ly - 0.105, 0.2));
+      const gl = new THREE.Sprite(lampGlow); gl.scale.set(0.9, 0.9, 1); gl.position.set(x, ly - 0.23, 0.12); g.add(gl);
     }
     scene.add(g);
     W3.bgq.push(P);

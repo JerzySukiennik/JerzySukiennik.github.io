@@ -96,9 +96,9 @@ function land(V, H) {
   ];
   return finish({
     mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
-    sun: at("sun", 0.6, 0.12, 1.1), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
-      at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4),
-      at("cloud4", 2.15, 0.45, 0.45), at("cloud1", 2.7, 0.44, 0.4)],
+    sun: at("sun", 0.6, 0.12, 1.1), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.78, 0.125, 0.8), at("cloud4", 0.2, 0.1, 0.5), at("cloud1", 0.62, 0.165, 0.45),
+      at("cloud1", 0.97, 0.085, 0.4), at("cloud2", 1.18, 0.155, 0.85), at("cloud4", 1.5, 0.11, 0.5), at("cloud3", 1.78, 0.135, 0.9), at("cloud1", 1.95, 0.08, 0.4),
+      at("cloud4", 2.15, 0.16, 0.45), at("cloud1", 2.7, 0.1, 0.4)],
     console: box(0.775 * V, 0.928 * H, 56 * s, 64 * s), garden: { x: 0.235 * V, y: 0.632 * H, w: 0.16 * V, h: 0.078 * H },
     river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8), at("sailboat", 2.62, 0.99, 0.65)], gull: at("gull", 0.955, 0.995, 0.64),
     kayaks: [kayak(0.48 * V, 0.975 * H, s * 1.15), kayak(0.585 * V, 0.98 * H, s * 1.15)],
@@ -591,8 +591,23 @@ export const WALL_KINDS = [
 ];
 const matCache = new Map(), REDBRICK = bricks({ w: 16, h: 9, k: 7, bricks: ["#b9472b", "#c4512f", "#ad4127", "#c95b36", "#b44a2c", "#bf4e2e", "#a63e26"], mortar: ["#d6a88a", "#c79a7c"] });
 const matOf = (id) => { if (!MAT[id]) return null; if (!matCache.has(id)) matCache.set(id, MAT[id]()); return matCache.get(id); };
-let kinds = {};
-const kindAt = (x) => kinds[Math.max(0, Math.floor((x - 2) / 400))];
+let kinds = {}, mats = [], matsKey = "[]";
+const kindAt = (x, y) => {
+  if (y !== undefined) for (let i = mats.length - 1; i >= 0; i--) { const m = mats[i]; if (x >= m.x0 && x < m.x1 && y >= m.y0 && y < m.y1) return m.k === "brick" ? undefined : m.k; }
+  return kinds[Math.max(0, Math.floor((x - 2) / 400))];
+};
+export function setWallMats(list) {
+  const key = JSON.stringify(list);
+  if (key === matsKey) return false;
+  matsKey = key;
+  mats = list.map((m) => ({ x0: 2 + m.x0 / 2.5, x1: 2 + m.x1 / 2.5, y0: 13 + m.y0 / (323 / 129), y1: 13 + m.y1 / (323 / 129), k: m.k }));
+  wallCache.clear();
+  artCache.clear();
+  tallCache.clear();
+  tallJobs.clear();
+  try { dispatchEvent(new CustomEvent("gl-wall-kinds")); } catch (e) {}
+  return true;
+}
 
 export function setWallKinds(next) {
   const changed = [];
@@ -608,7 +623,7 @@ export function setWallKinds(next) {
   return changed;
 }
 
-export function wallFace(x, y) { const m = matOf(kindAt(x)) || REDBRICK; return m(x, y); }
+export function wallFace(x, y) { const m = matOf(kindAt(x, y)) || REDBRICK; return m(x, y); }
 const tallCache = new Map(), tallJobs = new Map();
 function extend(base, x0, ends) {
   const W = base.width, cv = document.createElement("canvas");
@@ -639,6 +654,13 @@ function extendFast(base, ends) {
   c.drawImage(base, 0, 0, W, 11, 0, 0, W, 11);
   c.drawImage(base, 0, 11, W, base.height - 11, 0, 11 + TALL, W, base.height - 11);
   for (let p = 0; 2 + p * 400 < W; p++) c.drawImage(upperBlock(kinds[p] || "brick"), 2 + p * 400, 11);
+  mats.forEach((m) => {
+    const ax0 = Math.max(0, Math.floor(m.x0)), ax1 = Math.min(W, Math.ceil(m.x1)), ay0 = Math.max(11 - TALL, Math.floor(m.y0)), ay1 = Math.min(11, Math.ceil(m.y1));
+    if (ax1 <= ax0 || ay1 <= ay0) return;
+    const f = matOf(m.k === "brick" ? null : m.k) || REDBRICK, im = c.createImageData(ax1 - ax0, ay1 - ay0), d = im.data;
+    for (let y = ay0; y < ay1; y++) for (let x = ax0; x < ax1; x++) { const col = f(x, y), r = y - (11 - TALL), sh = r < 3 ? [-0.38, -0.24, -0.12][r] : 0, k = ((y - ay0) * (ax1 - ax0) + x - ax0) * 4; for (let q = 0; q < 3; q++) d[k + q] = sh ? Math.round(col[q] * (1 + sh)) : col[q]; d[k + 3] = 255; }
+    c.putImageData(im, ax0, ay0 - (11 - TALL) + 11);
+  });
   if (ends.l) { c.clearRect(0, 11, 1, TALL); c.fillStyle = "#1d140f"; c.fillRect(1, 11, 1, TALL); }
   if (ends.r) { c.clearRect(W - 1, 11, 1, TALL); c.fillStyle = "#1d140f"; c.fillRect(W - 2, 11, 1, TALL); }
   const im = c.getImageData(0, 11 + TALL, W, 3), d = im.data;
@@ -672,10 +694,12 @@ export function wallTall(p, lamps = true, until = Infinity) {
   if (tallCache.has(key)) return tallCache.get(key);
   let j = tallJobs.get(key);
   if (!j) {
-    j = p ? extend(wallLayer(2 + 400 * p, 400, { l: false, lamps }), 2 + 400 * p, { l: false }) : extend(wallLayer(0, 402, { l: true, lamps }), 0, { l: true });
+    j = p ? extend(wallLayer(2 + 400 * p, 400, { l: false, lamps: false }), 2 + 400 * p, { l: false }) : extend(wallLayer(0, 402, { l: true, lamps: false }), 0, { l: true });
+    j.lamps = lamps;
     tallJobs.set(key, j);
   }
   if (!grow(j, until)) return null;
+  if (j.lamps) lampTop(j.cv, j.x0, { l: j.l, r: j.r });
   tallJobs.delete(key);
   tallCache.set(key, j.cv);
   if (tallCache.size > 48) tallCache.delete(tallCache.keys().next().value);
@@ -686,6 +710,36 @@ export function wallSwatch(cv, id, w = 40, h = 25) {
   cv.width = w; cv.height = h;
   const f = matOf(id) || REDBRICK, c = cv.getContext("2d"), im = c.createImageData(w, h), x0 = 2 + 400 * 11 + 30, y0 = 34;
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const [r, g, b] = f(x0 + x, y0 + y), i = (y * w + x) * 4; im.data[i] = r; im.data[i + 1] = g; im.data[i + 2] = b; im.data[i + 3] = 255; }
+  c.putImageData(im, 0, 0);
+}
+
+const LAMP = [
+  [0, -1, 1, "#2a2e35"], [1, -1, 1, "#3a3f47"], [2, -1, 1, "#3a3f47"], [3, -4, 4, "#3c424c"], [3, -3, -2, "#6b7581"], [4, -6, 6, "#4b5361"],
+  [4, -5, -3, "#7d8895"], [4, 5, 6, "#2f343c"], [5, -8, 8, "#4b5361"], [5, -7, -5, "#7d8895"], [5, 6, 8, "#2f343c"], [6, -9, 9, "#22262d"],
+  [7, -5, 5, "#ffd24a"], [7, -2, 2, "#fff3bf"], [8, -5, 5, "#ffc93d"], [8, -2, 1, "#fff8d8"], [9, -4, 4, "#ffc93d"], [9, -1, 1, "#ffefb0"],
+  [10, -3, 3, "#f2a933"], [11, -1, 1, "#e0902a"],
+].map(([y, a, b, c]) => [y, a, b, hx(c)]);
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5], LIGHT = [255, 196, 110];
+function lamps(px, W, x0, ends, top) {
+  const get = (x, y) => { const i = (y * W + x - x0) * 4; return [px[i], px[i + 1], px[i + 2]]; };
+  const put = (x, y, rgb) => { x -= x0; if (x < 0 || x >= W) return; const i = (y * W + x) * 4; px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = 255; };
+  const lo = ends.l ? Math.max(2, x0) : x0, hi = ends.r ? x0 + W - 3 : x0 + W - 1, rows = px.length / 4 / W;
+  for (let cx = 58 + 288 * Math.floor((x0 - 110) / 288); cx <= x0 + W + 46; cx += 288) {
+    const gy = top + 9, rx = 46, ry = 32;
+    for (let y = top; y <= Math.min(rows - 1, top + 126); y++) {
+      for (let x = Math.max(lo, cx - rx); x <= Math.min(hi, cx + rx); x++) {
+        const d = Math.hypot((x - cx) / rx, (y - gy) / ry) + (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.47) * 0.12;
+        const a = d < 0.26 ? 0.6 : d < 0.48 ? 0.4 : d < 0.7 ? 0.23 : d < 0.92 ? 0.1 : 0;
+        if (!a) continue;
+        put(x, y, get(x, y).map((v, i) => Math.round(v + (LIGHT[i] - v) * a)));
+      }
+    }
+    LAMP.forEach(([y, a, b, col]) => { for (let dx = a; dx <= b; dx++) put(cx + dx, top + y, col); });
+  }
+}
+function lampTop(cv, x0, ends) {
+  const c = cv.getContext("2d"), h = Math.min(cv.height, 11 + 60), im = c.getImageData(0, 0, cv.width, h);
+  lamps(im.data, cv.width, x0, ends, 11);
   c.putImageData(im, 0, 0);
 }
 
@@ -703,7 +757,6 @@ function wallLayer(x0, W, ends) {
     return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
   };
   const put = (x, y, rgb, a = 255) => { x -= x0; if (x < 0 || x >= W) return; const i = (y * W + x) * 4; px[i] = rgb[0]; px[i + 1] = rgb[1]; px[i + 2] = rgb[2]; px[i + 3] = a; };
-  const get = (x, y) => { const i = (y * W + x - x0) * 4; return [px[i], px[i + 1], px[i + 2]]; };
   const OUT = hex("#1d140f"), BRICKS = ["#b9472b", "#c4512f", "#ad4127", "#c95b36", "#b44a2c", "#bf4e2e", "#a63e26"].map(hex);
   const BURNT = hex("#8f3420"), PALE = hex("#cf6a45"), MORTAR = [hex("#d6a88a"), hex("#c79a7c"), hex("#e2b698")];
   const CAP = [hex("#8d8984"), hex("#9b9792"), hex("#7b7772")], CAP_ROWS = { 1: hex("#c9c5c0"), 2: hex("#a9a5a0"), 8: hex("#6e6a66"), 9: hex("#4a4542") };
@@ -745,7 +798,7 @@ function wallLayer(x0, W, ends) {
     return tone(base, f);
   };
 
-  const face = (x, y) => { const m = matOf(kindAt(x)); return m ? m(x, y) : brickwork(x, y); };
+  const face = (x, y) => { const m = matOf(kindAt(x, y)); return m ? m(x, y) : brickwork(x, y); };
   for (let y = 0; y < H; y++) {
     for (let x = x0; x < x0 + W; x++) {
       const edge = (ends.l && x === 0) || (ends.r && x === x0 + W - 1), rim = (ends.l && x === 1) || (ends.r && x === x0 + W - 2);
@@ -766,29 +819,7 @@ function wallLayer(x0, W, ends) {
     }
   }
 
-  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  const LIGHT = [255, 196, 110];
-  if (ends.lamps !== false) {
-  const lo = ends.l ? Math.max(2, x0) : x0, hi = ends.r ? x0 + W - 3 : x0 + W - 1;
-  for (let cx = 58 + 288 * Math.floor((x0 - 110) / 288); cx <= x0 + W + 46; cx += 288) {
-    const gy = 20, rx = 46, ry = 32;
-    for (let y = 11; y <= 137; y++) {
-      for (let x = Math.max(lo, cx - rx); x <= Math.min(hi, cx + rx); x++) {
-        const d = Math.hypot((x - cx) / rx, (y - gy) / ry) + (BAYER[(y & 3) * 4 + (x & 3)] / 16 - 0.47) * 0.12;
-        const a = d < 0.26 ? 0.6 : d < 0.48 ? 0.4 : d < 0.7 ? 0.23 : d < 0.92 ? 0.1 : 0;
-        if (!a) continue;
-        put(x, y, get(x, y).map((v, i) => Math.round(v + (LIGHT[i] - v) * a)));
-      }
-    }
-    const rows = [
-      [11, -1, 1, "#2a2e35"], [12, -1, 1, "#3a3f47"], [13, -1, 1, "#3a3f47"], [14, -4, 4, "#3c424c"], [14, -3, -2, "#6b7581"], [15, -6, 6, "#4b5361"],
-      [15, -5, -3, "#7d8895"], [15, 5, 6, "#2f343c"], [16, -8, 8, "#4b5361"], [16, -7, -5, "#7d8895"], [16, 6, 8, "#2f343c"], [17, -9, 9, "#22262d"],
-      [18, -5, 5, "#ffd24a"], [18, -2, 2, "#fff3bf"], [19, -5, 5, "#ffc93d"], [19, -2, 1, "#fff8d8"], [20, -4, 4, "#ffc93d"], [20, -1, 1, "#ffefb0"],
-      [21, -3, 3, "#f2a933"], [22, -1, 1, "#e0902a"],
-    ];
-    rows.forEach(([y, a, b, col]) => { for (let dx = a; dx <= b; dx++) put(cx + dx, y, hex(col)); });
-  }
-  }
+  if (ends.lamps !== false) lamps(px, W, x0, ends, 11);
 
   const MOSS = ["#4e8a36", "#3f7430", "#6aa548"].map(hex);
   for (let b = Math.floor((x0 - 2) / 400) - 1; b <= Math.floor((x0 + W - 2) / 400) + 1; b++) {
@@ -796,7 +827,7 @@ function wallLayer(x0, W, ends) {
       const s = i + b * 4;
       for (let n = 0; n < 9; n++) {
         const x = mx + b * 400 + Math.floor(noise(s, n, 11) * 14) - 7, y = 136 + Math.floor(noise(s, n, 12) * 4);
-        const k = kindAt(x);
+        const k = kindAt(x, y);
         if ((!ends.l || x > 2) && (!ends.r || x < x0 + W - 3) && (!k || MOSSY.has(k))) put(x, y, MOSS[Math.floor(noise(s, n, 13) * MOSS.length)]);
       }
     });
@@ -809,8 +840,9 @@ function wallLayer(x0, W, ends) {
 export function drawWall(canvas, w = SPR.wall[0], short = false, end = false) {
   const key = "map" + w + (short ? "s" : "t") + (end ? "e" : "");
   if (!wallCache.has(key)) {
-    const ends = { l: true, r: end || w === SPR.wall[0] }, base = wallLayer(0, w, ends);
-    wallCache.set(key, short ? base : extendFast(base, ends));
+    const ends = { l: true, r: end || w === SPR.wall[0] };
+    if (short) wallCache.set(key, wallLayer(0, w, ends));
+    else { const cv = extendFast(wallLayer(0, w, { ...ends, lamps: false }), ends); lampTop(cv, 0, ends); wallCache.set(key, cv); }
   }
   const art = wallCache.get(key), k = w > 3000 ? 1 : w > 1000 ? 2 : 4;
   canvas.width = art.width * k;

@@ -59,7 +59,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -105,7 +105,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -328,6 +328,33 @@
           ".write": "!newData.parent().parent().child($p).exists()",
           ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
         }
+      },
+      "mats": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "$id.matches(/^[-0-9A-Z_a-z]{20}$/) && newData.hasChildren(['x0', 'y0', 'x1', 'y1', 'k', 't'])",
+          "x0": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "x1": {
+            ".validate": "newData.isNumber() && newData.val() > newData.parent().child('x0').val() && newData.val() - newData.parent().child('x0').val() <= 20000"
+          },
+          "y0": {
+            ".validate": "newData.isNumber() && newData.val() >= -877 && newData.val() < 323"
+          },
+          "y1": {
+            ".validate": "newData.isNumber() && newData.val() > newData.parent().child('y0').val() && newData.val() <= 323"
+          },
+          "k": {
+            ".validate": "newData.isString() && newData.val().matches(/^(brick|whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     },
     "muralWallTrash": {
@@ -435,6 +462,33 @@
         "$p": {
           ".write": "!newData.parent().parent().child($p).exists()",
           ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
+        }
+      },
+      "mats": {
+        "$id": {
+          ".write": "!data.exists() && newData.exists()",
+          ".validate": "$id.matches(/^[-0-9A-Z_a-z]{20}$/) && newData.hasChildren(['x0', 'y0', 'x1', 'y1', 'k', 't'])",
+          "x0": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000"
+          },
+          "x1": {
+            ".validate": "newData.isNumber() && newData.val() > newData.parent().child('x0').val() && newData.val() - newData.parent().child('x0').val() <= 20000"
+          },
+          "y0": {
+            ".validate": "newData.isNumber() && newData.val() >= -877 && newData.val() < 323"
+          },
+          "y1": {
+            ".validate": "newData.isNumber() && newData.val() > newData.parent().child('y0').val() && newData.val() <= 323"
+          },
+          "k": {
+            ".validate": "newData.isString() && newData.val().matches(/^(brick|whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },
