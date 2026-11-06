@@ -208,6 +208,7 @@ function cardboard(x, s) {
 }
 function cutHoles(x, holes, s) {
   x.globalCompositeOperation = "destination-out";
+  x.fillStyle = "#000";
   x.beginPath();
   holes.forEach((h) => { for (let i = 0; i < h.length; i += 2) (i ? x.lineTo(h[i] * s, h[i + 1] * s) : x.moveTo(h[i] * s, h[i + 1] * s)); x.closePath(); });
   x.fill("evenodd");
@@ -323,8 +324,8 @@ function importer(host, { onSave, onEdit }) {
     `<div class="pt-cut-b"><div class="pt-cut-board pt-imp-board"><canvas width="${VIEW_PX}" height="${VIEW_PX}"></canvas><span class="pt-imp-drop" data-imp-drop>Pick a picture, paste one with ${PASTE} or drop it here</span></div>` +
     `<div class="pt-cut-side"><p class="pt-cut-row"><button class="btn" type="button" data-imp-file>Pick a file...</button><button class="btn" type="button" data-imp-paste>Paste</button></p>` +
     `<input type="file" accept="image/*" hidden data-imp-input>` +
-    `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
-    `<label>Threshold<input type="range" min="1" max="254" step="1" value="128" data-imp-thr></label>` +
+    `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="colors" title="Every color gets its own hole, with a cardboard gap where two colors meet">Colors</button><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
+    `<label><span data-imp-thr-l>Threshold</span><input type="range" min="1" max="254" step="1" value="128" data-imp-thr></label>` +
     `<label>Smoothing<input type="range" min="0" max="4" step="1" value="1" data-imp-soft></label>` +
     `<p class="pt-cut-hint" data-imp-hint></p>` +
     `<label>Name<input type="text" data-imp-name maxlength="20" placeholder="My stencil" autocomplete="off"></label>` +
@@ -333,10 +334,39 @@ function importer(host, { onSave, onEdit }) {
   box.hidden = true;
   const cv = box.querySelector("canvas"), x = cv.getContext("2d"), input = box.querySelector("[data-imp-input]"), board = box.querySelector(".pt-imp-board");
   const thrEl = box.querySelector("[data-imp-thr]"), softEl = box.querySelector("[data-imp-soft]"), nameEl = box.querySelector("[data-imp-name]");
-  let src = null, mode = "dark", holes = [], raf = 0, busy = 0;
+  let src = null, mode = "dark", holes = [], raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
   const hint = (s) => { box.querySelector("[data-imp-hint]").textContent = s; };
 
+  function gaps(thr) {
+    const f = new Float32Array(N * N), { r, g, b, al, bg } = src;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const i = y * N + x, a = al[i];
+      if (a <= 0) continue;
+      if (bg && Math.hypot(r[i] - bg[0], g[i] - bg[1], b[i] - bg[2]) < thr * 0.8) continue;
+      let e = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const u = x + dx, v = y + dy;
+        if ((!dx && !dy) || u < 0 || v < 0 || u >= N || v >= N) continue;
+        const j = v * N + u;
+        if (al[j] < 0.5) continue;
+        e = Math.max(e, Math.hypot(r[i] - r[j], g[i] - g[j], b[i] - b[j]));
+      }
+      f[i] = Math.min(1, a * 2) * Math.min(1, Math.max(0, 1.5 - e / thr));
+    }
+    const o = new Float32Array(N * N);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let m = 1;
+      for (let dy = -1; dy <= 1 && m > 0; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const u = x + dx, v = y + dy;
+        m = Math.min(m, u < 0 || v < 0 || u >= N || v >= N ? 0 : f[v * N + u]);
+      }
+      o[y * N + x] = m;
+    }
+    return o;
+  }
+
   function field() {
+    if (mode === "colors") return blur(gaps(255 - +thrEl.value), +softEl.value);
     const f = new Float32Array(N * N), thr = +thrEl.value;
     for (let i = 0; i < N * N; i++) {
       const a = src.al[i];
@@ -357,13 +387,15 @@ function importer(host, { onSave, onEdit }) {
     if (!src) { holes = []; draw(); return; }
     holes = trace(field(), N, BUDGET, 4 + +softEl.value * 6);
     draw();
-    hint(holes.length ? "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter." : "Nothing gets cut yet. Move the threshold or switch what gets cut out.");
+    hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? "Every color is its own hole, with a strip of cardboard where colors meet. More gaps cuts finer details apart." : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
   }
   const soon = () => { if (!raf) raf = requestAnimationFrame(rebuild); };
   function sync() {
     box.querySelectorAll("[data-imp-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.impMode === mode)));
     box.querySelector('[data-imp-mode="shape"]').disabled = !(src && src.clear);
     thrEl.disabled = !src || mode === "shape";
+    if (levels[mode] !== undefined) thrEl.value = String(levels[mode]);
+    box.querySelector("[data-imp-thr-l]").textContent = mode === "colors" ? "Color gaps" : "Threshold";
     softEl.disabled = !src;
     box.querySelector("[data-imp-drop]").hidden = !!src;
     box.querySelector("[data-imp-edit]").disabled = box.querySelector("[data-imp-save]").disabled = !src;
@@ -385,16 +417,26 @@ function importer(host, { onSave, onEdit }) {
       g.imageSmoothingQuality = "high";
       g.drawImage(img, x0, y0, w, h);
       const d = g.getImageData(0, 0, N, N).data, lum = new Float32Array(N * N), al = new Float32Array(N * N);
-      let inside = 0, thin = 0;
+      const r = new Float32Array(N * N), gr = new Float32Array(N * N), b = new Float32Array(N * N), bins = new Map(), ring = [0, 0, 0, 0];
+      let inside = 0, thin = 0, solid = 0;
       for (let i = 0; i < N * N; i++) {
         const a = d[i * 4 + 3] / 255, px = i % N, py = (i / N) | 0;
         al[i] = a;
-        lum[i] = a > 0 ? 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2] : 255;
+        r[i] = d[i * 4]; gr[i] = d[i * 4 + 1]; b[i] = d[i * 4 + 2];
+        lum[i] = a > 0 ? 0.299 * r[i] + 0.587 * gr[i] + 0.114 * b[i] : 255;
         if (px > x0 + 1 && px < x0 + w - 2 && py > y0 + 1 && py < y0 + h - 2) { inside++; if (a < 0.5) thin++; }
+        if (a >= 0.5) {
+          solid++;
+          const k = (r[i] >> 6) * 16 + (gr[i] >> 6) * 4 + (b[i] >> 6);
+          bins.set(k, (bins.get(k) || 0) + 1);
+          if (px < x0 + 2 || px > x0 + w - 3 || py < y0 + 2 || py > y0 + h - 3) { ring[0] += r[i]; ring[1] += gr[i]; ring[2] += b[i]; ring[3]++; }
+        }
       }
-      src = { lum, al, clear: inside > 0 && thin / inside > 0.02 };
-      mode = src.clear ? "shape" : "dark";
-      thrEl.value = String(Math.round(otsu(lum, al)));
+      const clear = inside > 0 && thin / inside > 0.02, colorful = [...bins.values()].filter((n) => n > solid * 0.015).length >= 3;
+      src = { lum, al, r, g: gr, b, clear, bg: clear || !ring[3] ? null : [ring[0] / ring[3], ring[1] / ring[3], ring[2] / ring[3]] };
+      mode = colorful ? "colors" : clear ? "shape" : "dark";
+      const t = Math.round(otsu(lum, al));
+      levels = { dark: t, light: t, colors: 185 };
       const base = String(name || blob.name || "").replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
       nameEl.value = (base && base.toLowerCase() !== "image" ? base : "My picture").slice(0, 20);
       sync();
@@ -433,7 +475,7 @@ function importer(host, { onSave, onEdit }) {
     }
   });
   input.addEventListener("change", () => { const f = input.files && input.files[0]; input.value = ""; if (f) load(f); });
-  thrEl.addEventListener("input", soon);
+  thrEl.addEventListener("input", () => { levels[mode] = +thrEl.value; soon(); });
   softEl.addEventListener("input", soon);
   board.addEventListener("dragover", (e) => { e.preventDefault(); board.classList.add("over"); });
   board.addEventListener("dragleave", () => board.classList.remove("over"));
@@ -449,7 +491,7 @@ function importer(host, { onSave, onEdit }) {
     open(blob) {
       box.hidden = false;
       if (blob) load(blob, "Pasted picture");
-      else if (!src) hint("Dark parts of the picture get cut out of the cardboard. Logos and drawings work best.");
+      else if (!src) hint("Every color of the picture gets its own hole in the cardboard. Logos and drawings work best.");
       sync();
       draw();
       box.querySelector(src ? "[data-imp-save]" : "[data-imp-file]").focus({ preventScroll: true });

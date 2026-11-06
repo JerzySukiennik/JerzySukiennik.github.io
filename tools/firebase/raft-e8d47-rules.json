@@ -59,7 +59,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -105,7 +105,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -304,10 +304,16 @@
             ".validate": "newData.isString() && newData.val().length <= 32 && newData.val().matches(/^[0-9]+,[0-9]+$/)"
           },
           "m": {
-            ".validate": "newData.isString() && newData.val().length <= 2000 && newData.val().matches(/^[0-9,;-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 4000 && newData.val().matches(/^[0-9,;-]+$/)"
           },
           "s": {
-            ".validate": "newData.isString() && newData.val().length <= 6000 && newData.val().matches(/^[0-9,;-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;|-]+$/)"
+          },
+          "q": {
+            ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
+          },
+          "h": {
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
           }
         }
       }
@@ -346,6 +352,12 @@
           },
           "s": {
             ".validate": "newData.isString()"
+          },
+          "q": {
+            ".validate": "newData.isString()"
+          },
+          "h": {
+            ".validate": "newData.isString()"
           }
         }
       }
@@ -382,10 +394,16 @@
             ".validate": "newData.isString() && newData.val().length <= 32 && newData.val().matches(/^[0-9]+,[0-9]+$/)"
           },
           "m": {
-            ".validate": "newData.isString() && newData.val().length <= 2000 && newData.val().matches(/^[0-9,;-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 4000 && newData.val().matches(/^[0-9,;-]+$/)"
           },
           "s": {
-            ".validate": "newData.isString() && newData.val().length <= 6000 && newData.val().matches(/^[0-9,;-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;|-]+$/)"
+          },
+          "q": {
+            ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
+          },
+          "h": {
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
           }
         }
       }
@@ -423,6 +441,12 @@
             ".validate": "newData.isString()"
           },
           "s": {
+            ".validate": "newData.isString()"
+          },
+          "q": {
+            ".validate": "newData.isString()"
+          },
+          "h": {
             ".validate": "newData.isString()"
           }
         }
@@ -664,6 +688,256 @@
           },
           "t": {
             ".validate": "newData.val() === now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "muralLive": {
+      ".read": true,
+      "props": {
+        "$id": {
+          ".write": true,
+          ".validate": "$id.length <= 24 && $id.matches(/^[-_A-Za-z0-9]+$/) && newData.hasChildren(['k','p','t']) && ((newData.child('k').val() === 't' && newData.hasChildren(['ax','ay','bx','by','w','e'])) || (newData.child('k').val() === 's' && newData.hasChildren(['x','y','s','r','h','v'])))",
+          "k": {
+            ".validate": "newData.val() === 't' || newData.val() === 's'"
+          },
+          "p": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "ax": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "ay": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "bx": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "by": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "r": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "w": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 10000000"
+          },
+          "s": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 10000000"
+          },
+          "g": {
+            ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 1"
+          },
+          "e": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)"
+          },
+          "h": {
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;]+$/)"
+          },
+          "v": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,8}$/)"
+          },
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "who": {
+        "$sid": {
+          ".write": true,
+          ".validate": "$sid.length <= 24 && $sid.matches(/^[A-Za-z0-9_-]+$/)",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "p": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "s": {
+            ".validate": "newData.hasChildren(['id','k','w','z','p'])",
+            "id": {
+              ".validate": "newData.isString() && newData.val().length <= 24 && newData.val().matches(/^[-_A-Za-z0-9]+$/)"
+            },
+            "k": {
+              ".validate": "newData.val() === 'd' || newData.val() === 'c'"
+            },
+            "c": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "h": {
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+            },
+            "w": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
+            },
+            "z": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"
+            },
+            "p": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+            },
+            "d": {
+              "$c": {
+                ".validate": "$c.matches(/^c[0-9]{1,5}$/) && newData.isString() && newData.val().length <= 2000 && newData.val().matches(/^[0-9,]+$/)"
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "$other": {
+        ".validate": false
+      }
+    },
+    "muralLiveDev": {
+      ".read": true,
+      "props": {
+        "$id": {
+          ".write": true,
+          ".validate": "$id.length <= 24 && $id.matches(/^[-_A-Za-z0-9]+$/) && newData.hasChildren(['k','p','t']) && ((newData.child('k').val() === 't' && newData.hasChildren(['ax','ay','bx','by','w','e'])) || (newData.child('k').val() === 's' && newData.hasChildren(['x','y','s','r','h','v'])))",
+          "k": {
+            ".validate": "newData.val() === 't' || newData.val() === 's'"
+          },
+          "p": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "ax": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "ay": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "bx": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "by": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "r": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "w": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 10000000"
+          },
+          "s": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 10000000"
+          },
+          "g": {
+            ".validate": "newData.isNumber() && newData.val() >= -1 && newData.val() <= 1"
+          },
+          "e": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)"
+          },
+          "h": {
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;]+$/)"
+          },
+          "v": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,8}$/)"
+          },
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "who": {
+        "$sid": {
+          ".write": true,
+          ".validate": "$sid.length <= 24 && $sid.matches(/^[A-Za-z0-9_-]+$/)",
+          "n": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "t": {
+            ".validate": "newData.val() === now"
+          },
+          "p": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+          },
+          "x": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "y": {
+            ".validate": "newData.isNumber() && newData.val() > -10000000 && newData.val() < 10000000"
+          },
+          "s": {
+            ".validate": "newData.hasChildren(['id','k','w','z','p'])",
+            "id": {
+              ".validate": "newData.isString() && newData.val().length <= 24 && newData.val().matches(/^[-_A-Za-z0-9]+$/)"
+            },
+            "k": {
+              ".validate": "newData.val() === 'd' || newData.val() === 'c'"
+            },
+            "c": {
+              ".validate": "newData.isString() && newData.val().length <= 12"
+            },
+            "h": {
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+            },
+            "w": {
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
+            },
+            "z": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"
+            },
+            "p": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000000 && newData.val() % 1 === 0"
+            },
+            "d": {
+              "$c": {
+                ".validate": "$c.matches(/^c[0-9]{1,5}$/) && newData.isString() && newData.val().length <= 2000 && newData.val().matches(/^[0-9,]+$/)"
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
           },
           "$other": {
             ".validate": false
