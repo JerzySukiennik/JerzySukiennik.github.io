@@ -59,7 +59,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -105,7 +105,7 @@
           ".validate": "newData.isString() && newData.val().matches(/^(#[0-9a-f]{6}|rainbow)$/)"
         },
         "s": {
-          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9\u00c0-\u00d6\u00d8-\u00f6\u00f8-\u00ff\u0100-\u017e !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
+          ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 24 && newData.val().matches(/^[A-Za-z0-9À-ÖØ-öø-ÿĀ-ž !?.,:;'\\\"+*&#()@\\/_=<>-]+$/)"
         },
         "x": {
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
@@ -313,8 +313,14 @@
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
           }
+        }
+      },
+      "kinds": {
+        "$p": {
+          ".write": "!root.child('muralWall').child($p).exists()",
+          ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
         }
       }
     },
@@ -403,8 +409,14 @@
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
           }
+        }
+      },
+      "kinds": {
+        "$p": {
+          ".write": "!root.child('muralWallDev').child($p).exists()",
+          ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
         }
       }
     },
@@ -755,6 +767,18 @@
           "n": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
+          "i": {
+            ".validate": "newData.isBoolean()"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
+          },
+          "fu": {
+            ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
+          "fw": {
+            ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
           "$other": {
             ".validate": false
           }
@@ -794,7 +818,7 @@
               ".validate": "newData.isString() && newData.val().length <= 12"
             },
             "h": {
-              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
             },
             "w": {
               ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
@@ -880,6 +904,18 @@
           "n": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
+          "i": {
+            ".validate": "newData.isBoolean()"
+          },
+          "c": {
+            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
+          },
+          "fu": {
+            ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
+          "fw": {
+            ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
           "$other": {
             ".validate": false
           }
@@ -919,7 +955,7 @@
               ".validate": "newData.isString() && newData.val().length <= 12"
             },
             "h": {
-              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
             },
             "w": {
               ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"

@@ -1,8 +1,9 @@
 /* Gzowo Labs wall stencils: the ready made cardboard stencils, the cutting board where visitors cut their own with a knife, a hole punch,
    glue and letters, stencils cut automatically from a picture, and the tracing that turns a cut sheet into smooth outlines the wall
-   clips spray paint to. Outlines are normalized to 0..1. */
+   clips spray paint to. A picture is cropped to what is in it, its background is flood filled from the edge so light parts inside an
+   outline stay, and every hole remembers the color it was cut from so its rim can be drawn in it. Outlines are normalized to 0..1. */
 
-const N = 256, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
+const N = 256, NI = 512, QI = NI / N, BG_TOL = 40, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
 const PUNCH = [6, 12, 22], TEXT = [0.13, 0.2, 0.3], CARD = "#c49a5e";
 const PASTE = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘V" : "Ctrl+V";
 
@@ -180,22 +181,31 @@ function soften(h) {
 }
 
 const enc = (holes) => holes.map((h) => Array.from(h, (v) => Math.round(v * 1000)).join(",")).join(";");
-const dec = (s) => String(s || "").split(";").map((q) => Float64Array.from(q.split(","), (v) => +v / 1000)).filter((h) => h.length >= 6 && h.every((v) => v >= 0 && v <= 1));
+function dec(h, c) {
+  const cs = String(c || "").split(","), holes = [], colors = [];
+  String(h || "").split(";").forEach((q, i) => {
+    const p = Float64Array.from(q.split(","), (v) => +v / 1000);
+    if (p.length < 6 || p.length % 2 || !p.every((v) => v >= 0 && v <= 1)) return;
+    holes.push(p);
+    colors.push(/^[0-9a-f]{6}$/.test(cs[i] || "") ? cs[i] : "");
+  });
+  return { holes, colors: colors.some(Boolean) ? colors : null };
+}
 export function saved() {
   try {
     return (JSON.parse(localStorage.getItem(KEY)) || []).filter((s) => s && s.id && s.h).map((s) => {
-      const holes = dec(s.h);
-      return { id: "u:" + s.id, name: String(s.n || "My stencil").slice(0, 20), holes: holes.length && holes.every(old) ? holes.map(soften) : holes };
+      const { holes, colors } = dec(s.h, s.c);
+      return { id: "u:" + s.id, name: String(s.n || "My stencil").slice(0, 20), holes: holes.length && holes.every(old) ? holes.map(soften) : holes, colors };
     }).filter((s) => s.holes.length);
   } catch (e) { return []; }
 }
 function store(list) { try { localStorage.setItem(KEY, JSON.stringify(list.slice(-MAX))); } catch (e) {} }
 function raw() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
-function keep(name, holes) {
-  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5), list = raw().filter((s) => s && s.id);
-  list.push({ id, n: name, h: enc(holes) });
+function keep(name, holes, colors) {
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5), list = raw().filter((s) => s && s.id), c = colors && colors.some(Boolean) ? colors.join(",") : "";
+  list.push(c ? { id, n: name, h: enc(holes), c } : { id, n: name, h: enc(holes) });
   store(list);
-  return { id: "u:" + id, name, holes: dec(enc(holes)) };
+  return { id: "u:" + id, name, ...dec(enc(holes), c) };
 }
 function forget(id) { store(raw().filter((s) => "u:" + s.id !== id)); }
 
@@ -206,13 +216,18 @@ function cardboard(x, s) {
   const g = Math.max(2, Math.round(s / 80));
   for (let y = 0; y < s; y += g * 2) x.fillRect(0, y, s, g / 2);
 }
-function cutHoles(x, holes, s) {
+function cutHoles(x, holes, s, colors) {
+  const loop = (h) => { for (let i = 0; i < h.length; i += 2) (i ? x.lineTo(h[i] * s, h[i + 1] * s) : x.moveTo(h[i] * s, h[i + 1] * s)); x.closePath(); };
   x.globalCompositeOperation = "destination-out";
   x.fillStyle = "#000";
   x.beginPath();
-  holes.forEach((h) => { for (let i = 0; i < h.length; i += 2) (i ? x.lineTo(h[i] * s, h[i + 1] * s) : x.moveTo(h[i] * s, h[i + 1] * s)); x.closePath(); });
+  holes.forEach(loop);
   x.fill("evenodd");
   x.globalCompositeOperation = "source-over";
+  if (!colors) return;
+  x.lineWidth = Math.max(1, s / 220);
+  x.lineJoin = "round";
+  holes.forEach((h, i) => { if (!colors[i]) return; x.strokeStyle = "#" + colors[i]; x.beginPath(); loop(h); x.stroke(); });
 }
 
 export function sheetThumb(cv, st, px = 48) {
@@ -221,7 +236,7 @@ export function sheetThumb(cv, st, px = 48) {
   const x = cv.getContext("2d"), s = cv.width;
   x.fillStyle = CARD; x.fillRect(0, 0, s, s);
   x.strokeStyle = "rgba(90,60,25,.5)"; x.strokeRect(0.5, 0.5, s - 1, s - 1);
-  cutHoles(x, st.holes, s);
+  cutHoles(x, st.holes, s, st.colors);
 }
 
 const ICON = {
@@ -277,10 +292,10 @@ export function picker(host, { onPick, onCut, onPicture, onClose }) {
   return { open, close, toggle() { if (el.hidden) open(); else close(); }, get shown() { return !el.hidden; } };
 }
 
-function otsu(lum, al) {
+function otsu(lum, al, bg) {
   const h = new Float64Array(256);
   let n = 0;
-  for (let i = 0; i < lum.length; i++) if (al[i] >= 0.5) { h[Math.min(255, Math.max(0, Math.round(lum[i])))]++; n++; }
+  for (let i = 0; i < lum.length; i++) if (al[i] >= 0.5 && !bg[i]) { h[Math.min(255, Math.max(0, Math.round(lum[i])))]++; n++; }
   if (!n) return 128;
   let sum = 0;
   for (let i = 0; i < 256; i++) sum += i * h[i];
@@ -297,23 +312,86 @@ function otsu(lum, al) {
   return Math.min(254, Math.max(1, thr + 0.5));
 }
 
-function blur(f, r) {
+function blur(f, r, n = NI) {
   if (!r) return f;
-  let a = f, b = new Float32Array(N * N);
+  let a = f, b = new Float32Array(n * n);
   for (let pass = 0; pass < 4; pass++) {
     const side = pass % 2 === 0;
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
       let s = 0;
       for (let k = -r; k <= r; k++) {
         const u = side ? x + k : x, v = side ? y : y + k;
-        if (u >= 0 && v >= 0 && u < N && v < N) s += a[v * N + u];
+        if (u >= 0 && v >= 0 && u < n && v < n) s += a[v * n + u];
       }
-      b[y * N + x] = s / (2 * r + 1);
+      b[y * n + x] = s / (2 * r + 1);
     }
     [a, b] = [b, a];
   }
   return a;
 }
+
+function edgeColor(d, W, H) {
+  const bins = new Map();
+  let n = 0;
+  const see = (i) => {
+    n++;
+    if (d[i * 4 + 3] < 128) return;
+    const k = (d[i * 4] >> 4) * 256 + (d[i * 4 + 1] >> 4) * 16 + (d[i * 4 + 2] >> 4), e = bins.get(k) || [0, 0, 0, 0];
+    e[0] += d[i * 4]; e[1] += d[i * 4 + 1]; e[2] += d[i * 4 + 2]; e[3]++;
+    bins.set(k, e);
+  };
+  const ring = (f) => { for (let x = 0; x < W; x++) { f(x); if (H > 1) f((H - 1) * W + x); } for (let y = 1; y < H - 1; y++) { f(y * W); if (W > 1) f(y * W + W - 1); } };
+  ring(see);
+  let best = null;
+  bins.forEach((e) => { if (!best || e[3] > best[3]) best = e; });
+  if (!best || best[3] <= n * 0.3) return null;
+  const c = [best[0] / best[3], best[1] / best[3], best[2] / best[3]];
+  let sq = 0, k = 0;
+  ring((i) => { if (d[i * 4 + 3] < 128) return; const e = Math.hypot(d[i * 4] - c[0], d[i * 4 + 1] - c[1], d[i * 4 + 2] - c[2]); if (e < BG_TOL) { sq += e * e; k++; } });
+  return [...c, Math.min(BG_TOL, Math.max(6, 3 * Math.sqrt(sq / Math.max(1, k)) + 5))];
+}
+
+function flood(al, r, g, b, ring) {
+  const T = NI * NI, bg = new Uint8Array(T), q = new Int32Array(T);
+  const ok = (i) => al[i] < 0.5 || (!!ring && Math.hypot(r[i] - ring[0], g[i] - ring[1], b[i] - ring[2]) <= ring[3]);
+  let h = 0, t = 0;
+  const push = (i) => { if (!bg[i] && ok(i)) { bg[i] = 1; q[t++] = i; } };
+  for (let x = 0; x < NI; x++) { push(x); push((NI - 1) * NI + x); }
+  for (let y = 0; y < NI; y++) { push(y * NI); push(y * NI + NI - 1); }
+  while (h < t) {
+    const i = q[h++], x = i % NI;
+    if (x > 0) push(i - 1);
+    if (x < NI - 1) push(i + 1);
+    if (i >= NI) push(i - NI);
+    if (i < T - NI) push(i + NI);
+  }
+  return bg;
+}
+
+function erode(f) {
+  const o = new Float32Array(NI * NI);
+  for (let y = 0; y < NI; y++) for (let x = 0; x < NI; x++) {
+    let m = 1;
+    for (let dy = -1; dy <= 1 && m > 0; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const u = x + dx, v = y + dy;
+      m = Math.min(m, u < 0 || v < 0 || u >= NI || v >= NI ? 0 : f[v * NI + u]);
+    }
+    o[y * NI + x] = m;
+  }
+  return o;
+}
+
+function shrink(f) {
+  const o = new Float32Array(N * N);
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    let s = 0;
+    for (let dy = 0; dy < QI; dy++) for (let dx = 0; dx < QI; dx++) s += f[(y * QI + dy) * NI + x * QI + dx];
+    o[y * N + x] = s / (QI * QI);
+  }
+  return o;
+}
+
+const NEAR = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1], [-2, -2], [0, -2], [2, -2], [-2, 0], [2, 0], [-2, 2], [0, 2], [2, 2]];
 
 function importer(host, { onSave, onEdit }) {
   const box = document.createElement("div");
@@ -334,65 +412,84 @@ function importer(host, { onSave, onEdit }) {
   box.hidden = true;
   const cv = box.querySelector("canvas"), x = cv.getContext("2d"), input = box.querySelector("[data-imp-input]"), board = box.querySelector(".pt-imp-board");
   const thrEl = box.querySelector("[data-imp-thr]"), softEl = box.querySelector("[data-imp-soft]"), nameEl = box.querySelector("[data-imp-name]");
-  let src = null, mode = "dark", holes = [], raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
+  let src = null, mode = "dark", holes = [], colors = null, raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
   const hint = (s) => { box.querySelector("[data-imp-hint]").textContent = s; };
 
   function gaps(thr) {
-    const f = new Float32Array(N * N), { r, g, b, al, bg } = src;
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      const i = y * N + x, a = al[i];
-      if (a <= 0) continue;
-      if (bg && Math.hypot(r[i] - bg[0], g[i] - bg[1], b[i] - bg[2]) < thr * 0.8) continue;
+    const f = new Float32Array(NI * NI), { r, g, b, al, bg } = src;
+    for (let y = 0; y < NI; y++) for (let x = 0; x < NI; x++) {
+      const i = y * NI + x, a = al[i];
+      if (a <= 0 || bg[i]) continue;
       let e = 0;
-      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      for (const [dx, dy] of NEAR) {
         const u = x + dx, v = y + dy;
-        if ((!dx && !dy) || u < 0 || v < 0 || u >= N || v >= N) continue;
-        const j = v * N + u;
-        if (al[j] < 0.5) continue;
+        if (u < 0 || v < 0 || u >= NI || v >= NI) continue;
+        const j = v * NI + u;
+        if (al[j] < 0.5 || bg[j]) continue;
         e = Math.max(e, Math.hypot(r[i] - r[j], g[i] - g[j], b[i] - b[j]));
       }
       f[i] = Math.min(1, a * 2) * Math.min(1, Math.max(0, 1.5 - e / thr));
     }
-    const o = new Float32Array(N * N);
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
-      let m = 1;
-      for (let dy = -1; dy <= 1 && m > 0; dy++) for (let dx = -1; dx <= 1; dx++) {
-        const u = x + dx, v = y + dy;
-        m = Math.min(m, u < 0 || v < 0 || u >= N || v >= N ? 0 : f[v * N + u]);
-      }
-      o[y * N + x] = m;
-    }
-    return o;
+    return erode(f);
   }
 
   function field() {
-    if (mode === "colors") return blur(gaps(255 - +thrEl.value), +softEl.value);
-    const f = new Float32Array(N * N), thr = +thrEl.value;
-    for (let i = 0; i < N * N; i++) {
+    const soft = +softEl.value * QI;
+    if (mode === "colors") return blur(gaps(255 - +thrEl.value), soft);
+    const f = new Float32Array(NI * NI), thr = +thrEl.value;
+    for (let i = 0; i < NI * NI; i++) {
       const a = src.al[i];
-      if (a <= 0) continue;
-      if (mode === "shape") { f[i] = a; continue; }
+      if (a <= 0 || src.bg[i]) continue;
+      if (mode === "shape") { f[i] = src.clear ? a : 1; continue; }
       const d = (thr - src.lum[i]) / 18, v = mode === "dark" ? 0.5 + d : 0.5 - d;
       f[i] = Math.min(1, Math.max(0, v)) * Math.min(1, a * 2);
     }
-    return blur(f, +softEl.value);
+    return blur(f, soft);
   }
+
+  function colorsOf(loops, f) {
+    const at = (px, py) => { const u = Math.round(px - 0.5), v = Math.round(py - 0.5); return u < 0 || v < 0 || u >= NI || v >= NI ? -1 : v * NI + u; };
+    const out = loops.map((h) => {
+      const n = h.length / 2, step = Math.max(1, Math.floor(n / 90)), bins = new Map();
+      for (let i = 0; i < n; i += step) {
+        const j = (i + 1) % n, ax = h[i * 2] * NI, ay = h[i * 2 + 1] * NI, bx = h[j * 2] * NI, by = h[j * 2 + 1] * NI, L = Math.hypot(bx - ax, by - ay);
+        if (L < 1e-6) continue;
+        const nx = -(by - ay) / L, ny = (bx - ax) / L, mx = (ax + bx) / 2, my = (ay + by) / 2;
+        const p1 = at(mx + nx * 1.5, my + ny * 1.5), p2 = at(mx - nx * 1.5, my - ny * 1.5), s = (p1 >= 0 ? f[p1] : 0) >= (p2 >= 0 ? f[p2] : 0) ? 1 : -1;
+        for (const d of [3, 2, 4.5]) {
+          const k = at(mx + nx * s * d, my + ny * s * d);
+          if (k < 0 || src.al[k] < 0.5 || src.bg[k] || f[k] < 0.5) continue;
+          const key = (src.r[k] >> 5) * 64 + (src.g[k] >> 5) * 8 + (src.b[k] >> 5), e = bins.get(key) || [0, 0, 0, 0];
+          e[0] += src.r[k]; e[1] += src.g[k]; e[2] += src.b[k]; e[3]++;
+          bins.set(key, e);
+          break;
+        }
+      }
+      let best = null;
+      bins.forEach((e) => { if (!best || e[3] > best[3]) best = e; });
+      return best ? [0, 1, 2].map((c) => Math.round(best[c] / best[3]).toString(16).padStart(2, "0")).join("") : "";
+    });
+    return out.some(Boolean) ? out : null;
+  }
+
   function draw() {
     const s = cv.width;
     cardboard(x, s);
-    if (holes.length) cutHoles(x, holes, s);
+    if (holes.length) cutHoles(x, holes, s, colors);
   }
   function rebuild() {
     raf = 0;
-    if (!src) { holes = []; draw(); return; }
-    holes = trace(field(), N, BUDGET, 4 + +softEl.value * 6);
+    if (!src) { holes = []; colors = null; draw(); return; }
+    const f = field();
+    holes = trace(f, NI, BUDGET, (4 + +softEl.value * 6) * QI * QI);
+    colors = holes.length ? colorsOf(holes, f) : null;
     draw();
     hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? "Every color is its own hole, with a strip of cardboard where colors meet. More gaps cuts finer details apart." : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
   }
   const soon = () => { if (!raf) raf = requestAnimationFrame(rebuild); };
   function sync() {
     box.querySelectorAll("[data-imp-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.impMode === mode)));
-    box.querySelector('[data-imp-mode="shape"]').disabled = !(src && src.clear);
+    box.querySelector('[data-imp-mode="shape"]').disabled = !(src && src.cutout);
     thrEl.disabled = !src || mode === "shape";
     if (levels[mode] !== undefined) thrEl.value = String(levels[mode]);
     box.querySelector("[data-imp-thr-l]").textContent = mode === "colors" ? "Color gaps" : "Threshold";
@@ -410,32 +507,47 @@ function importer(host, { onSave, onEdit }) {
       img.src = url;
       await img.decode();
       if (ticket !== busy) return;
-      const c = document.createElement("canvas");
-      c.width = c.height = N;
-      const g = ctx2d(c), m = N * 0.04, k = Math.min((N - 2 * m) / img.naturalWidth, (N - 2 * m) / img.naturalHeight);
-      const w = img.naturalWidth * k, h = img.naturalHeight * k, x0 = (N - w) / 2, y0 = (N - h) / 2;
+      const kp = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight)), pre = document.createElement("canvas");
+      pre.width = Math.max(1, Math.round(img.naturalWidth * kp)); pre.height = Math.max(1, Math.round(img.naturalHeight * kp));
+      const pg = ctx2d(pre), PW = pre.width, PH = pre.height;
+      pg.drawImage(img, 0, 0, PW, PH);
+      const pd = pg.getImageData(0, 0, PW, PH).data, ring = edgeColor(pd, PW, PH);
+      let cx0 = PW, cy0 = PH, cx1 = -1, cy1 = -1;
+      for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+        const i = (y * PW + x) * 4;
+        if (pd[i + 3] < 128 || (ring && Math.hypot(pd[i] - ring[0], pd[i + 1] - ring[1], pd[i + 2] - ring[2]) <= ring[3])) continue;
+        if (x < cx0) cx0 = x; if (x > cx1) cx1 = x; if (y < cy0) cy0 = y; if (y > cy1) cy1 = y;
+      }
+      if (cx1 < 0) { cx0 = 0; cy0 = 0; cx1 = PW - 1; cy1 = PH - 1; }
+      const pad = Math.round(Math.max(cx1 - cx0, cy1 - cy0) * 0.02) + 1;
+      cx0 = Math.max(0, cx0 - pad); cy0 = Math.max(0, cy0 - pad); cx1 = Math.min(PW - 1, cx1 + pad); cy1 = Math.min(PH - 1, cy1 + pad);
+      const cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1, m = NI * 0.04, k = Math.min((NI - 2 * m) / cw, (NI - 2 * m) / ch);
+      const w = cw * k, h = ch * k, x0 = (NI - w) / 2, y0 = (NI - h) / 2, T = NI * NI, c = document.createElement("canvas");
+      c.width = c.height = NI;
+      const g = ctx2d(c);
       g.imageSmoothingQuality = "high";
-      g.drawImage(img, x0, y0, w, h);
-      const d = g.getImageData(0, 0, N, N).data, lum = new Float32Array(N * N), al = new Float32Array(N * N);
-      const r = new Float32Array(N * N), gr = new Float32Array(N * N), b = new Float32Array(N * N), bins = new Map(), ring = [0, 0, 0, 0];
+      g.drawImage(pre, cx0, cy0, cw, ch, x0, y0, w, h);
+      const d = g.getImageData(0, 0, NI, NI).data, lum = new Float32Array(T), al = new Float32Array(T);
+      const r = new Float32Array(T), gr = new Float32Array(T), b = new Float32Array(T), bins = new Map();
       let inside = 0, thin = 0, solid = 0;
-      for (let i = 0; i < N * N; i++) {
-        const a = d[i * 4 + 3] / 255, px = i % N, py = (i / N) | 0;
+      for (let i = 0; i < T; i++) {
+        const a = d[i * 4 + 3] / 255, px = i % NI, py = (i / NI) | 0;
         al[i] = a;
         r[i] = d[i * 4]; gr[i] = d[i * 4 + 1]; b[i] = d[i * 4 + 2];
         lum[i] = a > 0 ? 0.299 * r[i] + 0.587 * gr[i] + 0.114 * b[i] : 255;
         if (px > x0 + 1 && px < x0 + w - 2 && py > y0 + 1 && py < y0 + h - 2) { inside++; if (a < 0.5) thin++; }
-        if (a >= 0.5) {
-          solid++;
-          const k = (r[i] >> 6) * 16 + (gr[i] >> 6) * 4 + (b[i] >> 6);
-          bins.set(k, (bins.get(k) || 0) + 1);
-          if (px < x0 + 2 || px > x0 + w - 3 || py < y0 + 2 || py > y0 + h - 3) { ring[0] += r[i]; ring[1] += gr[i]; ring[2] += b[i]; ring[3]++; }
-        }
+      }
+      const bg = flood(al, r, gr, b, ring);
+      for (let i = 0; i < T; i++) {
+        if (al[i] < 0.5 || bg[i]) continue;
+        solid++;
+        const q = (r[i] >> 6) * 16 + (gr[i] >> 6) * 4 + (b[i] >> 6);
+        bins.set(q, (bins.get(q) || 0) + 1);
       }
       const clear = inside > 0 && thin / inside > 0.02, colorful = [...bins.values()].filter((n) => n > solid * 0.015).length >= 3;
-      src = { lum, al, r, g: gr, b, clear, bg: clear || !ring[3] ? null : [ring[0] / ring[3], ring[1] / ring[3], ring[2] / ring[3]] };
+      src = { lum, al, r, g: gr, b, bg, clear, cutout: clear || !!ring };
       mode = colorful ? "colors" : clear ? "shape" : "dark";
-      const t = Math.round(otsu(lum, al));
+      const t = Math.round(otsu(lum, al, bg));
       levels = { dark: t, light: t, colors: 185 };
       const base = String(name || blob.name || "").replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
       nameEl.value = (base && base.toLowerCase() !== "image" ? base : "My picture").slice(0, 20);
@@ -467,11 +579,11 @@ function importer(host, { onSave, onEdit }) {
     if (b.hasAttribute("data-imp-paste")) { paste(); return; }
     if (b.dataset.impMode) { mode = b.dataset.impMode; sync(); soon(); return; }
     const name = (nameEl.value || "").trim().slice(0, 20) || "My stencil";
-    if (b.hasAttribute("data-imp-edit") && src) { const f = field(); hide(); onEdit(f, name); return; }
+    if (b.hasAttribute("data-imp-edit") && src) { const f = shrink(field()); hide(); onEdit(f, name); return; }
     if (b.hasAttribute("data-imp-save")) {
       if (!holes.length) { hint("Nothing gets cut yet. Move the threshold first."); return; }
       hide();
-      onSave(keep(name, holes));
+      onSave(keep(name, holes, colors));
     }
   });
   input.addEventListener("change", () => { const f = input.files && input.files[0]; input.value = ""; if (f) load(f); });

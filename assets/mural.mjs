@@ -2,15 +2,17 @@
    forever to the right of where it starts and zooms in forever: the wheel or a pinch zooms, A and D walk, W and S climb, two fingers on a phone.
    Every 1000 units of wall is a panel with its own log of strokes, replayed in order with seeded mist so every visitor sees the same paint.
    Brushes are spray with a box of swappable caps, chalk, neon and a rainbow can, plus an eraser anyone can use. Masking tape and cardboard
-   stencils are shared: everyone sees them, everyone's paint stops at them and anyone can rip a strip off by its end or lift a stencil by its
-   folded corner. Every stroke carries the outlines it was masked by and the ids of the tape and cardboard it landed on, so the paint on a
+   stencils are shared: everyone sees them, everyone's paint stops at them and anyone peels them off like stickers, a strip by its end and a
+   stencil by its folded corner; let go halfway and the peeled part stays folded back, masking and taking paint on its back. A stencil
+   flips inside out with the round button in its corner, and a stencil cut from a picture draws each hole's rim in the color it came
+   from. A piece of wall nobody has painted yet can be switched to another surface with the button above it. Every stroke carries the outlines it was masked by and the ids of the tape and cardboard it landed on, so the paint on a
    strip shows for everyone and leaves the same crisp edge when it comes off. A stroke keeps the precision of the zoom it was drawn at, so whole
    pictures fit inside one brick. The view is drawn in tiles at many resolutions like a map, the timelapse replays the paint in view in the
    order it went on. The wall comes over one stream; while the wall is open a second small stream carries the tape, the stencils, the other
    painters' cursors and their strokes as they spray them. Undo deletes only your own strokes and copies them to the trash first. */
 
 import { icon } from "/assets/views.mjs";
-import { wallArt, WALL_SM, WALL_SKY, WALL_GRASS } from "/assets/map.mjs";
+import { wallArt, WALL_SM, WALL_SKY, WALL_GRASS, WALL_KINDS, setWallKinds, wallSwatch } from "/assets/map.mjs";
 import { picker, cutter, simplify } from "/assets/stencil.mjs";
 import { me as wallet } from "/assets/bank.mjs";
 
@@ -52,14 +54,17 @@ const HEADS = [
   ["drip", "Dripper", "Runny paint that drips as you go", 1],
   ["soft", "Airbrush", "No speckle, just a smooth soft haze", 1.4],
   ["dust", "Dust", "Only a fine speckle of dots", 1],
+  ["brush", "Brush", "A clean solid line like a paintbrush: no mist, no drips, no dots", 0.8],
 ];
 const HEAD_IDS = new Set(HEADS.slice(1).map((h) => h[0]));
 const headSize = (h) => (HEADS.find((x) => x[0] === h) || HEADS[0])[3];
 const HINTS = {
   paint: TOUCH ? "Two fingers walk and pinch to zoom in forever. Hold still and the paint drips." : `Wheel zooms in forever, A and D walk, W and S climb. Hold still and the paint drips, ${UNDO_KEY} takes back your strokes.`,
-  tape: "Drag to lay a strip of masking tape, everyone's paint stops at its edge. Grab the end of a strip and pull to rip it off.",
-  stencil: "Drag a stencil to move it, pull the corner with the arrow to turn and size it. Pull the folded corner to lift it off.",
+  tape: "Drag to lay a strip of masking tape, everyone's paint stops at its edge. Grab the end and peel it like a sticker, let go halfway and it stays.",
+  stencil: "Drag a stencil to move it, the arrow corner turns and sizes it, the round button flips it. Peel the folded corner like a sticker.",
 };
+const FLIP_MS = 320, KIND_IDS = new Set(WALL_KINDS.slice(1).map((k) => k[0]));
+const kindName = (id) => (WALL_KINDS.find((k) => k[0] === id) || WALL_KINDS[0])[1];
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rgbOf = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -240,7 +245,39 @@ const CAP = {
   dust: { f: 1, a: 0.85, ah: 0.85, step: 0.22, jit: 0 },
 };
 
+function brushLine(op, c, v, tint) {
+  const lw = op.w * v.r * 0.8, W = c.canvas.width, H = c.canvas.height, half = Math.hypot(W, H) / 2;
+  let px = null, py = null, run = 0;
+  const seg = (ax, ay, bx, by, col) => {
+    const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = l2 ? clamp(((W / 2 - ax) * dx + (H / 2 - ay) * dy) / l2, 0, 1) : 0;
+    const gap = Math.hypot(ax + dx * t - W / 2, ay + dy * t - H / 2);
+    if (gap > lw / 2 + half) return;
+    c.fillStyle = c.strokeStyle = col;
+    if (lw > 20000) { if (gap < lw / 2 - half) c.fillRect(0, 0, W, H); return; }
+    if (!l2) { c.beginPath(); c.arc(ax, ay, lw / 2, 0, Math.PI * 2); c.fill(); return; }
+    c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+  };
+  return {
+    add(x, y) {
+      c.globalCompositeOperation = "source-over";
+      c.globalAlpha = 1;
+      c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = lw;
+      if (px === null) { seg(x, y, x, y, tint(0, y)); px = x; py = y; return; }
+      const len = Math.hypot(x - px, y - py);
+      if (len < 0.25) return;
+      seg(px, py, x, y, tint(run, y));
+      run += len; px = x; py = y;
+    },
+    end() {},
+  };
+}
+
 function sprayer(op, c, v) {
+  if (op.h === "brush") {
+    const base = op.w * v.r, metal = SHINE[op.c];
+    return brushLine(op, c, v, (run, y) => (op.c === "rainbow" ? RAINBOW_RUN[Math.floor(run / (base * 1.5)) % RAINBOW_RUN.length]
+      : metal ? metal[Math.round(clamp((y / v.r + v.y0) / WY + Math.sin(run / (base * 3)) * 0.05, 0, 1) * 31)] : op.c));
+  }
   const head = CAP[op.h] ? op.h : "std", cap = CAP[head];
   const r = rng(hash(op.id)), base = op.w * v.r, lw = base * cap.f, step = Math.max(0.5, lw * cap.step), W = c.canvas.width, H = c.canvas.height;
   const q = stampSize(lw), sc = lw / q, metal = SHINE[op.c], dripAt = head === "drip" ? 5 : DRIP;
@@ -522,40 +559,83 @@ function strip(a, b, w, teeth) {
   return orient(pts);
 }
 
+function cutHalf(p, nx, ny, d, keep) {
+  const out = [], n = p.length / 2, s = keep ? 1 : -1;
+  for (let i = 0; i < n; i++) {
+    const j = (i + 1) % n, ax = p[i * 2], ay = p[i * 2 + 1], bx = p[j * 2], by = p[j * 2 + 1];
+    const da = s * (ax * nx + ay * ny - d), db = s * (bx * nx + by * ny - d);
+    if (da >= 0) out.push(ax, ay);
+    if (da >= 0 !== db >= 0) { const t = da / (da - db); out.push(ax + (bx - ax) * t, ay + (by - ay) * t); }
+  }
+  return out.length >= 6 ? out : null;
+}
+function mirror(p, nx, ny, d) {
+  const o = new Array(p.length);
+  for (let i = 0; i < p.length; i += 2) { const k = 2 * (d - p[i] * nx - p[i + 1] * ny); o[i] = p[i] + k * nx; o[i + 1] = p[i + 1] + k * ny; }
+  return o;
+}
+function peelOf(F) {
+  const C = -SHEET_M, dx = F[0] - C, dy = F[1] - C, len = Math.hypot(dx, dy);
+  if (!(len > 1e-4)) return null;
+  let a = Math.atan2(dy, dx);
+  if (a < -Math.PI / 2) a = Math.PI / 4;
+  a = clamp(a, 0.06, Math.PI / 2 - 0.06);
+  return [C + Math.cos(a) * len, C + Math.sin(a) * len];
+}
+const peelP = (F) => { if (!F) return 0; const C = -SHEET_M, dx = F[0] - C, dy = F[1] - C, len = Math.hypot(dx, dy) || 1; return len / (2 * (1 + 2 * SHEET_M) * ((dx + dy) / len)); };
+const tFlap = (id) => !!id && id.includes(":");
+const sFlap = (key) => !!key && key.indexOf(":") !== key.lastIndexOf(":");
+
 function maskIn(op, v, W, H, alive) {
-  const b = op.p * WX, M = 6, T = (poly) => {
+  const b = op.p * WX, M = 6;
+  let rx0 = -M, ry0 = -M, rx1 = W + M, ry1 = H + M;
+  if (op.bb) { rx0 = Math.max(rx0, (op.bb[0] - v.x0) * v.r - M); ry0 = Math.max(ry0, (op.bb[1] - v.y0) * v.r - M); rx1 = Math.min(rx1, (op.bb[2] - v.x0) * v.r + M); ry1 = Math.min(ry1, (op.bb[3] - v.y0) * v.r + M); }
+  const T = (poly) => {
+    if (rx1 <= rx0 || ry1 <= ry0) return null;
     const o = new Array(poly.length);
     for (let i = 0; i < poly.length; i += 2) { o[i] = (b + poly[i] - v.x0) * v.r; o[i + 1] = (poly[i + 1] - v.y0) * v.r; }
-    return clipRect(o, -M, -M, W + M, H + M);
+    return clipRect(o, rx0, ry0, rx1, ry1);
   };
   const mk = op.mask, tapes = [], sheets = [];
-  mk.tapes.forEach((t, i) => { if (alive && !alive.t.has(mk.tapeIds[i])) return; const q = T(t); if (q) tapes.push(q); });
-  mk.sheets.forEach((s) => { const sheet = T(s.sheet); if (sheet) sheets.push({ sheet, holes: s.holes.map(T).filter(Boolean), live: !alive || (!!s.key && alive.s.has(s.key)) }); });
+  mk.tapes.forEach((t, i) => { const poly = T(t), id = mk.tapeIds[i]; if (poly) tapes.push({ poly, flap: tFlap(id), live: !alive || (!!id && alive.t.has(id)) }); });
+  mk.sheets.forEach((s) => { const sheet = T(s.sheet); if (sheet) sheets.push({ sheet, holes: s.holes.map(T).filter(Boolean), flap: sFlap(s.key), live: !alive || (!!s.key && alive.s.has(s.key)) }); });
   return { x0: -M, y0: -M, x1: W + M, y1: H + M, tapes, sheets };
 }
 
-function clipMask(c, mk, mode, only) {
-  const box = () => { c.moveTo(mk.x0, mk.y0); c.lineTo(mk.x1, mk.y0); c.lineTo(mk.x1, mk.y1); c.lineTo(mk.x0, mk.y1); c.closePath(); };
-  const card = (s, outer) => { c.beginPath(); if (outer) box(); trail(c, s.sheet); s.holes.forEach((h) => trail(c, h)); c.clip("evenodd"); };
-  if (mode === "sheet") { const s = only || mk.sheets.find((q) => q.live); if (!s) return false; card(s, false); return true; }
-  mk.sheets.forEach((s) => card(s, true));
+function clips(mk, mode) {
+  const box = (c) => { c.moveTo(mk.x0, mk.y0); c.lineTo(mk.x1, mk.y0); c.lineTo(mk.x1, mk.y1); c.lineTo(mk.x0, mk.y1); c.closePath(); };
+  const card = (c, s, outer) => { c.beginPath(); if (outer) box(c); trail(c, s.sheet); s.holes.forEach((h) => trail(c, h)); c.clip("evenodd"); };
+  const off = (c, p) => { c.beginPath(); box(c); trail(c, p); c.clip("evenodd"); };
+  const flaps = (c) => { mk.tapes.forEach((t) => { if (t.flap) off(c, t.poly); }); mk.sheets.forEach((s) => { if (s.flap) card(c, s, true); }); };
+  if (mode === "wall") return [(c) => { mk.sheets.forEach((s) => card(c, s, true)); mk.tapes.forEach((t) => off(c, t.poly)); }];
   if (mode === "tape") {
-    if (!mk.tapes.length) return false;
-    c.beginPath();
-    mk.tapes.forEach((t) => trail(c, orient(t)));
-    c.clip();
-    return true;
+    const stuck = mk.tapes.filter((t) => !t.flap && t.live);
+    if (!stuck.length) return [];
+    return [(c) => {
+      mk.sheets.forEach((s) => card(c, s, true));
+      mk.tapes.forEach((t) => { if (t.flap) off(c, t.poly); });
+      c.beginPath(); stuck.forEach((t) => trail(c, orient(t.poly))); c.clip();
+    }];
   }
-  for (const t of mk.tapes) { c.beginPath(); box(); trail(c, t); c.clip("evenodd"); }
-  return true;
+  if (mode === "sheet") {
+    return mk.sheets.map((s, i) => (s.flap || !s.live ? null : (c) => {
+      card(c, s, false);
+      for (let k = i + 1; k < mk.sheets.length; k++) if (!mk.sheets[k].flap) card(c, mk.sheets[k], true);
+      flaps(c);
+    })).filter(Boolean);
+  }
+  const out = [];
+  mk.tapes.forEach((t) => { if (t.flap && t.live) out.push((c) => { c.beginPath(); trail(c, t.poly); c.clip(); }); });
+  mk.sheets.forEach((s) => { if (s.flap && s.live) out.push((c) => card(c, s, false)); });
+  return out;
 }
 
 const brushOf = (op) => (op.k === "e" ? rubber : op.k === "c" ? chalk : op.c === "bands" ? bands : op.c[0] === "n" ? neon : sprayer);
 function painterFor(op, c, v, mode = "wall", alive) {
-  const base = brushOf(op)(op, c, v);
-  if (!op.mask) return base;
-  const mk = maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), run = (f) => (x, y) => { c.save(); if (clipMask(c, mk, mode)) f(x, y); c.restore(); };
-  return { add: run(base.add), end: run(base.end) };
+  if (!op.mask) return brushOf(op)(op, c, v);
+  const fs = clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode), ps = fs.map(() => brushOf(op)(op, c, v));
+  const run = (k) => (x, y) => fs.forEach((f, i) => { c.save(); f(c); ps[i][k](x, y); c.restore(); });
+  return { add: run("add"), end: run("end") };
 }
 const reset = (c) => { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; };
 const at = (op, i, v) => [(op.p * WX + op.d[i] - v.x0) * v.r, (op.d[i + 1] - v.y0) * v.r];
@@ -570,8 +650,7 @@ function paintOp(op, c, v, mode = "wall", alive) {
     p.end();
   };
   if (!op.mask) { draw(); reset(c); return; }
-  const mk = maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive);
-  for (const only of mode === "sheet" ? mk.sheets.filter((s) => s.live) : [null]) { c.save(); if (clipMask(c, mk, mode, only)) draw(); c.restore(); }
+  for (const f of clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode)) { c.save(); f(c); draw(); c.restore(); }
   reset(c);
 }
 const older = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -600,6 +679,7 @@ const ICONS = {
   stencil: '<rect x="1" y="1" width="14" height="14" fill="#c49a5e" stroke="#000"/><path d="M8 3l1.4 3 3.3.3-2.5 2.2.8 3.3L8 10.1l-3 1.7.8-3.3-2.5-2.2 3.3-.3z" fill="#b5523b" stroke="#000"/>',
   lapse: '<circle cx="8" cy="8" r="6.5" fill="#fff" stroke="#000"/><path d="M8 4v4h3" fill="none" stroke="#000"/><path d="M1 1h4L1 5z" fill="#000080"/>',
   caps: '<rect x="5" y="8" width="9" height="7" fill="#e0e0e0" stroke="#000"/><rect x="7" y="5" width="5" height="3" fill="#fff" stroke="#000"/><rect x="6" y="6" width="1" height="1" fill="#000"/><rect x="1" y="3" width="1" height="1" fill="#ff2d2d"/><rect x="3" y="1" width="1" height="1" fill="#2f6bff"/><rect x="0" y="6" width="1" height="1" fill="#38e03b"/><rect x="3" y="5" width="1" height="1" fill="#ffb700"/>',
+  wallk: '<rect x="1" y="4" width="14" height="10" fill="#b9472b"/><path d="M1 7.5h14M1 10.5h14M5 4v3.5M11 4v3.5M8 7.5v3M3 10.5v3.5M13 10.5v3.5" stroke="#e2b698"/><rect x="1" y="4" width="14" height="10" fill="none" stroke="#000"/><path d="M4 1h8l-2-1M12 1l-2 2" fill="none" stroke="#000"/>',
   cancur: '<path d="M1 1v9l2.5-2.5L5 11l1.5-.7L5 7h3.5z" fill="#fff" stroke="#000"/><rect x="10" y="7" width="5" height="8" fill="#ff0000" stroke="#000"/><rect x="11" y="5" width="3" height="2" fill="#fff" stroke="#000"/><rect x="11" y="10" width="3" height="2" fill="#fff"/>',
 };
 const TOOLS = [["spray", "Spray can"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow spray"], ["eraser", "Eraser, it rubs out any paint"], ["tape", "Masking tape"], ["stencil", "Stencils, ready made or cut your own"]];
@@ -615,8 +695,9 @@ export function createMural(el, opts) {
   const props = new Map(), alive = { t: new Set(), s: new Set() }, others = new Map(), ghosts = new Map();
   const SID = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 9), outbox = { patch: {}, timer: 0, busy: false };
   let tapes = [], sheets = [], tapeDrag = null, sheetDrag = null, rip = null, liftDrag = null, peels = [], lifts = [], peelRaf = 0, hoverK = "", tipped = false;
-  let lapse = null, lapseEl = null, pick = null, cut = null, caps = null, tapeL = null, sheetL = null, layRaf = 0, ovRaf = 0, hint = "", cardPat = null;
+  let lapse = null, lapseEl = null, pick = null, cut = null, caps = null, tapeL = null, sheetL = null, flapL = null, layRaf = 0, ovRaf = 0, hint = "", cardPat = null;
   let ink = null, who = null, inkRaf = 0, liveSrc = null, liveTree = {}, liveTimer = 0, head = "std", canCursor = true;
+  let wallKinds = {}, loaded = false, kindsEl = null, kindPick = null, kindFor = -1;
   function tile(p, cv) {
     const r = p < 2 ? SX : SX / 2;
     cv.width = Math.round(WX * r); cv.height = Math.round(WY * r);
@@ -831,8 +912,16 @@ export function createMural(el, opts) {
     view.append(cv);
     return { kind, cv, c: cv.getContext("2d"), cache: null, tile: null, job: null, timer: 0 };
   }
-  const wants = (L, op) => !!op.mask && (L.kind === "tape" ? op.mask.tapeIds.some((id) => id && alive.t.has(id)) : op.mask.sheets.some((s) => s.key && alive.s.has(s.key)));
-  const layerOn = (L) => (L.kind === "tape" ? tapes.length > 0 || !!tapeDrag || peels.length > 0 : sheets.length > 0 || lifts.length > 0);
+  const wants = (L, op) => {
+    const mk = op.mask;
+    if (!mk) return false;
+    if (L.kind === "tape") return mk.tapeIds.some((id) => id && !tFlap(id) && alive.t.has(id));
+    if (L.kind === "sheet") return mk.sheets.some((s) => s.key && !sFlap(s.key) && alive.s.has(s.key));
+    return mk.tapeIds.some((id) => tFlap(id) && alive.t.has(id)) || mk.sheets.some((s) => sFlap(s.key) && alive.s.has(s.key));
+  };
+  const layerOn = (L) => (L.kind === "tape" ? tapes.length > 0 || !!tapeDrag || peels.length > 0
+    : L.kind === "sheet" ? sheets.length > 0 || lifts.length > 0
+    : !!rip || tapes.some((t) => t.flap) || sheets.some((sh) => sh.flapP));
   const inView = (q) => { const v = viewNow(), ppu = k0 * Z; return q.bb[2] >= v.x0 && q.bb[0] <= v.x0 + W / ppu && q.bb[3] >= v.y0 && q.bb[1] <= v.y0 + H / ppu; };
 
   function sizeLayers() {
@@ -895,6 +984,8 @@ export function createMural(el, opts) {
   function overlaysSoon() { if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; layers.forEach(drawLayer); }); }
 
   const drawCache = (c, cache, tv, v) => { const k = v.r / tv.r; c.drawImage(cache, (tv.x0 - v.x0) * v.r, (tv.y0 - v.y0) * v.r, cache.width * k, cache.height * k); };
+  const px = (p, v) => [(p[0] - v.x0) * v.r, (p[1] - v.y0) * v.r];
+  const far = (...n) => n.some((x) => !(Math.abs(x) < 1e6));
 
   function drawLayer(L) {
     if (!active) return;
@@ -906,11 +997,12 @@ export function createMural(el, opts) {
     c.globalCompositeOperation = "source-over";
     c.clearRect(0, 0, Wc, Hc);
     if (L === tapeL) drawTapes(L, c, v, Wc, Hc);
-    else drawSheets(L, c, v, Wc, Hc);
+    else if (L === sheetL) drawSheets(L, c, v, Wc, Hc);
+    else drawFlaps(L, c, v, Wc, Hc);
   }
 
-  function tapeFill(c, t, v, Wc, Hc, alpha) {
-    const q = toCanvas(t.poly, v, Wc, Hc);
+  function tapeFill(c, t, v, Wc, Hc, alpha, poly = t.poly) {
+    const q = toCanvas(poly, v, Wc, Hc);
     if (!q) return null;
     const d = DPR(), dx = t.b[0] - t.a[0], dy = t.b[1] - t.a[1], len = Math.hypot(dx, dy) || 1, wp = t.w * v.r;
     const mx = ((t.a[0] + t.b[0]) / 2 - v.x0) * v.r, my = ((t.a[1] + t.b[1]) / 2 - v.y0) * v.r;
@@ -943,24 +1035,39 @@ export function createMural(el, opts) {
   }
 
   function drawTapes(L, c, v, Wc, Hc) {
-    const qs = [], tv = L.tile && L.tile.v, ripping = (t) => (rip && rip.tape === t) || !!t.g;
-    tapes.forEach((t) => { if (ripping(t)) return; const q = tapeFill(c, t, v, Wc, Hc, 1); if (q) qs.push(q); });
+    const qs = [], tv = L.tile && L.tile.v;
+    tapes.forEach((t) => { if (!t.stuck) return; const q = tapeFill(c, t, v, Wc, Hc, 1, t.stuck); if (q) qs.push(q); });
     if (qs.length && L.cache && tv) { c.save(); c.beginPath(); qs.forEach((q) => trail(c, orient(q))); c.clip(); drawCache(c, L.cache, tv, v); c.restore(); }
-    tapes.forEach((t) => {
-      if (rip && rip.tape === t) ripFrame(c, t, v, Wc, Hc, rip.p, rip.fromB, L.cache, tv, rip.hand, 1);
-      else if (t.g) ripFrame(c, t, v, Wc, Hc, Math.abs(t.g), t.g < 0, L.cache, tv, null, 1);
-      else if (tool === "tape" && !lapse) tab(c, t, v);
-    });
+    if (tool === "tape" && !lapse) tapes.forEach((t) => { if (!t.g && !(rip && rip.tape === t)) tab(c, t, v); });
     peels.forEach((P) => P.list.forEach((e) => { const s = peelAt(P, e); ripFrame(c, e.t, v, Wc, Hc, s.p, e.fromB, P.cache, P.v, s.hand, s.fade); }));
     if (tapeDrag) tapeFill(c, { ...tapeDrag, poly: strip(tapeDrag.a, tapeDrag.b, tapeDrag.w, tapeDrag.teeth) }, v, Wc, Hc, 0.85);
   }
 
+  function flapShape(c, q, fade, fill) {
+    const d = DPR();
+    c.globalAlpha = fade;
+    c.save(); c.translate(2 * d, 3 * d); c.fillStyle = "rgba(40,25,0,.3)"; c.beginPath(); trail(c, q); c.fill(); c.restore();
+    c.fillStyle = fill || TAPE_HI; c.beginPath(); trail(c, q); c.fill();
+    c.strokeStyle = "rgba(120,92,36,.6)"; c.lineWidth = d; c.stroke();
+    c.globalAlpha = 1;
+  }
+
+  function handFlap(c, t, v, Wc, Hc, p, fromB, hand, fade) {
+    if (p <= 0 || fade <= 0) return;
+    const A = fromB ? t.b : t.a, B = fromB ? t.a : t.b, dx = B[0] - A[0], dy = B[1] - A[1], len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+    const px0 = A[0] + ux * len * p, py0 = A[1] + uy * len * p, hw = t.w / 2, fx = hand[0] - px0, fy = hand[1] - py0, fl = Math.hypot(fx, fy) || 1;
+    let mx = (-fy / fl) * hw * 0.9, my = (fx / fl) * hw * 0.9;
+    if (mx * nx + my * ny < 0) { mx = -mx; my = -my; }
+    const q = toCanvas([px0 + nx * hw, py0 + ny * hw, px0 - nx * hw, py0 - ny * hw, hand[0] - mx, hand[1] - my, hand[0] + mx, hand[1] + my], v, Wc, Hc);
+    if (q) flapShape(c, q, fade);
+  }
+
   function ripFrame(c, t, v, Wc, Hc, p, fromB, cache, cv, hand, fade) {
-    const d = DPR(), A = fromB ? t.b : t.a, B = fromB ? t.a : t.b;
+    const A = fromB ? t.b : t.a, B = fromB ? t.a : t.b;
     const dx = B[0] - A[0], dy = B[1] - A[1], len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
-    const px = A[0] + ux * len * p, py = A[1] + uy * len * p, big = len + t.w * 4, hw = t.w / 2;
+    const px0 = A[0] + ux * len * p, py0 = A[1] + uy * len * p, big = len + t.w * 4, hw = t.w / 2;
     if (p < 1) {
-      const half = toCanvas([px + nx * big, py + ny * big, px - nx * big, py - ny * big, px - nx * big + ux * big, py - ny * big + uy * big, px + nx * big + ux * big, py + ny * big + uy * big], v, Wc, Hc);
+      const half = toCanvas([px0 + nx * big, py0 + ny * big, px0 - nx * big, py0 - ny * big, px0 - nx * big + ux * big, py0 - ny * big + uy * big, px0 + nx * big + ux * big, py0 + ny * big + uy * big], v, Wc, Hc);
       if (half) {
         c.save(); c.beginPath(); trail(c, half); c.clip();
         const q = tapeFill(c, t, v, Wc, Hc, 1);
@@ -969,23 +1076,24 @@ export function createMural(el, opts) {
       }
     }
     if (p <= 0 || fade <= 0) return;
-    let flap;
-    if (hand) {
-      const fx = hand[0] - px, fy = hand[1] - py, fl = Math.hypot(fx, fy) || 1;
-      let mx = (-fy / fl) * hw * 0.9, my = (fx / fl) * hw * 0.9;
-      if (mx * nx + my * ny < 0) { mx = -mx; my = -my; }
-      flap = [px + nx * hw, py + ny * hw, px - nx * hw, py - ny * hw, hand[0] - mx, hand[1] - my, hand[0] + mx, hand[1] + my];
-    } else {
-      const cl = Math.min(t.w * 0.9, len * p);
-      flap = [px + nx * hw, py + ny * hw, px - nx * hw, py - ny * hw, px - ux * cl - nx * hw * 0.82, py - uy * cl - ny * hw * 0.82, px - ux * cl + nx * hw * 0.82, py - uy * cl + ny * hw * 0.82];
-    }
-    const q = toCanvas(flap, v, Wc, Hc);
+    if (hand) { handFlap(c, t, v, Wc, Hc, p, fromB, hand, fade); return; }
+    const cl = Math.min(t.w * 0.9, len * p);
+    const q = toCanvas([px0 + nx * hw, py0 + ny * hw, px0 - nx * hw, py0 - ny * hw, px0 - ux * cl - nx * hw * 0.82, py0 - uy * cl - ny * hw * 0.82, px0 - ux * cl + nx * hw * 0.82, py0 - uy * cl + ny * hw * 0.82], v, Wc, Hc);
+    if (q) flapShape(c, q, fade);
+  }
+
+  function tapeFlap(c, t, v, Wc, Hc, cache, cv) {
+    const q = toCanvas(t.flap, v, Wc, Hc);
     if (!q) return;
-    c.globalAlpha = fade;
-    c.save(); c.translate(2 * d, 3 * d); c.fillStyle = "rgba(40,25,0,.3)"; c.beginPath(); trail(c, q); c.fill(); c.restore();
-    c.fillStyle = TAPE_HI; c.beginPath(); trail(c, q); c.fill();
-    c.strokeStyle = "rgba(120,92,36,.6)"; c.lineWidth = d; c.stroke();
-    c.globalAlpha = 1;
+    const d = DPR(), P = px(t.foldAt, v), E = px(t.tip, v), L = Math.hypot(E[0] - P[0], E[1] - P[1]);
+    let fill = TAPE_HI;
+    if (!far(...P, ...E) && L > 0.5) {
+      const g = c.createLinearGradient(P[0], P[1], E[0], E[1]);
+      g.addColorStop(0, "#fffdf2"); g.addColorStop(clamp((3 * d) / L, 0.02, 0.45), TAPE_HI); g.addColorStop(1, TAPE);
+      fill = g;
+    }
+    flapShape(c, q, 1, fill);
+    if (cache && cv) { c.save(); c.beginPath(); trail(c, q); c.clip(); drawCache(c, cache, cv, v); c.restore(); }
   }
 
   function peelAt(P, e) {
@@ -995,17 +1103,20 @@ export function createMural(el, opts) {
     return { p, fade: 1 - clamp((u - 0.55) / 0.45, 0, 1), hand: [e.hand[0] + e.dir[0] * k, e.hand[1] + e.dir[1] * k] };
   }
 
+  const loop = () => { if (!peelRaf) peelRaf = requestAnimationFrame(animate); };
   function peelAway(list, hand, dir) {
     if (!list.length) return;
     peels.push({ t0: performance.now(), dur: hand ? 260 : 520, list: list.map((t, i) => ({ t, fromB: t.g < 0, p0: Math.abs(t.g || 0), delay: hand ? 0 : i * 70, hand, dir })), cache: tapeL.tile ? tapeL.cache : null, v: tapeL.tile && tapeL.tile.v });
     rerender(tapeL, true);
-    if (!peelRaf) peelRaf = requestAnimationFrame(animate);
+    rerender(flapL, true);
+    loop();
   }
 
-  function liftAway(sh, off, vel, k) {
-    lifts.push({ sh, t0: performance.now(), dur: 380, off, vel, k, cache: sheetL.tile ? sheetL.cache : null, v: sheetL.tile && sheetL.tile.v });
+  function liftAway(sh, vel) {
+    lifts.push({ g: { ...sh }, t0: performance.now(), dur: 420, vel, cache: sheetL.tile ? sheetL.cache : null, v: sheetL.tile && sheetL.tile.v });
     rerender(sheetL, true);
-    if (!peelRaf) peelRaf = requestAnimationFrame(animate);
+    rerender(flapL, true);
+    loop();
   }
 
   function animate() {
@@ -1013,8 +1124,9 @@ export function createMural(el, opts) {
     const now = performance.now();
     peels = peels.filter((P) => now - P.t0 < P.dur + 70 * (P.list.length - 1) + 60);
     lifts = lifts.filter((F) => now - F.t0 < F.dur + 30);
+    sheets.forEach((sh) => { if (sh.flip && now - sh.flip.t0 > FLIP_MS) sh.flip = null; });
     drawOverlays();
-    if (peels.length || lifts.length) peelRaf = requestAnimationFrame(animate);
+    if (peels.length || lifts.length || sheets.some((sh) => sh.flip)) peelRaf = requestAnimationFrame(animate);
   }
 
   function cardFill(c, v, sh) {
@@ -1034,47 +1146,123 @@ export function createMural(el, opts) {
     return pt;
   }
 
+  function squish(c, sh, v, s) {
+    const mx = clamp((sh.x - v.x0) * v.r, -1e5, 1e5), my = clamp((sh.y - v.y0) * v.r, -1e5, 1e5);
+    c.translate(mx, my); c.rotate(sh.a); c.scale(Math.max(0.03, s), 1); c.rotate(-sh.a); c.translate(-mx, -my);
+  }
+
   function drawSheets(L, c, v, Wc, Hc) {
-    const tv = L.tile && L.tile.v;
+    const tv = L.tile && L.tile.v, now = performance.now(), tools = tool === "stencil" && !lapse;
     sheets.forEach((sh) => {
-      const D = liftDrag && liftDrag.sheet === sh ? liftDrag : sh.bounce || null;
-      drawSheet(c, sh, v, Wc, Hc, L.cache, tv, D ? D.k * 0.5 : 0, D ? D.off : null, !D, 1);
+      if (sh.flip) {
+        const u = clamp((now - sh.flip.t0) / FLIP_MS, 0, 1), G = u < 0.5 ? sh.flip.old : sh, s = Math.abs(Math.cos(Math.PI * u));
+        c.save();
+        squish(c, sh, v, s);
+        drawFront(c, G, v, Wc, Hc, null, null, 1 - s);
+        if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null);
+        c.restore();
+        return;
+      }
+      drawFront(c, sh, v, Wc, Hc, L.cache, tv, 0);
+      if (tools) sheetTools(c, sh, v);
     });
-    const now = performance.now();
     lifts.forEach((F) => {
-      const u = clamp((now - F.t0) / F.dur, 0, 1), dt = (now - F.t0) / 1000, k = F.k + (1 - F.k) * u * (2 - u);
-      drawSheet(c, F.sh, v, Wc, Hc, F.cache, F.v, k, [F.off[0] + F.vel[0] * dt, F.off[1] + F.vel[1] * dt], false, 1 - u);
+      const u = clamp((now - F.t0) / F.dur, 0, 1), dt = (now - F.t0) / 1000, d = DPR(), G = F.g, s = 1 + 0.08 * u;
+      const mx = clamp((G.x - v.x0) * v.r, -1e5, 1e5), my = clamp((G.y - v.y0) * v.r, -1e5, 1e5);
+      c.save();
+      c.globalAlpha = 1 - u;
+      c.translate(mx + F.vel[0] * dt * d, my + F.vel[1] * dt * d); c.scale(s, s); c.translate(-mx, -my);
+      drawFront(c, G, v, Wc, Hc, F.cache, F.v, 0);
+      if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null);
+      c.restore();
     });
   }
 
-  function drawSheet(c, sh, v, Wc, Hc, cache, cv, k, off, tools, fade) {
-    const o = toCanvas(sh.outline, v, Wc, Hc);
-    if (!o || fade <= 0) return;
-    const hs = sh.holesW.map((h) => toCanvas(h, v, Wc, Hc)).filter(Boolean), d = DPR();
+  function rims(c, holes, cols, v, Wc, Hc, path, d) {
+    if (!holes || !holes.length) return;
+    c.save(); path(); c.clip("evenodd");
+    c.lineJoin = "round";
+    holes.forEach((h, i) => {
+      const q = toCanvas(h, v, Wc, Hc), col = cols && cols[i];
+      if (!q) return;
+      c.strokeStyle = col ? "#" + col : "rgba(74,44,14,.8)";
+      c.lineWidth = (col ? 3.4 : 2) * d;
+      c.beginPath(); trail(c, q); c.stroke();
+    });
+    c.restore();
+  }
+
+  function drawFront(c, G, v, Wc, Hc, cache, cv, dim) {
+    if (!G.stuck) return;
+    const o = toCanvas(G.stuck.poly, v, Wc, Hc);
+    if (!o) return;
+    const hs = G.stuck.holes.map((h) => toCanvas(h, v, Wc, Hc)).filter(Boolean), d = DPR();
     const path = () => { c.beginPath(); trail(c, o); hs.forEach((h) => trail(c, h)); };
-    c.save();
-    c.globalAlpha = fade * (1 - 0.12 * k);
-    if (off || k) {
-      const mx = clamp((sh.x - v.x0) * v.r, -1e5, 1e5), my = clamp((sh.y - v.y0) * v.r, -1e5, 1e5), s = 1 + 0.07 * k;
-      c.translate(mx + (off ? off[0] * d : 0), my + (off ? off[1] * d : 0)); c.scale(s, s); c.translate(-mx, -my);
-    }
-    c.save(); c.translate((3 + 18 * k) * d, (4 + 24 * k) * d); c.fillStyle = `rgba(0,0,0,${(0.32 - 0.1 * k).toFixed(3)})`; path(); c.fill("evenodd"); c.restore();
-    c.fillStyle = cardFill(c, v, sh); path(); c.fill("evenodd");
-    c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.stroke();
+    c.save(); c.translate(3 * d, 4 * d); c.fillStyle = "rgba(0,0,0,.32)"; path(); c.fill("evenodd"); c.restore();
+    c.fillStyle = cardFill(c, v, G); path(); c.fill("evenodd");
     if (cache && cv) { c.save(); path(); c.clip("evenodd"); drawCache(c, cache, cv, v); c.restore(); }
-    if (tools && tool === "stencil" && !lapse) {
+    if (!G.inv) { c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke(); }
+    rims(c, G.holesW, G.cols, v, Wc, Hc, path, d);
+    if (dim > 0.02) { c.fillStyle = `rgba(40,20,0,${(dim * 0.35).toFixed(3)})`; path(); c.fill("evenodd"); }
+  }
+
+  function sheetFlap(c, G, v, Wc, Hc, cache, cv) {
+    const F = G.flapP, o = toCanvas(F.poly, v, Wc, Hc);
+    if (!o) return;
+    const hs = F.holes.map((h) => toCanvas(h, v, Wc, Hc)).filter(Boolean), d = DPR();
+    const path = () => { c.beginPath(); trail(c, o); hs.forEach((h) => trail(c, h)); };
+    c.save(); c.translate(5 * d, 7 * d); c.fillStyle = "rgba(0,0,0,.26)"; path(); c.fill("evenodd"); c.restore();
+    const P = px(G.foldMid, v), E = px(G.foldTip, v), L = Math.hypot(E[0] - P[0], E[1] - P[1]);
+    let fill = "#d8b47a";
+    if (!far(...P, ...E) && L > 1) {
+      const g = c.createLinearGradient(P[0], P[1], E[0], E[1]);
+      g.addColorStop(0, "#f6e2b8"); g.addColorStop(clamp((5 * d) / L, 0.01, 0.4), "#e2c28c"); g.addColorStop(1, "#c79f66");
+      fill = g;
+    }
+    c.fillStyle = fill; path(); c.fill("evenodd");
+    if (cache && cv) { c.save(); path(); c.clip("evenodd"); drawCache(c, cache, cv, v); c.restore(); }
+    if (!G.inv) { c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke(); }
+    rims(c, G.holesF, null, v, Wc, Hc, path, d);
+  }
+
+  function drawFlaps(L, c, v, Wc, Hc) {
+    const tv = L.tile && L.tile.v;
+    tapes.forEach((t) => {
+      if (rip && rip.tape === t) handFlap(c, t, v, Wc, Hc, rip.p, rip.fromB, rip.hand, 1);
+      else if (t.flap) tapeFlap(c, t, v, Wc, Hc, L.cache, tv);
+    });
+    sheets.forEach((sh) => { if (sh.flapP && !sh.flip) sheetFlap(c, sh, v, Wc, Hc, liftDrag && liftDrag.sheet === sh ? null : L.cache, tv); });
+  }
+
+  const stuckAt = (sh, u, w) => !sh.fold || sh.fold[0] * u + sh.fold[1] * w >= sh.fold[2];
+  function sheetTools(c, sh, v) {
+    const d = DPR(), s = (TOUCH ? 9 : 6) * d, M = SHEET_M;
+    if (!sh.f) {
       const f = foldOf(sh, v), A = [f.x0 + f.u[0] * f.ts, f.y0 + f.u[1] * f.ts], B = [f.x0 + f.w[0] * f.ts, f.y0 + f.w[1] * f.ts], T = [A[0] + B[0] - f.x0, A[1] + B[1] - f.y0];
       c.fillStyle = "rgba(0,0,0,.28)";
       c.beginPath(); c.moveTo(A[0] + d, A[1] + 2 * d); c.lineTo(T[0] + 2 * d, T[1] + 3 * d); c.lineTo(B[0] + d, B[1] + 2 * d); c.closePath(); c.fill();
       c.fillStyle = "#e2bd84";
       c.beginPath(); c.moveTo(A[0], A[1]); c.lineTo(T[0], T[1]); c.lineTo(B[0], B[1]); c.closePath(); c.fill();
       c.strokeStyle = "rgba(74,44,14,.8)"; c.lineWidth = d; c.stroke();
-      const [hx, hy] = handleAt(sh, v), s = (TOUCH ? 9 : 6) * d;
-      c.fillStyle = "#fff"; c.strokeStyle = "#000"; c.lineWidth = d;
+    }
+    c.lineWidth = d;
+    if (sh.inv && sh.stuck) {
+      const o = toCanvas(sh.stuck.poly, v, c.canvas.width, c.canvas.height);
+      if (o) { c.save(); c.setLineDash([4 * d, 4 * d]); c.strokeStyle = "rgba(0,0,0,.45)"; c.beginPath(); trail(c, o); c.stroke(); c.restore(); }
+    }
+    if (stuckAt(sh, 1 + M, 1 + M)) {
+      const [hx, hy] = handleAt(sh, v);
+      c.fillStyle = "#fff"; c.strokeStyle = "#000";
       c.fillRect(hx - s, hy - s, s * 2, s * 2); c.strokeRect(hx - s, hy - s, s * 2, s * 2);
       c.beginPath(); c.arc(hx, hy, s * 0.5, -Math.PI * 0.9, Math.PI * 0.4); c.stroke();
     }
-    c.restore();
+    if (stuckAt(sh, 1 + M, -M)) {
+      const [bx, by] = flipAt(sh, v);
+      c.fillStyle = "#fff"; c.strokeStyle = "#000";
+      c.fillRect(bx - s, by - s, s * 2, s * 2); c.strokeRect(bx - s, by - s, s * 2, s * 2);
+      c.beginPath(); c.arc(bx, by, s * 0.58, 0, Math.PI * 2); c.stroke();
+      c.fillStyle = "#000"; c.beginPath(); c.arc(bx, by, s * 0.58, Math.PI / 2, Math.PI * 1.5); c.closePath(); c.fill();
+    }
   }
 
   function foldOf(sh, v) {
@@ -1088,24 +1276,65 @@ export function createMural(el, opts) {
     const ca = Math.cos(sh.a) * sh.s, sa = Math.sin(sh.a) * sh.s;
     return [sh.x + (u - 0.5) * ca - (w - 0.5) * sa, sh.y + (u - 0.5) * sa + (w - 0.5) * ca];
   }
+  function local(sh, [x, y]) {
+    const dx = x - sh.x, dy = y - sh.y, ca = Math.cos(sh.a), sa = Math.sin(sh.a);
+    return [(dx * ca + dy * sa) / sh.s + 0.5, (-dx * sa + dy * ca) / sh.s + 0.5];
+  }
   const boxOf = (p) => { let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (let i = 0; i < p.length; i += 2) { x0 = Math.min(x0, p[i]); x1 = Math.max(x1, p[i]); y0 = Math.min(y0, p[i + 1]); y1 = Math.max(y1, p[i + 1]); } return [x0, y0, x1, y1]; };
   function shapeSheet(sh) {
-    const M = SHEET_M;
-    sh.outline = [...sheetAt(sh, -M, -M), ...sheetAt(sh, 1 + M, -M), ...sheetAt(sh, 1 + M, 1 + M), ...sheetAt(sh, -M, 1 + M)];
-    sh.holesW = sh.st.holes.map((h) => {
-      const o = new Array(h.length);
-      for (let i = 0; i < h.length; i += 2) { const [x, y] = sheetAt(sh, h[i], h[i + 1]); o[i] = x; o[i + 1] = y; }
-      return o;
-    });
-    sh.bb = boxOf(sh.outline);
+    const M = SHEET_M, C = -M, L = [-M, -M, 1 + M, -M, 1 + M, 1 + M, -M, 1 + M];
+    const toW = (p) => { const o = new Array(p.length); for (let i = 0; i < p.length; i += 2) { const [x, y] = sheetAt(sh, p[i], p[i + 1]); o[i] = x; o[i + 1] = y; } return o; };
+    const eff = sh.inv ? [L, ...sh.st.holes] : sh.st.holes;
+    sh.outline = toW(L);
+    sh.holesW = sh.st.holes.map(toW);
+    sh.stuck = { poly: sh.outline, holes: eff.map(toW) };
+    sh.flapP = null; sh.holesF = null; sh.fold = null; sh.tag = null;
+    const f = sh.f, len = f ? Math.hypot(f[0] - C, f[1] - C) : 0;
+    if (f && len > 1e-4) {
+      const nx = (f[0] - C) / len, ny = (f[1] - C) / len, d = nx * C + ny * C + len / 2, R = (p) => toW(mirror(p, nx, ny, d));
+      const so = cutHalf(L, nx, ny, d, true), po = cutHalf(L, nx, ny, d, false);
+      sh.stuck = so ? { poly: toW(so), holes: eff.map((h) => cutHalf(h, nx, ny, d, true)).filter(Boolean).map(toW) } : null;
+      if (po) {
+        sh.flapP = { poly: R(po), holes: eff.map((h) => cutHalf(h, nx, ny, d, false)).filter(Boolean).map(R) };
+        sh.holesF = sh.st.holes.map(R);
+      }
+      sh.fold = [nx, ny, d];
+      sh.foldMid = sheetAt(sh, C + (nx * len) / 2, C + (ny * len) / 2);
+      sh.foldTip = sheetAt(sh, f[0], f[1]);
+      sh.tag = Math.round(f[0] * 1000) + "_" + Math.round(f[1] * 1000);
+    }
+    sh.bb = boxOf(sh.flapP ? [...sh.outline, ...sh.flapP.poly] : sh.outline);
   }
-  function shapeTape(t) { t.poly = strip(t.a, t.b, t.w, t.teeth); t.bb = boxOf(t.poly); }
-  const handleAt = (sh, v) => { const [x, y] = sheetAt(sh, 1 + SHEET_M, 1 + SHEET_M); return [(x - v.x0) * v.r, (y - v.y0) * v.r]; };
+  function shapeTape(t) {
+    t.poly = strip(t.a, t.b, t.w, t.teeth);
+    t.stuck = t.poly; t.flap = null; t.tag = null;
+    const g = Math.abs(t.g || 0);
+    if (g > 0) {
+      const A = t.g < 0 ? t.b : t.a, B = t.g < 0 ? t.a : t.b, len = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, ux = (B[0] - A[0]) / len, uy = (B[1] - A[1]) / len;
+      const P = [A[0] + ux * len * g, A[1] + uy * len * g], d = P[0] * ux + P[1] * uy, pe = cutHalf(t.poly, ux, uy, d, false);
+      t.stuck = g < 1 ? cutHalf(t.poly, ux, uy, d, true) : null;
+      t.flap = pe ? mirror(pe, ux, uy, d) : null;
+      t.foldAt = P;
+      t.tip = [2 * P[0] - A[0], 2 * P[1] - A[1]];
+      t.tag = t.id + ":" + Math.round(t.g * 1000);
+    }
+    t.bb = boxOf(t.flap ? [...t.poly, ...t.flap] : t.poly);
+  }
+  const handleAt = (sh, v) => px(sheetAt(sh, 1 + SHEET_M, 1 + SHEET_M), v);
+  const flipAt = (sh, v) => px(sheetAt(sh, 1 + SHEET_M, -SHEET_M), v);
   const canvasPt = (e) => { const r = view.getBoundingClientRect(), d = DPR(); return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; };
-  const onHandle = (sh, P, v) => { const [hx, hy] = handleAt(sh, v); return Math.hypot(P[0] - hx, P[1] - hy) <= (TOUCH ? 24 : 12) * DPR(); };
+  const reachPx = () => (TOUCH ? 24 : 12) * DPR();
+  const onHandle = (sh, P, v) => { if (!stuckAt(sh, 1 + SHEET_M, 1 + SHEET_M)) return false; const [hx, hy] = handleAt(sh, v); return Math.hypot(P[0] - hx, P[1] - hy) <= reachPx(); };
+  const onFlip = (sh, P, v) => { if (!stuckAt(sh, 1 + SHEET_M, -SHEET_M)) return false; const [bx, by] = flipAt(sh, v); return Math.hypot(P[0] - bx, P[1] - by) <= reachPx(); };
   function onFold(sh, P, v) {
     const f = foldOf(sh, v), rx = P[0] - f.x0, ry = P[1] - f.y0, a1 = rx * f.u[0] + ry * f.u[1], a2 = rx * f.w[0] + ry * f.w[1], m = 8 * DPR();
     return a1 > -m && a2 > -m && a1 + a2 < f.ts * 1.2 + m;
+  }
+  function onPeel(sh, P, w, v) {
+    if (!sh.f) return onFold(sh, P, v);
+    if (sh.flapP && inside(sh.flapP.poly, w)) return true;
+    const T = px(sh.foldTip, v);
+    return Math.hypot(P[0] - T[0], P[1] - T[1]) <= reachPx() * 1.2;
   }
   function inside(p, [x, y]) {
     let hit = false;
@@ -1115,12 +1344,14 @@ export function createMural(el, opts) {
   const vtag = () => Math.random().toString(36).slice(2, 8) || "v";
   const track = (m, e) => { m.push([performance.now(), e.clientX, e.clientY]); while (m.length > 6) m.shift(); };
   const speed = (m) => { if (m.length < 2) return [0, 0]; const a = m[0], b = m[m.length - 1], dt = Math.max(16, b[0] - a[0]) / 1000; return [(b[1] - a[1]) / dt, (b[2] - a[2]) / dt]; };
+  const r4 = (n) => Math.round(n * 10000) / 10000;
+  const peelFields = (sh) => (sh.f ? { fu: r4(sh.f[0]), fw: r4(sh.f[1]) } : { fu: null, fw: null });
 
   function placeStencil(st) {
-    if (sheets.filter(inView).length >= MAX_SHEETS) { flash("TOO MANY STENCILS HERE, LIFT ONE OFF FIRST"); return; }
-    const ppu = k0 * Z, p = Math.max(0, Math.floor(cx / WX));
-    const sh = { id: pushId(), kind: "s", p, x: cx, y: cy, s: (Math.min(W, H) * 0.5) / ppu, a: 0, v: vtag(), name: String(st.name || "").slice(0, 20), st: { holes: decHoles(encHoles(st.holes)) } };
-    if (!sh.st.holes.length) return;
+    if (sheets.filter(inView).length >= MAX_SHEETS) { flash("TOO MANY STENCILS HERE, PEEL ONE OFF FIRST"); return; }
+    const ppu = k0 * Z, p = Math.max(0, Math.floor(cx / WX)), { holes, cols } = decHoles(encHoles(st.holes), st.colors ? st.colors.join(",") : "");
+    if (!holes.length) return;
+    const sh = { id: pushId(), kind: "s", p, x: cx, y: cy, s: (Math.min(W, H) * 0.5) / ppu, a: 0, v: vtag(), name: String(st.name || "").slice(0, 20), st: { holes }, cols, inv: false, f: null };
     shapeSheet(sh);
     props.set(sh.id, sh);
     reindex();
@@ -1129,16 +1360,19 @@ export function createMural(el, opts) {
     tool = "stencil";
     sync();
     drawOverlays();
-    flash("DRAG IT INTO PLACE AND PAINT OVER IT, THEN PULL THE FOLDED CORNER");
+    flash("DRAG IT INTO PLACE, PAINT OVER IT, THEN PEEL IT OFF BY THE FOLDED CORNER");
   }
 
   function grabSheet(e) {
     const P = canvasPt(e), v = viewNow(), w = wallPoint(e.clientX, e.clientY);
     for (let i = sheets.length - 1; i >= 0; i--) {
-      if (onFold(sheets[i], P, v)) { startLift(e, sheets[i]); return; }
-      if (onHandle(sheets[i], P, v)) { startDrag(e, sheets[i], true, w); return; }
+      const sh = sheets[i];
+      if (sh.flip) continue;
+      if (onFlip(sh, P, v)) { flipSheet(sh); return; }
+      if (onPeel(sh, P, w, v)) { startLift(e, sh); return; }
+      if (onHandle(sh, P, v)) { startDrag(e, sh, true, w); return; }
     }
-    for (let i = sheets.length - 1; i >= 0; i--) if (inside(sheets[i].outline, w)) { startDrag(e, sheets[i], false, w); return; }
+    for (let i = sheets.length - 1; i >= 0; i--) if (sheets[i].stuck && inside(sheets[i].stuck.poly, w)) { startDrag(e, sheets[i], false, w); return; }
     pick.open();
   }
   function startDrag(e, sh, turn, at) {
@@ -1147,7 +1381,7 @@ export function createMural(el, opts) {
   }
   function dragSheet(e) {
     const p = wallPoint(e.clientX, e.clientY), sd = sheetDrag, sh = sd.sheet;
-    if (!sd.moved) { sd.moved = true; sh.v = vtag(); reindex(); forgetLayer(sheetL); rerender(sheetL, true); }
+    if (!sd.moved) { sd.moved = true; sh.v = vtag(); reindex(); forgetLayer(sheetL); forgetLayer(flapL); rerender(sheetL, true); rerender(flapL, true); }
     if (sd.turn) {
       const dx = p[0] - sh.x, dy = p[1] - sh.y;
       sh.s = Math.max(36 / (k0 * Z), Math.hypot(dx, dy) / ((0.5 + SHEET_M) * Math.SQRT2));
@@ -1160,57 +1394,79 @@ export function createMural(el, opts) {
   function endDrag() {
     const sd = sheetDrag;
     sheetDrag = null;
-    if (sd && sd.moved && props.has(sd.sheet.id)) flushProp(sd.sheet);
+    if (sd && sd.moved && props.has(sd.sheet.id)) { flushProp(sd.sheet); reindex(); }
+    drawOverlays();
+  }
+
+  function flipSheet(sh) {
+    sh.flip = { t0: performance.now(), old: { ...sh } };
+    sh.inv = !sh.inv; sh.f = null; sh.v = vtag();
+    shapeSheet(sh);
+    reindex();
+    forgetLayer(sheetL); forgetLayer(flapL);
+    rerender(sheetL, true); rerender(flapL, true);
+    pushProp(sh, { i: sh.inv || null, v: sh.v, fu: null, fw: null });
+    flushProp(sh);
+    loop();
     drawOverlays();
   }
 
   function startLift(e, sh) {
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
-    sh.bounce = null;
-    liftDrag = { id: e.pointerId, sheet: sh, start: [e.clientX, e.clientY], off: [0, 0], k: 0, m: [] };
+    const v = viewNow(), h = local(sh, wallPoint(e.clientX, e.clientY)), k = foldOf(sh, v).ts / Math.max(1e-9, sh.s * v.r);
+    const F0 = sh.f || [-SHEET_M + k, -SHEET_M + k], f0 = sh.f;
+    sh.f = peelOf(F0);
+    shapeSheet(sh);
+    liftDrag = { id: e.pointerId, sheet: sh, f0, pd: f0 ? 0.004 : peelP(sh.f), off: [F0[0] - h[0], F0[1] - h[1]], m: [] };
     track(liftDrag.m, e);
     view.style.cursor = "grabbing";
     drawOverlays();
   }
   function moveLift(e) {
-    const D = liftDrag;
-    D.off = [e.clientX - D.start[0], e.clientY - D.start[1]];
+    const D = liftDrag, sh = D.sheet, h = local(sh, wallPoint(e.clientX, e.clientY));
     track(D.m, e);
-    D.k = clamp(Math.hypot(D.off[0], D.off[1]) / Math.max(50, D.sheet.s * k0 * Z * 0.5), 0, 1);
-    if (D.k >= 1) { endLift(false); return; }
+    sh.f = peelOf([h[0] + D.off[0], h[1] + D.off[1]]);
+    shapeSheet(sh);
+    if (!sh.stuck) { endLift(false, true); return; }
+    pushProp(sh, peelFields(sh));
     overlaysSoon();
   }
-  function endLift(cancel) {
+  function endLift(cancel, done) {
     const D = liftDrag;
     if (!D) return;
     liftDrag = null;
-    const sh = D.sheet, [vx, vy] = speed(D.m), fast = Math.hypot(vx, vy) > 900;
-    if (!cancel && props.has(sh.id) && (D.k >= 0.35 || (fast && D.k > 0.06))) {
+    const sh = D.sheet, [vx, vy] = speed(D.m), fast = Math.hypot(vx, vy) > 900, p = peelP(sh.f);
+    const n = sh.fold ? [sh.fold[0] * Math.cos(sh.a) - sh.fold[1] * Math.sin(sh.a), sh.fold[0] * Math.sin(sh.a) + sh.fold[1] * Math.cos(sh.a)] : [Math.SQRT1_2, Math.SQRT1_2];
+    if (!cancel && props.has(sh.id) && (done || (fast && p > 0.05 && vx * n[0] + vy * n[1] > 0))) {
       let vel = [vx, vy];
-      if (Math.hypot(vx, vy) < 300) { const l = Math.hypot(D.off[0], D.off[1]) || 1; vel = [(D.off[0] / l) * 650, (D.off[1] / l) * 650 - 150]; }
+      if (Math.hypot(vx, vy) < 300) vel = [n[0] * 650, n[1] * 650 - 150];
       clearTimeout(sh.pt); sh.pend = null;
       props.delete(sh.id);
       reindex();
-      liftAway(sh, D.off, vel, D.k * 0.5);
+      liftAway(sh, vel);
       save("props/" + sh.id, null, "DELETE");
     } else {
-      const t0 = performance.now(), off = D.off, k = D.k;
-      const back = () => {
-        const u = clamp((performance.now() - t0) / 220, 0, 1), e2 = (1 - u) * (1 - u);
-        sh.bounce = u < 1 ? { off: [off[0] * e2, off[1] * e2], k: k * e2 } : null;
-        drawOverlays();
-        if (u < 1) requestAnimationFrame(back);
-      };
-      requestAnimationFrame(back);
+      if (cancel) sh.f = D.f0;
+      else if (p <= D.pd + 0.015) sh.f = null;
+      shapeSheet(sh);
+      if (props.has(sh.id)) { pushProp(sh, peelFields(sh)); flushProp(sh); }
+      reindex();
+      forgetLayer(flapL);
+      rerender(flapL, true);
     }
     cursor();
     sync();
+    drawOverlays();
   }
 
   function ripAt(e) {
     const [x, y] = wallPoint(e.clientX, e.clientY), ppu = k0 * Z, reach = 10 / ppu;
     for (let i = tapes.length - 1; i >= 0; i--) {
       const t = tapes[i];
+      if (t.g) {
+        if ((t.flap && inside(t.flap, [x, y])) || Math.hypot(x - t.foldAt[0], y - t.foldAt[1]) <= t.w / 2 + reach) return { tape: t, fromB: t.g < 0 };
+        continue;
+      }
       for (const fromB of [false, true]) {
         const A = fromB ? t.b : t.a, B = fromB ? t.a : t.b, dx = B[0] - A[0], dy = B[1] - A[1], len = Math.hypot(dx, dy) || 1;
         const along = ((x - A[0]) * dx + (y - A[1]) * dy) / len, across = Math.abs((x - A[0]) * -dy + (y - A[1]) * dx) / len;
@@ -1221,7 +1477,8 @@ export function createMural(el, opts) {
   }
   function startRip(e, hit) {
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
-    rip = { id: e.pointerId, tape: hit.tape, fromB: hit.fromB, p: Math.abs(hit.tape.g || 0), hand: wallPoint(e.clientX, e.clientY), m: [] };
+    const t = hit.tape, A = hit.fromB ? t.b : t.a, len = Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1]) || 1, hand = wallPoint(e.clientX, e.clientY), p0 = Math.abs(t.g || 0);
+    rip = { id: e.pointerId, tape: t, fromB: hit.fromB, p: p0, g0: t.g || 0, k: p0 - (Math.hypot(hand[0] - A[0], hand[1] - A[1]) * 0.75) / len, hand, m: [] };
     track(rip.m, e);
     view.style.cursor = "grabbing";
     drawOverlays();
@@ -1230,20 +1487,20 @@ export function createMural(el, opts) {
     const R = rip, t = R.tape, A = R.fromB ? t.b : t.a, len = Math.hypot(t.b[0] - t.a[0], t.b[1] - t.a[1]) || 1;
     R.hand = wallPoint(e.clientX, e.clientY);
     track(R.m, e);
-    R.far = Math.hypot(R.hand[0] - A[0], R.hand[1] - A[1]) * k0 * Z;
-    R.p = Math.max(R.p, clamp((Math.hypot(R.hand[0] - A[0], R.hand[1] - A[1]) * 0.75) / len, 0, 1));
-    t.g = R.fromB ? -R.p : R.p;
-    pushProp(t, { g: Math.round(t.g * 1000) / 1000 });
-    if (R.p >= 1) { endRip(false); return; }
+    R.p = clamp((Math.hypot(R.hand[0] - A[0], R.hand[1] - A[1]) * 0.75) / len + R.k, 0, 1);
+    t.g = Math.round((R.fromB ? -R.p : R.p) * 1000) / 1000;
+    shapeTape(t);
+    if (R.p >= 1) { endRip(false, true); return; }
+    pushProp(t, { g: t.g });
     overlaysSoon();
   }
-  function endRip(cancel) {
+  function endRip(cancel, done) {
     const R = rip;
     if (!R) return;
     rip = null;
-    const t = R.tape, [vx, vy] = speed(R.m), fast = Math.hypot(vx, vy) > 900;
-    if (!cancel && props.has(t.id) && (R.p >= 0.4 || (R.far || 0) >= 110 || (fast && R.p > 0.06))) {
-      const ppu = k0 * Z, A = R.fromB ? t.b : t.a;
+    const t = R.tape, [vx, vy] = speed(R.m), fast = Math.hypot(vx, vy) > 900, A = R.fromB ? t.b : t.a, pull = vx * (R.hand[0] - A[0]) + vy * (R.hand[1] - A[1]) > 0;
+    if (!cancel && props.has(t.id) && (done || (fast && R.p > 0.05 && pull))) {
+      const ppu = k0 * Z;
       let dir = [vx / ppu, vy / ppu];
       if (Math.hypot(vx, vy) < 300) { const fx = R.hand[0] - A[0], fy = R.hand[1] - A[1], l = Math.hypot(fx, fy) || 1; dir = [((fx / l) * 700) / ppu, ((fy / l) * 700) / ppu]; }
       t.g = R.fromB ? -R.p : R.p;
@@ -1253,17 +1510,13 @@ export function createMural(el, opts) {
       peelAway([t], R.hand, dir);
       save("props/" + t.id, null, "DELETE");
     } else {
-      const t0 = performance.now(), p0 = R.p, sg = R.fromB ? -1 : 1;
-      const back = () => {
-        if (!props.has(t.id) || rip) return;
-        const u = clamp((performance.now() - t0) / 180, 0, 1);
-        t.g = u < 1 ? sg * p0 * (1 - u) * (1 - u) : 0;
-        drawOverlays();
-        if (u < 1) requestAnimationFrame(back);
-      };
-      requestAnimationFrame(back);
-      pushProp(t, { g: 0 });
-      flushProp(t);
+      t.g = cancel ? R.g0 : R.p < 0.03 ? 0 : t.g;
+      shapeTape(t);
+      if (props.has(t.id)) { pushProp(t, { g: t.g }); flushProp(t); }
+      reindex();
+      forgetLayer(flapL);
+      rerender(flapL, true);
+      drawOverlays();
     }
     cursor();
     sync();
@@ -1272,7 +1525,7 @@ export function createMural(el, opts) {
   function startTape(e) {
     const hit = ripAt(e);
     if (hit) { startRip(e, hit); return; }
-    if (tapes.filter(inView).length >= MAX_TAPES) { flash("THAT IS A LOT OF TAPE HERE, RIP SOME OFF FIRST"); return; }
+    if (tapes.filter(inView).length >= MAX_TAPES) { flash("THAT IS A LOT OF TAPE HERE, PEEL SOME OFF FIRST"); return; }
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
     const a = wallPoint(e.clientX, e.clientY);
     tapeDrag = { id: e.pointerId, a, b: a, w: TAPES[size] / (k0 * Z), teeth: Array.from({ length: 8 }, () => Math.round(Math.random() * 9) / 9) };
@@ -1288,7 +1541,7 @@ export function createMural(el, opts) {
     reindex();
     if (!tapeL.tile && !tapeL.job) rerender(tapeL, true);
     save("props/" + q.id, wire(q));
-    if (!tipped) { tipped = true; flash("GRAB THE END OF A STRIP AND PULL TO RIP IT OFF"); }
+    if (!tipped) { tipped = true; flash("GRAB THE END OF A STRIP AND PEEL IT, LET GO HALFWAY AND IT STAYS"); }
     drawOverlays();
     sync();
   }
@@ -1297,26 +1550,42 @@ export function createMural(el, opts) {
     const near = (q) => q.bb[2] >= p * WX - 60 && q.bb[0] <= (p + 1) * WX + 60;
     const ts = tapes.filter(near), ss = sheets.filter(near);
     if (!ts.length && !ss.length) return null;
-    const s = 2 ** z, b = p * WX, q = (poly) => poly.map((n, i) => Math.round((i % 2 ? n : n - b) * s) / s);
-    return { tapes: ts.map((t) => q(t.poly)), tapeIds: ts.map((t) => t.id), sheets: ss.map((h) => ({ sheet: q(h.outline), holes: h.holesW.map(q), key: h.id + ":" + h.v })) };
+    const s = 2 ** z, b = p * WX, q = (poly) => poly.map((n, i) => Math.round((i % 2 ? n : n - b) * s) / s), tp = [], ids = [], sh = [];
+    ts.forEach((t) => { if (t.stuck) { tp.push(q(t.stuck)); ids.push(t.id); } });
+    ts.forEach((t) => { if (t.flap) { tp.push(q(t.flap)); ids.push(t.tag); } });
+    ss.forEach((h) => { if (h.stuck) sh.push({ sheet: q(h.stuck.poly), holes: h.stuck.holes.map(q), key: h.id + ":" + h.v }); });
+    ss.forEach((h) => { if (h.flapP) sh.push({ sheet: q(h.flapP.poly), holes: h.flapP.holes.map(q), key: h.id + ":" + h.v + ":" + h.tag }); });
+    return tp.length || sh.length ? { tapes: tp, tapeIds: ids, sheets: sh } : null;
   }
 
   function reindex() {
     tapes = []; sheets = [];
     alive.t.clear(); alive.s.clear();
-    props.forEach((q) => { if (q.kind === "t") { tapes.push(q); alive.t.add(q.id); } else { sheets.push(q); alive.s.add(q.id + ":" + q.v); } });
+    props.forEach((q) => {
+      if (q.kind === "t") { tapes.push(q); alive.t.add(q.id); if (q.flap) alive.t.add(q.tag); }
+      else { sheets.push(q); alive.s.add(q.id + ":" + q.v); if (q.flapP) alive.s.add(q.id + ":" + q.v + ":" + q.tag); }
+    });
     tapes.sort(older); sheets.sort(older);
   }
 
   const encHoles = (holes) => holes.map((h) => Array.from(h, (x) => Math.round(clamp(x, 0, 1) * 1000)).join(",")).join(";");
-  const decHoles = (s) => String(s || "").split(";").map((q) => q.split(",").map((x) => +x / 1000)).filter((h) => h.length >= 6 && h.length % 2 === 0 && h.every((x) => x >= 0 && x <= 1));
+  function decHoles(s, c) {
+    const cs = String(c || "").split(","), holes = [], cols = [];
+    String(s || "").split(";").forEach((q, i) => {
+      const h = q.split(",").map((x) => +x / 1000);
+      if (h.length < 6 || h.length % 2 || !h.every((x) => x >= 0 && x <= 1)) return;
+      holes.push(h);
+      cols.push(/^[0-9a-f]{6}$/.test(cs[i] || "") ? cs[i] : "");
+    });
+    return { holes, cols: cols.some(Boolean) ? cols : null };
+  }
   const isNum = (v) => typeof v === "number" && isFinite(v) && Math.abs(v) < 1e7;
   const SV = { ".sv": "timestamp" };
 
   function wire(q) {
     const b = q.p * WX;
-    if (q.kind === "t") return { k: "t", p: q.p, ax: q.a[0] - b, ay: q.a[1], bx: q.b[0] - b, by: q.b[1], w: q.w, e: q.teeth.map((x) => Math.round(clamp(x, 0, 1) * 9)).join(""), t: SV };
-    return { k: "s", p: q.p, x: q.x - b, y: q.y, s: q.s, r: q.a, h: encHoles(q.st.holes), v: q.v, n: q.name || "", t: SV };
+    if (q.kind === "t") return { k: "t", p: q.p, ax: q.a[0] - b, ay: q.a[1], bx: q.b[0] - b, by: q.b[1], w: q.w, e: q.teeth.map((x) => Math.round(clamp(x, 0, 1) * 9)).join(""), ...(q.g ? { g: q.g } : {}), t: SV };
+    return { k: "s", p: q.p, x: q.x - b, y: q.y, s: q.s, r: q.a, h: encHoles(q.st.holes), v: q.v, n: q.name || "", ...(q.cols ? { c: q.cols.join(",") } : {}), ...(q.inv ? { i: true } : {}), ...(q.f ? peelFields(q) : {}), t: SV };
   }
   function propOf(id, v) {
     if (!v || typeof v !== "object" || !/^[-_A-Za-z0-9]{1,24}$/.test(id) || !Number.isInteger(v.p) || v.p < 0) return null;
@@ -1329,9 +1598,9 @@ export function createMural(el, opts) {
     }
     if (v.k === "s") {
       if (![v.x, v.y, v.s, v.r].every(isNum) || v.s <= 0 || typeof v.h !== "string" || typeof v.v !== "string") return null;
-      const holes = decHoles(v.h);
+      const { holes, cols } = decHoles(v.h, typeof v.c === "string" ? v.c : "");
       if (!holes.length) return null;
-      const sh = { id, kind: "s", p: v.p, x: b + v.x, y: v.y, s: v.s, a: v.r, v: v.v, name: typeof v.n === "string" ? v.n.slice(0, 20) : "", st: { holes } };
+      const sh = { id, kind: "s", p: v.p, x: b + v.x, y: v.y, s: v.s, a: v.r, v: v.v, name: typeof v.n === "string" ? v.n.slice(0, 20) : "", st: { holes }, cols, inv: v.i === true, f: isNum(v.fu) && isNum(v.fw) ? peelOf([v.fu, v.fw]) : null };
       shapeSheet(sh);
       return sh;
     }
@@ -1354,20 +1623,24 @@ export function createMural(el, opts) {
     if (pend && props.has(q.id)) save("props/" + q.id, { ...pend, t: SV }, "PATCH");
   }
 
+  const same = (a, b) => (!a && !b) || (!!a && !!b && a[0] === b[0] && a[1] === b[1]);
+  const held = (q) => (sheetDrag && sheetDrag.sheet === q) || (liftDrag && liftDrag.sheet === q) || (rip && rip.tape === q);
   function upsert(id, raw) {
     const q = propOf(id, raw);
     if (!q) return;
     const old = props.get(id);
     if (old && old.kind !== q.kind) return;
-    if (old && ((sheetDrag && sheetDrag.sheet === old) || (liftDrag && liftDrag.sheet === old) || (rip && rip.tape === old) || old.pend)) return;
-    const moved = !!old && q.kind === "s" && old.v !== q.v;
+    if (old && (held(old) || old.pend)) return;
+    const moved = !!old && q.kind === "s" && (old.v !== q.v || old.inv !== q.inv), folded = !!old && (q.kind === "t" ? old.g !== q.g : !same(old.f, q.f));
     if (old) {
-      ["p", "a", "b", "w", "teeth", "g", "x", "y", "s", "v", "name", "st"].forEach((k) => { if (k in q) old[k] = q[k]; });
+      if (q.kind === "s" && old.inv !== q.inv) { old.flip = { t0: performance.now(), old: { ...old } }; loop(); }
+      ["p", "a", "b", "w", "teeth", "g", "x", "y", "s", "v", "name", "st", "cols", "inv", "f"].forEach((k) => { if (k in q) old[k] = q[k]; });
       if (old.kind === "t") shapeTape(old); else shapeSheet(old);
     } else props.set(id, q);
     reindex();
-    if (moved) forgetLayer(sheetL);
-    layers.forEach((L) => { if (layerOn(L) && (moved || (!L.tile && !L.job))) rerender(L, true); });
+    if (moved) { forgetLayer(sheetL); forgetLayer(flapL); }
+    else if (folded) forgetLayer(flapL);
+    layers.forEach((L) => { if (layerOn(L) && (moved || (L === flapL && folded) || (!L.tile && !L.job))) rerender(L, true); });
     overlaysSoon();
   }
   function vanish(id) {
@@ -1381,7 +1654,7 @@ export function createMural(el, opts) {
     props.delete(id);
     reindex();
     if (q.kind === "t") peelAway([q]);
-    else liftAway(q, [0, 0], [30, -240], 0);
+    else liftAway(q, [30, -240]);
     sync();
   }
 
@@ -1559,7 +1832,7 @@ export function createMural(el, opts) {
     if (tool === "tape") k = ripAt(e) ? "grab" : "";
     else if (tool === "stencil") {
       const P = canvasPt(e), v = viewNow(), w = wallPoint(e.clientX, e.clientY);
-      k = sheets.some((sh) => onFold(sh, P, v)) ? "grab" : sheets.some((sh) => onHandle(sh, P, v)) ? "nwse-resize" : sheets.some((sh) => inside(sh.outline, w)) ? "move" : "pointer";
+      k = sheets.some((sh) => onFlip(sh, P, v)) ? "pointer" : sheets.some((sh) => onPeel(sh, P, w, v)) ? "grab" : sheets.some((sh) => onHandle(sh, P, v)) ? "nwse-resize" : sheets.some((sh) => sh.stuck && inside(sh.stuck.poly, w)) ? "move" : "pointer";
     }
     if (k === hoverK) return;
     if (k) { hoverK = k; view.style.cursor = k; } else cursor();
@@ -1611,8 +1884,8 @@ export function createMural(el, opts) {
   function bounds(op) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let i = 0; i < op.d.length; i += 2) { x0 = Math.min(x0, op.d[i]); x1 = Math.max(x1, op.d[i]); y0 = Math.min(y0, op.d[i + 1]); y1 = Math.max(y1, op.d[i + 1]); }
-    const m = op.w * (op.c && op.c[0] === "n" ? 2.05 : op.h === "fat" ? 3.1 : op.h === "splat" ? 2.9 : op.h === "flat" ? 1.9 : 1.7), b = op.p * WX;
-    op.bb = [b + x0 - m, y0 - m, b + x1 + m, y1 + m + op.w * (op.h === "drip" ? 11 : 6.5)];
+    const m = op.w * (op.c && op.c[0] === "n" ? 2.05 : op.h === "fat" ? 3.1 : op.h === "splat" ? 2.9 : op.h === "flat" ? 1.9 : op.h === "brush" ? 0.7 : 1.7), b = op.p * WX;
+    op.bb = [b + x0 - m, y0 - m, b + x1 + m, y1 + m + op.w * (op.h === "drip" ? 11 : op.h === "brush" ? 0 : 6.5)];
     return op;
   }
 
@@ -1690,7 +1963,14 @@ export function createMural(el, opts) {
   const num = (k) => (/^(0|[1-9][0-9]*)$/.test(k) ? +k : -1);
   function ingest(path, data) {
     const parts = path.split("/").filter(Boolean);
-    if (!parts.length) { Object.keys(data || {}).forEach((k) => { if (num(k) >= 0 && data[k]) loadAll(panel(num(k)), data[k]); }); return; }
+    if (!parts.length) {
+      kindsIn(data && data.kinds, true);
+      Object.keys(data || {}).forEach((k) => { if (num(k) >= 0 && data[k]) loadAll(panel(num(k)), data[k]); });
+      loaded = true;
+      placeKinds();
+      return;
+    }
+    if (parts[0] === "kinds") { if (parts.length === 1) kindsIn(data, true); else if (parts.length === 2) kindsIn({ [parts[1]]: data }, false); return; }
     const p = num(parts[0]);
     if (p < 0) return;
     const P = panel(p);
@@ -1709,6 +1989,75 @@ export function createMural(el, opts) {
       Object.keys(msg.data).forEach((k) => ingest(msg.path.replace(/\/$/, "") + "/" + k, msg.data[k]));
     });
     src.onerror = () => {};
+  }
+
+  function kindsIn(obj, whole) {
+    const next = whole ? {} : { ...wallKinds };
+    Object.keys(obj && typeof obj === "object" ? obj : {}).forEach((k) => {
+      const p = num(k);
+      if (p < 0) return;
+      if (typeof obj[k] === "string" && KIND_IDS.has(obj[k])) next[p] = obj[k]; else delete next[p];
+    });
+    applyKinds(next);
+  }
+  function applyKinds(next) {
+    wallKinds = next;
+    setWallKinds(next).forEach((p) => lod.forEach((t) => { if (t.x1 > p * WX && t.v.x0 < (p + 1) * WX) backdrop(t.bg.getContext("2d"), t.v, t.x1, t.y1); }));
+    placeKinds();
+    if (kindPick && !kindPick.hidden) markKinds();
+  }
+  const emptyPanel = (p) => { const P = panels.get(p); return !(P && P.ops.length) && !(live && live.p === p); };
+  function placeKinds() {
+    if (!kindsEl) return;
+    const off = !active || !!lapse || !loaded;
+    if (kindsEl.hidden !== off) kindsEl.hidden = off;
+    if (off) return;
+    const ppu = k0 * Z, x0 = cx - W / 2 / ppu, x1 = cx + W / 2 / ppu, top = (-12 * ARTY - cy) * ppu + H / 2, want = new Map();
+    if (top > 30 && top < H - 20) for (let p = Math.max(0, Math.floor(x0 / WX)); p <= Math.floor(x1 / WX); p++) {
+      if (!emptyPanel(p)) continue;
+      const a = Math.max(x0, p * WX), b = Math.min(x1, (p + 1) * WX);
+      if ((b - a) * ppu >= 170) want.set(p, ((a + b) / 2 - cx) * ppu + W / 2);
+    }
+    kindsEl.querySelectorAll("[data-kind-p]").forEach((el) => { if (!want.has(+el.dataset.kindP)) el.remove(); });
+    want.forEach((sx, p) => {
+      let el = kindsEl.querySelector(`[data-kind-p="${p}"]`);
+      if (!el) {
+        el = document.createElement("button");
+        el.type = "button";
+        el.className = "btn wv-kind";
+        el.dataset.kindP = String(p);
+        el.title = "Change what this piece of wall is made of. It only works while nobody has painted on it.";
+        kindsEl.append(el);
+      }
+      const name = kindName(wallKinds[p]);
+      if (el.dataset.name !== name) { el.dataset.name = name; el.innerHTML = `${T16(ICONS.wallk)}<span>${name}</span>`; }
+      el.style.transform = `translate(${sx.toFixed(1)}px,${top.toFixed(1)}px) translate(-50%,-100%)`;
+    });
+  }
+  function markKinds() { kindPick.querySelectorAll("[data-kind]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kind === (wallKinds[kindFor] || "brick")))); }
+  function openKinds(p) {
+    kindFor = p;
+    kindPick.querySelector(".tb-t").textContent = `Wall type, piece ${p + 1}`;
+    kindPick.querySelectorAll("[data-kind] canvas").forEach((cv) => { if (!cv.width || cv.width === 300) wallSwatch(cv, cv.parentNode.dataset.kind); });
+    markKinds();
+    if (pick) pick.close();
+    if (caps) caps.hidden = true;
+    kindPick.hidden = false;
+  }
+  function setKind(p, id) {
+    if (!emptyPanel(p)) { flash("SOMEBODY ALREADY PAINTED THIS PIECE, ITS WALL STAYS"); return; }
+    const before = wallKinds[p] || "brick", next = { ...wallKinds }, url = DB + "/" + FAR + "/kinds/" + p + ".json";
+    if (before === id) return;
+    if (id === "brick") delete next[p]; else next[p] = id;
+    applyKinds(next);
+    fetch(url, id === "brick" ? { method: "DELETE" } : { method: "PUT", body: JSON.stringify(id) })
+      .then((r) => { if (!r.ok) throw r.status; })
+      .catch(() => {
+        const back = { ...wallKinds };
+        if (before === "brick") delete back[p]; else back[p] = before;
+        applyKinds(back);
+        flash("COULD NOT CHANGE THE WALL HERE, SOMEBODY MAY HAVE PAINTED IT");
+      });
   }
 
   const body = (it) => {
@@ -2080,13 +2429,35 @@ export function createMural(el, opts) {
     chrome.querySelector(".pt-hole").append(view);
     tapeL = overlay("tape");
     sheetL = overlay("sheet");
-    layers.push(tapeL, sheetL);
+    flapL = overlay("flap");
+    layers.push(tapeL, sheetL, flapL);
     ink = document.createElement("canvas");
     ink.className = "wv-ink";
     view.append(ink);
     who = document.createElement("div");
     who.className = "wv-who";
     view.append(who);
+    kindsEl = document.createElement("div");
+    kindsEl.className = "wv-kinds";
+    kindsEl.hidden = true;
+    view.append(kindsEl);
+    kindsEl.addEventListener("pointerdown", (e) => e.stopPropagation());
+    kindsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-kind-p]"); if (b) { if (!kindPick.hidden && kindFor === +b.dataset.kindP) kindPick.hidden = true; else openKinds(+b.dataset.kindP); } });
+    kindPick = document.createElement("div");
+    kindPick.className = "pt-pick pt-kinds";
+    kindPick.hidden = true;
+    kindPick.setAttribute("role", "dialog");
+    kindPick.setAttribute("aria-label", "Wall type");
+    kindPick.innerHTML = `<header class="tb"><h2 class="tb-t">Wall type</h2><span class="tb-btns"><button class="tb-x" type="button" data-kind-x aria-label="Close"></button></span></header>` +
+      `<div class="pt-pick-g">${WALL_KINDS.map(([id, name]) => `<span class="pt-pk"><button type="button" data-kind="${id}" title="${name}"><canvas></canvas><span>${name}</span></button></span>`).join("")}</div>` +
+      `<p class="pt-kinds-n">Only a piece nobody has painted on yet can change.</p>`;
+    chrome.append(kindPick);
+    kindPick.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.dataset.kind) setKind(kindFor, b.dataset.kind);
+      kindPick.hidden = true;
+    });
     caps = document.createElement("div");
     caps.className = "pt-pick pt-caps";
     caps.hidden = true;
@@ -2167,6 +2538,7 @@ export function createMural(el, opts) {
       e.preventDefault();
       if (pick.shown) pick.close();
       if (!caps.hidden) { caps.hidden = true; sync(); }
+      if (!kindPick.hidden) kindPick.hidden = true;
       here(e);
       if (tool === "tape") { startTape(e); return; }
       if (tool === "stencil") { grabSheet(e); return; }
@@ -2245,6 +2617,7 @@ export function createMural(el, opts) {
     const zoom = Z < 1.05 ? "" : Z < 1000 ? `, zoom ${Z.toFixed(Z < 10 ? 1 : 0)}x` : `, zoom ${Z.toExponential(1).replace("e+", "e")}x`;
     const text = (m > 0 ? `${m} m from the start` : "The start of the wall") + zoom + `, ${n} ${n === 1 ? "stroke" : "strokes"} here`;
     if (text !== said) { said = text; chrome.querySelector("[data-where]").textContent = text; }
+    placeKinds();
   }
 
   function sync() {
@@ -2275,6 +2648,7 @@ export function createMural(el, opts) {
       else if (cut && cut.shown) cut.close();
       else if (pick && pick.shown) pick.close();
       else if (caps && !caps.hidden) { caps.hidden = true; sync(); }
+      else if (kindPick && !kindPick.hidden) kindPick.hidden = true;
       else if (tapeDrag || sheetDrag || rip || liftDrag) { tapeDrag = null; if (sheetDrag) endDrag(); if (rip) endRip(true); if (liftDrag) endLift(true); drawOverlays(); }
       else opts.onExit();
       return;
@@ -2355,6 +2729,8 @@ export function createMural(el, opts) {
       if (pick) pick.close();
       if (cut) cut.close();
       if (caps) caps.hidden = true;
+      if (kindPick) kindPick.hidden = true;
+      if (kindsEl) kindsEl.hidden = true;
       if (chrome) chrome.hidden = true;
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
       shown.forEach((t) => t.el.remove());

@@ -533,6 +533,10 @@ function init() {
     clearTimeout(resizeT);
     resizeT = setTimeout(() => { layout(); if (painting) aim(); }, 120);
   });
+  addEventListener("gl-wall-kinds", () => {
+    const art = world.querySelector("[data-wall-art]");
+    if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k));
+  });
   (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => data());
   desk.classList.add("is-ready");
 }
