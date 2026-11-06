@@ -1,8 +1,10 @@
 /* Gzowo Labs wall stencils: the ready made cardboard stencils, the cutting board where visitors cut their own with a knife, a hole punch,
-   glue and letters, and the tracing that turns a cut sheet into outlines the wall clips spray paint to. Outlines are normalized to 0..1. */
+   glue and letters, stencils cut automatically from a picture, and the tracing that turns a cut sheet into smooth outlines the wall
+   clips spray paint to. Outlines are normalized to 0..1. */
 
-const N = 128, KEY = "gl-stencils", MAX = 24, CUT_PX = 320, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
-const PUNCH = [3, 6, 11], TEXT = [0.13, 0.2, 0.3];
+const N = 256, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
+const PUNCH = [6, 12, 22], TEXT = [0.13, 0.2, 0.3], CARD = "#c49a5e";
+const PASTE = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘V" : "Ctrl+V";
 
 function star(cx, cy, R, r, n) {
   const pts = [];
@@ -65,10 +67,12 @@ const PRESETS = [
   ["gsp", "GSP", (x, n) => word(x, n, "GSP")],
 ];
 
-function maskOf(cv) {
-  const d = cv.getContext("2d").getImageData(0, 0, N, N).data, m = new Uint8Array(N * N);
-  for (let i = 0; i < N * N; i++) m[i] = d[i * 4 + 3] > 127 ? 1 : 0;
-  return m;
+const ctx2d = (cv) => cv.getContext("2d", { willReadFrequently: true });
+
+function fieldOf(cv) {
+  const d = ctx2d(cv).getImageData(0, 0, N, N).data, f = new Float32Array(N * N);
+  for (let i = 0; i < N * N; i++) f[i] = d[i * 4 + 3] / 255;
+  return f;
 }
 
 export function simplify(pts, eps) {
@@ -97,45 +101,53 @@ export function simplify(pts, eps) {
 
 function area(p) { let s = 0; for (let i = 0; i < p.length; i += 2) { const j = (i + 2) % p.length; s += p[i] * p[j + 1] - p[j] * p[i + 1]; } return s / 2; }
 
-export function trace(mask, n = N) {
-  const V = n + 1, out = new Map();
-  const edge = (ax, ay, bx, by) => { const k = ay * V + ax; let l = out.get(k); if (!l) out.set(k, (l = [])); l.push([bx, by]); };
-  const hole = (x, y) => x >= 0 && y >= 0 && x < n && y < n && mask[y * n + x] === 1;
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) {
-    if (!hole(x, y)) continue;
-    if (!hole(x, y - 1)) edge(x + 1, y, x, y);
-    if (!hole(x, y + 1)) edge(x, y + 1, x + 1, y + 1);
-    if (!hole(x - 1, y)) edge(x, y, x, y + 1);
-    if (!hole(x + 1, y)) edge(x + 1, y + 1, x + 1, y);
-  }
-  const loops = [];
-  for (const [k0, list0] of out) {
-    while (list0.length) {
-      const sx = k0 % V, sy = Math.floor(k0 / V), pts = [sx, sy];
-      let px = sx, py = sy, [nx, ny] = list0.pop(), guard = 0;
-      while ((nx !== sx || ny !== sy) && guard++ < 200000) {
-        const dx = nx - px, dy = ny - py;
-        pts.push(nx, ny);
-        const l = out.get(ny * V + nx);
-        if (!l || !l.length) break;
-        let pick = 0;
-        if (l.length > 1) { const left = [nx + dy, ny - dx]; pick = Math.max(0, l.findIndex(([a, b]) => a === left[0] && b === left[1])); }
-        const [qx, qy] = l.splice(pick, 1)[0];
-        px = nx; py = ny; nx = qx; ny = qy;
-      }
-      const corners = [];
-      const m = pts.length / 2;
-      for (let i = 0; i < m; i++) {
-        const a = (i - 1 + m) % m, b = (i + 1) % m;
-        const cross = (pts[i * 2] - pts[a * 2]) * (pts[b * 2 + 1] - pts[i * 2 + 1]) - (pts[i * 2 + 1] - pts[a * 2 + 1]) * (pts[b * 2] - pts[i * 2]);
-        if (cross !== 0) corners.push(pts[i * 2], pts[i * 2 + 1]);
-      }
-      if (corners.length >= 6 && Math.abs(area(corners)) >= 3) loops.push(corners);
+export function trace(f, n = N, budget = BUDGET, speck = 2) {
+  const P = n + 2, ids = P * P * 2, adj = new Int32Array(ids * 2).fill(-1), xy = new Float32Array(ids * 2);
+  const at = (x, y) => (x < 0 || y < 0 || x >= n || y >= n ? 0 : f[y * n + x]);
+  const hid = (x, y) => ((y + 1) * P + x + 1) * 2, vid = (x, y) => ((y + 1) * P + x + 1) * 2 + 1;
+  const t = (p, q) => (0.5 - p) / (q - p);
+  const link = (i, j) => { adj[i * 2 + (adj[i * 2] === -1 ? 0 : 1)] = j; adj[j * 2 + (adj[j * 2] === -1 ? 0 : 1)] = i; };
+  for (let y = -1; y < n; y++) for (let x = -1; x < n; x++) {
+    const a = at(x, y), b = at(x + 1, y), c = at(x + 1, y + 1), d = at(x, y + 1);
+    const ia = a >= 0.5, ib = b >= 0.5, ic = c >= 0.5, id = d >= 0.5, k = (ia ? 8 : 0) | (ib ? 4 : 0) | (ic ? 2 : 0) | (id ? 1 : 0);
+    if (k === 0 || k === 15) continue;
+    const T = hid(x, y), B = hid(x, y + 1), L = vid(x, y), R = vid(x + 1, y);
+    if (ia !== ib) { xy[T * 2] = x + 0.5 + t(a, b); xy[T * 2 + 1] = y + 0.5; }
+    if (id !== ic) { xy[B * 2] = x + 0.5 + t(d, c); xy[B * 2 + 1] = y + 1.5; }
+    if (ia !== id) { xy[L * 2] = x + 0.5; xy[L * 2 + 1] = y + 0.5 + t(a, d); }
+    if (ib !== ic) { xy[R * 2] = x + 1.5; xy[R * 2 + 1] = y + 0.5 + t(b, c); }
+    const mid = (a + b + c + d) / 4 >= 0.5;
+    switch (k) {
+      case 1: case 14: link(L, B); break;
+      case 2: case 13: link(B, R); break;
+      case 3: case 12: link(L, R); break;
+      case 4: case 11: link(T, R); break;
+      case 6: case 9: link(T, B); break;
+      case 7: case 8: link(T, L); break;
+      case 5: if (mid) { link(T, L); link(B, R); } else { link(T, R); link(L, B); } break;
+      case 10: if (mid) { link(T, R); link(L, B); } else { link(T, L); link(B, R); } break;
     }
   }
-  let eps = 0.7, res = loops.map((l) => simplify(l, eps));
-  while (res.reduce((s, l) => s + l.length, 0) > 700 && eps < 6) { eps *= 1.5; res = loops.map((l) => simplify(l, eps)); }
-  return res.filter((l) => l.length >= 6).map((l) => Float64Array.from(l, (v) => v / n));
+  const seen = new Uint8Array(ids), loops = [];
+  for (let s = 0; s < ids; s++) {
+    if (adj[s * 2] === -1 || seen[s]) continue;
+    const pts = [];
+    let prev = -1, cur = s, guard = 0;
+    do {
+      seen[cur] = 1;
+      pts.push(xy[cur * 2], xy[cur * 2 + 1]);
+      const nx = adj[cur * 2] !== prev ? adj[cur * 2] : adj[cur * 2 + 1];
+      prev = cur; cur = nx;
+    } while (cur !== s && cur !== -1 && guard++ < 1e6);
+    if (pts.length >= 6 && Math.abs(area(pts)) >= speck) loops.push(pts);
+  }
+  loops.sort((p, q) => Math.abs(area(q)) - Math.abs(area(p)));
+  const total = (r) => r.reduce((s, l) => s + l.length, 0);
+  let eps = 0.3, res = loops.map((l) => simplify(l, eps));
+  while (total(res) > budget && eps < 2.5) { eps *= 1.35; res = loops.map((l) => simplify(l, eps)); }
+  res = res.filter((l) => l.length >= 6);
+  while (res.length > 1 && total(res) > budget) res.pop();
+  return res.map((l) => Float64Array.from(l, (v) => Math.min(1, Math.max(0, v / n))));
 }
 
 const cache = new Map();
@@ -144,19 +156,38 @@ function presetStencil([id, name, draw]) {
   if (cache.has(key)) return cache.get(key);
   const cv = document.createElement("canvas");
   cv.width = cv.height = N;
-  const x = cv.getContext("2d");
+  const x = ctx2d(cv);
   x.fillStyle = x.strokeStyle = "#000";
   draw(x, N);
-  const st = { id: key, name, holes: trace(maskOf(cv)) };
+  const st = { id: key, name, holes: trace(fieldOf(cv)) };
   cache.set(key, st);
   return st;
 }
 export const presets = () => PRESETS.map(presetStencil);
 
+const old = (h) => h.every((v) => Math.abs(v * 128 - Math.round(v * 128)) < 0.07);
+function soften(h) {
+  let p = Array.from(h);
+  for (let r = 0; r < 3; r++) {
+    const o = [], m = p.length / 2;
+    for (let i = 0; i < m; i++) {
+      const j = (i + 1) % m, ax = p[i * 2], ay = p[i * 2 + 1], bx = p[j * 2], by = p[j * 2 + 1];
+      o.push(ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25, ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75);
+    }
+    p = o;
+  }
+  return Float64Array.from(simplify(p, 0.0012));
+}
+
 const enc = (holes) => holes.map((h) => Array.from(h, (v) => Math.round(v * 1000)).join(",")).join(";");
 const dec = (s) => String(s || "").split(";").map((q) => Float64Array.from(q.split(","), (v) => +v / 1000)).filter((h) => h.length >= 6 && h.every((v) => v >= 0 && v <= 1));
 export function saved() {
-  try { return (JSON.parse(localStorage.getItem(KEY)) || []).filter((s) => s && s.id && s.h).map((s) => ({ id: "u:" + s.id, name: String(s.n || "My stencil").slice(0, 20), holes: dec(s.h) })).filter((s) => s.holes.length); } catch (e) { return []; }
+  try {
+    return (JSON.parse(localStorage.getItem(KEY)) || []).filter((s) => s && s.id && s.h).map((s) => {
+      const holes = dec(s.h);
+      return { id: "u:" + s.id, name: String(s.n || "My stencil").slice(0, 20), holes: holes.length && holes.every(old) ? holes.map(soften) : holes };
+    }).filter((s) => s.holes.length);
+  } catch (e) { return []; }
 }
 function store(list) { try { localStorage.setItem(KEY, JSON.stringify(list.slice(-MAX))); } catch (e) {} }
 function raw() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
@@ -168,17 +199,28 @@ function keep(name, holes) {
 }
 function forget(id) { store(raw().filter((s) => "u:" + s.id !== id)); }
 
+function cardboard(x, s) {
+  x.globalCompositeOperation = "source-over";
+  x.fillStyle = CARD; x.fillRect(0, 0, s, s);
+  x.fillStyle = "rgba(120,80,30,.18)";
+  const g = Math.max(2, Math.round(s / 80));
+  for (let y = 0; y < s; y += g * 2) x.fillRect(0, y, s, g / 2);
+}
+function cutHoles(x, holes, s) {
+  x.globalCompositeOperation = "destination-out";
+  x.beginPath();
+  holes.forEach((h) => { for (let i = 0; i < h.length; i += 2) (i ? x.lineTo(h[i] * s, h[i + 1] * s) : x.moveTo(h[i] * s, h[i + 1] * s)); x.closePath(); });
+  x.fill("evenodd");
+  x.globalCompositeOperation = "source-over";
+}
+
 export function sheetThumb(cv, st, px = 48) {
   const dpr = Math.min(2, devicePixelRatio || 1);
   cv.width = cv.height = Math.round(px * dpr);
   const x = cv.getContext("2d"), s = cv.width;
-  x.fillStyle = "#c49a5e"; x.fillRect(0, 0, s, s);
+  x.fillStyle = CARD; x.fillRect(0, 0, s, s);
   x.strokeStyle = "rgba(90,60,25,.5)"; x.strokeRect(0.5, 0.5, s - 1, s - 1);
-  x.globalCompositeOperation = "destination-out";
-  x.beginPath();
-  st.holes.forEach((h) => { for (let i = 0; i < h.length; i += 2) (i ? x.lineTo(h[i] * s, h[i + 1] * s) : x.moveTo(h[i] * s, h[i + 1] * s)); x.closePath(); });
-  x.fill("evenodd");
-  x.globalCompositeOperation = "source-over";
+  cutHoles(x, st.holes, s);
 }
 
 const ICON = {
@@ -190,8 +232,12 @@ const ICON = {
 const btnIcon = (k) => `<svg viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true">${ICON[k]}</svg>`;
 
 const esc = (s) => String(s).replace(/[<>&"]/g, "");
+const pastedImage = (e) => {
+  const it = [...((e.clipboardData && e.clipboardData.items) || [])].find((i) => i.kind === "file" && /^image\//.test(i.type));
+  return it ? it.getAsFile() : null;
+};
 
-export function picker(host, { onPick, onCut, onClose }) {
+export function picker(host, { onPick, onCut, onPicture, onClose }) {
   const el = document.createElement("div");
   el.className = "pt-pick";
   el.hidden = true;
@@ -202,7 +248,7 @@ export function picker(host, { onPick, onCut, onClose }) {
     const mine = saved(), all = [...presets(), ...mine];
     el.innerHTML = `<header class="tb"><h2 class="tb-t">Stencils</h2><span class="tb-btns"><button class="tb-x" type="button" data-pk-x aria-label="Close"></button></span></header>` +
       `<div class="pt-pick-g">${all.map((s) => `<span class="pt-pk"><button type="button" data-pk="${s.id}" title="${esc(s.name)}"><canvas></canvas><span>${esc(s.name)}</span></button>${s.id.startsWith("u:") ? `<button type="button" class="pt-pk-del" data-pk-del="${s.id}" aria-label="Throw away ${esc(s.name)}" title="Throw away">x</button>` : ""}</span>`).join("")}</div>` +
-      `<p class="pt-pick-a"><button class="btn" type="button" data-pk-cut>Cut your own...</button></p>`;
+      `<p class="pt-pick-a"><button class="btn" type="button" data-pk-pic>From a picture...</button><button class="btn" type="button" data-pk-cut>Cut your own...</button></p>`;
     el.querySelectorAll("[data-pk] canvas").forEach((cv, i) => sheetThumb(cv, all[i]));
     el._all = all;
   }
@@ -211,13 +257,207 @@ export function picker(host, { onPick, onCut, onClose }) {
     if (!b) return;
     if (b.hasAttribute("data-pk-x")) { close(); if (onClose) onClose(); return; }
     if (b.hasAttribute("data-pk-cut")) { close(); onCut(); return; }
+    if (b.hasAttribute("data-pk-pic")) { close(); onPicture(); return; }
     if (b.dataset.pkDel) { forget(b.dataset.pkDel); render(); return; }
     const st = (el._all || []).find((s) => s.id === b.dataset.pk);
     if (st) { close(); onPick(st); }
   });
+  document.addEventListener("paste", (e) => {
+    if (el.hidden) return;
+    const f = pastedImage(e);
+    if (!f) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    close();
+    onPicture(f);
+  });
   function open() { render(); el.hidden = false; }
   function close() { el.hidden = true; }
   return { open, close, toggle() { if (el.hidden) open(); else close(); }, get shown() { return !el.hidden; } };
+}
+
+function otsu(lum, al) {
+  const h = new Float64Array(256);
+  let n = 0;
+  for (let i = 0; i < lum.length; i++) if (al[i] >= 0.5) { h[Math.min(255, Math.max(0, Math.round(lum[i])))]++; n++; }
+  if (!n) return 128;
+  let sum = 0;
+  for (let i = 0; i < 256; i++) sum += i * h[i];
+  let wb = 0, sb = 0, best = -1, thr = 128;
+  for (let i = 0; i < 256; i++) {
+    wb += h[i];
+    if (!wb) continue;
+    const wf = n - wb;
+    if (!wf) break;
+    sb += i * h[i];
+    const mb = sb / wb, mf = (sum - sb) / wf, v = wb * wf * (mb - mf) ** 2;
+    if (v > best) { best = v; thr = i; }
+  }
+  return Math.min(254, Math.max(1, thr + 0.5));
+}
+
+function blur(f, r) {
+  if (!r) return f;
+  let a = f, b = new Float32Array(N * N);
+  for (let pass = 0; pass < 4; pass++) {
+    const side = pass % 2 === 0;
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      let s = 0;
+      for (let k = -r; k <= r; k++) {
+        const u = side ? x + k : x, v = side ? y : y + k;
+        if (u >= 0 && v >= 0 && u < N && v < N) s += a[v * N + u];
+      }
+      b[y * N + x] = s / (2 * r + 1);
+    }
+    [a, b] = [b, a];
+  }
+  return a;
+}
+
+function importer(host, { onSave, onEdit }) {
+  const box = document.createElement("div");
+  box.className = "pt-cut";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", "Stencil from a picture");
+  box.innerHTML = `<div class="pt-cut-w"><header class="tb"><h2 class="tb-t">Stencil from a picture</h2><span class="tb-btns"><button class="tb-x" type="button" data-imp-x aria-label="Close"></button></span></header>` +
+    `<div class="pt-cut-b"><div class="pt-cut-board pt-imp-board"><canvas width="${VIEW_PX}" height="${VIEW_PX}"></canvas><span class="pt-imp-drop" data-imp-drop>Pick a picture, paste one with ${PASTE} or drop it here</span></div>` +
+    `<div class="pt-cut-side"><p class="pt-cut-row"><button class="btn" type="button" data-imp-file>Pick a file...</button><button class="btn" type="button" data-imp-paste>Paste</button></p>` +
+    `<input type="file" accept="image/*" hidden data-imp-input>` +
+    `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
+    `<label>Threshold<input type="range" min="1" max="254" step="1" value="128" data-imp-thr></label>` +
+    `<label>Smoothing<input type="range" min="0" max="4" step="1" value="1" data-imp-soft></label>` +
+    `<p class="pt-cut-hint" data-imp-hint></p>` +
+    `<label>Name<input type="text" data-imp-name maxlength="20" placeholder="My stencil" autocomplete="off"></label>` +
+    `<p class="pt-cut-row"><button class="btn" type="button" data-imp-edit>Edit in cutter</button><button class="btn" type="button" data-imp-save>Save and use</button></p></div></div></div>`;
+  host.append(box);
+  box.hidden = true;
+  const cv = box.querySelector("canvas"), x = cv.getContext("2d"), input = box.querySelector("[data-imp-input]"), board = box.querySelector(".pt-imp-board");
+  const thrEl = box.querySelector("[data-imp-thr]"), softEl = box.querySelector("[data-imp-soft]"), nameEl = box.querySelector("[data-imp-name]");
+  let src = null, mode = "dark", holes = [], raf = 0, busy = 0;
+  const hint = (s) => { box.querySelector("[data-imp-hint]").textContent = s; };
+
+  function field() {
+    const f = new Float32Array(N * N), thr = +thrEl.value;
+    for (let i = 0; i < N * N; i++) {
+      const a = src.al[i];
+      if (a <= 0) continue;
+      if (mode === "shape") { f[i] = a; continue; }
+      const d = (thr - src.lum[i]) / 18, v = mode === "dark" ? 0.5 + d : 0.5 - d;
+      f[i] = Math.min(1, Math.max(0, v)) * Math.min(1, a * 2);
+    }
+    return blur(f, +softEl.value);
+  }
+  function draw() {
+    const s = cv.width;
+    cardboard(x, s);
+    if (holes.length) cutHoles(x, holes, s);
+  }
+  function rebuild() {
+    raf = 0;
+    if (!src) { holes = []; draw(); return; }
+    holes = trace(field(), N, BUDGET, 4 + +softEl.value * 6);
+    draw();
+    hint(holes.length ? "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter." : "Nothing gets cut yet. Move the threshold or switch what gets cut out.");
+  }
+  const soon = () => { if (!raf) raf = requestAnimationFrame(rebuild); };
+  function sync() {
+    box.querySelectorAll("[data-imp-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.impMode === mode)));
+    box.querySelector('[data-imp-mode="shape"]').disabled = !(src && src.clear);
+    thrEl.disabled = !src || mode === "shape";
+    softEl.disabled = !src;
+    box.querySelector("[data-imp-drop]").hidden = !!src;
+    box.querySelector("[data-imp-edit]").disabled = box.querySelector("[data-imp-save]").disabled = !src;
+  }
+
+  async function load(blob, name) {
+    if (!blob || !/^image\//.test(blob.type || "")) { hint("That is not a picture. Try a PNG, JPG or GIF."); return; }
+    const ticket = ++busy, url = URL.createObjectURL(blob);
+    hint("Cutting...");
+    try {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      if (ticket !== busy) return;
+      const c = document.createElement("canvas");
+      c.width = c.height = N;
+      const g = ctx2d(c), m = N * 0.04, k = Math.min((N - 2 * m) / img.naturalWidth, (N - 2 * m) / img.naturalHeight);
+      const w = img.naturalWidth * k, h = img.naturalHeight * k, x0 = (N - w) / 2, y0 = (N - h) / 2;
+      g.imageSmoothingQuality = "high";
+      g.drawImage(img, x0, y0, w, h);
+      const d = g.getImageData(0, 0, N, N).data, lum = new Float32Array(N * N), al = new Float32Array(N * N);
+      let inside = 0, thin = 0;
+      for (let i = 0; i < N * N; i++) {
+        const a = d[i * 4 + 3] / 255, px = i % N, py = (i / N) | 0;
+        al[i] = a;
+        lum[i] = a > 0 ? 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2] : 255;
+        if (px > x0 + 1 && px < x0 + w - 2 && py > y0 + 1 && py < y0 + h - 2) { inside++; if (a < 0.5) thin++; }
+      }
+      src = { lum, al, clear: inside > 0 && thin / inside > 0.02 };
+      mode = src.clear ? "shape" : "dark";
+      thrEl.value = String(Math.round(otsu(lum, al)));
+      const base = String(name || blob.name || "").replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
+      nameEl.value = (base && base.toLowerCase() !== "image" ? base : "My picture").slice(0, 20);
+      sync();
+      rebuild();
+    } catch (e) {
+      if (ticket === busy) hint("Could not read that picture. Try another one.");
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+
+  async function paste() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const it of items) {
+        const type = it.types.find((t) => t.startsWith("image/"));
+        if (type) { load(await it.getType(type), "Pasted picture"); return; }
+      }
+      hint("There is no picture on the clipboard. Copy one first.");
+    } catch (e) { hint(`Press ${PASTE} to paste a picture.`); }
+  }
+
+  box.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || b.disabled) return;
+    if (b.hasAttribute("data-imp-x")) { hide(); return; }
+    if (b.hasAttribute("data-imp-file")) { input.click(); return; }
+    if (b.hasAttribute("data-imp-paste")) { paste(); return; }
+    if (b.dataset.impMode) { mode = b.dataset.impMode; sync(); soon(); return; }
+    const name = (nameEl.value || "").trim().slice(0, 20) || "My stencil";
+    if (b.hasAttribute("data-imp-edit") && src) { const f = field(); hide(); onEdit(f, name); return; }
+    if (b.hasAttribute("data-imp-save")) {
+      if (!holes.length) { hint("Nothing gets cut yet. Move the threshold first."); return; }
+      hide();
+      onSave(keep(name, holes));
+    }
+  });
+  input.addEventListener("change", () => { const f = input.files && input.files[0]; input.value = ""; if (f) load(f); });
+  thrEl.addEventListener("input", soon);
+  softEl.addEventListener("input", soon);
+  board.addEventListener("dragover", (e) => { e.preventDefault(); board.classList.add("over"); });
+  board.addEventListener("dragleave", () => board.classList.remove("over"));
+  board.addEventListener("drop", (e) => {
+    e.preventDefault();
+    board.classList.remove("over");
+    const f = [...((e.dataTransfer && e.dataTransfer.files) || [])].find((q) => /^image\//.test(q.type));
+    if (f) load(f); else hint("Drop a picture file here.");
+  });
+  box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); hide(); } });
+  function hide() { box.hidden = true; }
+  return {
+    open(blob) {
+      box.hidden = false;
+      if (blob) load(blob, "Pasted picture");
+      else if (!src) hint("Dark parts of the picture get cut out of the cardboard. Logos and drawings work best.");
+      sync();
+      draw();
+      box.querySelector(src ? "[data-imp-save]" : "[data-imp-file]").focus({ preventScroll: true });
+    },
+    load,
+    close: hide,
+    get shown() { return !box.hidden; },
+  };
 }
 
 export function cutter(host, { onSave }) {
@@ -228,30 +468,41 @@ export function cutter(host, { onSave }) {
   box.innerHTML = `<div class="pt-cut-w"><header class="tb"><h2 class="tb-t">Cut a stencil</h2><span class="tb-btns"><button class="tb-x" type="button" data-cut-x aria-label="Close"></button></span></header>` +
     `<div class="pt-cut-b"><div class="pt-cut-tools">${["knife", "punch", "glue", "text"].map((k) => `<button type="button" class="pt-t" data-ct="${k}" title="${{ knife: "Knife: draw around a shape to cut it out", punch: "Hole punch: drag to cut a line", glue: "Glue: drag to stick cardboard back", text: "Letters: click where the word goes" }[k]}">${btnIcon(k)}</button>`).join("")}` +
     `<div class="pt-sizes">${PUNCH.map((_, i) => `<button type="button" class="pt-s" data-cs="${i}" aria-label="Size ${i + 1}"><i style="width:${[3, 6, 10][i]}px;height:${[3, 6, 10][i]}px"></i></button>`).join("")}</div></div>` +
-    `<div class="pt-cut-board"><canvas width="${CUT_PX}" height="${CUT_PX}"></canvas></div>` +
+    `<div class="pt-cut-board"><canvas width="${VIEW_PX}" height="${VIEW_PX}"></canvas></div>` +
     `<div class="pt-cut-side"><label>Word to cut<input type="text" data-cut-word maxlength="12" value="GZOWO" autocomplete="off"></label>` +
     `<p class="pt-cut-hint" data-cut-hint></p><p class="pt-cut-row"><button class="btn" type="button" data-cut-undo>Undo</button><button class="btn" type="button" data-cut-new>New sheet</button></p>` +
+    `<p class="pt-cut-row"><button class="btn" type="button" data-cut-pic>From a picture...</button></p>` +
     `<label>Name<input type="text" data-cut-name maxlength="20" placeholder="My stencil" autocomplete="off"></label>` +
     `<p class="pt-cut-row"><button class="btn" type="button" data-cut-save>Save and use</button></p></div></div></div>`;
   host.append(box);
   const view = box.querySelector("canvas"), vx = view.getContext("2d"), sheet = document.createElement("canvas");
   sheet.width = sheet.height = N;
-  const sx = sheet.getContext("2d"), undo = [];
+  const sx = ctx2d(sheet), undo = [];
   let tool = "knife", size = 1, lasso = null, last = null, drag = false;
   const hints = { knife: "Draw around a shape and let go: the inside falls out.", punch: "Drag to punch a line of holes through the sheet.", glue: "Drag over a hole to glue cardboard back in.", text: "Type a word on the right, then click the sheet where it goes." };
+  const imp = importer(host, {
+    onSave,
+    onEdit(f, name) {
+      snap();
+      const img = sx.createImageData(N, N);
+      for (let i = 0; i < N * N; i++) img.data[i * 4 + 3] = Math.round(f[i] * 255);
+      sx.putImageData(img, 0, 0);
+      box.querySelector("[data-cut-name]").value = name;
+      show();
+    },
+  });
 
   function paint() {
-    vx.globalCompositeOperation = "source-over";
-    vx.fillStyle = "#c49a5e"; vx.fillRect(0, 0, CUT_PX, CUT_PX);
-    vx.fillStyle = "rgba(120,80,30,.18)";
-    for (let y = 0; y < CUT_PX; y += 4) vx.fillRect(0, y, CUT_PX, 1);
+    const V = view.width, k = V / N;
+    cardboard(vx, V);
     vx.globalCompositeOperation = "destination-out";
-    vx.imageSmoothingEnabled = false;
-    vx.drawImage(sheet, 0, 0, CUT_PX, CUT_PX);
+    vx.imageSmoothingEnabled = true;
+    vx.imageSmoothingQuality = "high";
+    vx.drawImage(sheet, 0, 0, V, V);
     vx.globalCompositeOperation = "source-over";
     if (lasso && lasso.length > 2) {
-      vx.setLineDash([5, 4]); vx.lineWidth = 2; vx.strokeStyle = "#000";
-      vx.beginPath(); lasso.forEach(([a, b], i) => (i ? vx.lineTo(a * (CUT_PX / N), b * (CUT_PX / N)) : vx.moveTo(a * (CUT_PX / N), b * (CUT_PX / N)))); vx.stroke();
+      vx.setLineDash([10, 8]); vx.lineWidth = 3; vx.strokeStyle = "#000";
+      vx.beginPath(); lasso.forEach(([a, b], i) => (i ? vx.lineTo(a * k, b * k) : vx.moveTo(a * k, b * k))); vx.stroke();
       vx.setLineDash([]);
     }
   }
@@ -261,7 +512,7 @@ export function cutter(host, { onSave }) {
     box.querySelector("[data-cut-hint]").textContent = hints[tool];
     box.querySelector("[data-cut-undo]").disabled = !undo.length;
   }
-  const snap = () => { undo.push(sx.getImageData(0, 0, N, N)); if (undo.length > 25) undo.shift(); };
+  function snap() { undo.push(sx.getImageData(0, 0, N, N)); if (undo.length > 25) undo.shift(); }
   const pt = (e) => { const r = view.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * N, ((e.clientY - r.top) / r.height) * N]; };
   function line(a, b, erase) {
     sx.globalCompositeOperation = erase ? "destination-out" : "source-over";
@@ -296,7 +547,7 @@ export function cutter(host, { onSave }) {
   view.addEventListener("pointermove", (e) => {
     if (!drag) return;
     const p = pt(e);
-    if (tool === "knife") { if (Math.hypot(p[0] - last[0], p[1] - last[1]) > 0.8) { lasso.push(p); last = p; } }
+    if (tool === "knife") { if (Math.hypot(p[0] - last[0], p[1] - last[1]) > 1.6) { lasso.push(p); last = p; } }
     else { line(last, p, tool === "glue"); last = p; }
     paint();
   });
@@ -316,12 +567,13 @@ export function cutter(host, { onSave }) {
     const b = e.target.closest("button");
     if (!b) return;
     if (b.hasAttribute("data-cut-x")) { hide(); return; }
+    if (b.hasAttribute("data-cut-pic")) { hide(); imp.open(); return; }
     if (b.dataset.ct) tool = b.dataset.ct;
     if (b.dataset.cs) size = +b.dataset.cs;
     if (b.hasAttribute("data-cut-undo") && undo.length) sx.putImageData(undo.pop(), 0, 0);
     if (b.hasAttribute("data-cut-new")) { snap(); sx.clearRect(0, 0, N, N); }
     if (b.hasAttribute("data-cut-save")) {
-      const holes = trace(maskOf(sheet));
+      const holes = trace(fieldOf(sheet));
       if (!holes.length) { box.querySelector("[data-cut-hint]").textContent = "Cut something out first: the sheet has no holes yet."; return; }
       const name = (box.querySelector("[data-cut-name]").value || "").trim().slice(0, 20) || "My stencil";
       hide();
@@ -331,11 +583,20 @@ export function cutter(host, { onSave }) {
     paint(); sync();
   });
   box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); hide(); } });
+  document.addEventListener("paste", (e) => {
+    if (box.hidden && !imp.shown) return;
+    const f = pastedImage(e);
+    if (!f) return;
+    e.preventDefault();
+    if (!imp.shown) { hide(); imp.open(f); } else imp.load(f, "Pasted picture");
+  });
   function hide() { box.hidden = true; lasso = null; drag = false; }
+  function show() { box.hidden = false; paint(); sync(); box.querySelector("[data-ct]").focus({ preventScroll: true }); }
   box.hidden = true;
   return {
-    open() { box.hidden = false; paint(); sync(); box.querySelector("[data-ct]").focus({ preventScroll: true }); },
-    close: hide,
-    get shown() { return !box.hidden; },
+    open: show,
+    picture(blob) { hide(); imp.open(blob); },
+    close() { hide(); imp.close(); },
+    get shown() { return !box.hidden || imp.shown; },
   };
 }

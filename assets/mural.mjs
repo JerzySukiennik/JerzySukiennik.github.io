@@ -1483,7 +1483,7 @@ export function createMural(el, opts) {
     sheetL = overlay("sheet");
     layers.push(tapeL, sheetL);
     lapseEl = chrome.querySelector(".pt-lapse");
-    pick = picker(chrome, { onPick: placeStencil, onCut: () => cut.open() });
+    pick = picker(chrome, { onPick: placeStencil, onCut: () => cut.open(), onPicture: (f) => cut.picture(f) });
     cut = cutter(chrome, { onSave: placeStencil });
     chrome.addEventListener("click", (e) => {
       const b = e.target.closest("button");

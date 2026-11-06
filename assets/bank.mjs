@@ -29,7 +29,7 @@ export async function api(path, body, opts = {}) {
   const headers = { "content-type": "application/json" };
   const code = opts.code || S.code;
   if (code) headers.authorization = "Bearer " + code;
-  if (path.startsWith("/admin")) headers["x-admin"] = store.get("gl-admin", "");
+  if (path.startsWith("/admin") || path === "/nick") headers["x-admin"] = store.get("gl-admin", "");
   let r, j;
   try {
     r = await fetch(BANK + path, { method: body ? "POST" : "GET", headers, body: body ? JSON.stringify(body) : undefined });
@@ -132,7 +132,7 @@ function walletTab(m) {
 <tr><td><b>GZM</b> Gzowium</td><td>${coins(m.gzm)}</td><td>${fmt(m.gzm * p.gzm)} szyszki</td></tr>
 <tr><td><b>GZF</b> Gzofajfus</td><td>${coins(m.gzf)}</td><td>${fmt(m.gzf * p.gzf)} szyszki</td></tr>
 <tr><td>Worth in total</td><td></td><td><b>${fmt(m.worth)}</b></td></tr></tbody></table>
-<form class="bk-form bk-nick" data-bk-form="nick"><label>Your name on Gzowo Street<input name="nick" maxlength="16" value="${esc(m.nick || "")}" placeholder="anon ${esc(m.id.slice(0, 4))}" autocomplete="nickname"></label><button class="btn" type="submit">Save</button></form>
+<form class="bk-form bk-nick" data-bk-form="nick"><label>Your name on Gzowo Street<input name="nick" maxlength="16" value="${esc(m.nick || "")}" placeholder="anon ${esc(m.id.slice(0, 4))}" autocomplete="nickname"></label><button class="btn" type="submit">Save</button><p class="bk-note" data-note></p></form>
 <p class="bk-row"><button class="btn" type="button" data-exchange>${icon("bank")} Exchange</button><button class="btn" type="button" data-store>${icon("store")} Store</button><button class="btn" type="button" data-top>Top 25</button></p>
 ${items.length ? `<p class="bk-sub">Wardrobe</p><div class="bk-items">${items.map((id) => `<span title="${esc(itemOf(id)[1])}"><canvas data-item-art="${id}"></canvas></span>`).join("")}</div>` : ""}</div>`;
 }
@@ -251,9 +251,11 @@ async function openInbox() {
   }
 }
 
+const typing = (el) => { const a = document.activeElement; return !!a && el.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName); };
+
 function refresh() {
   const w = window.gzDesk && window.gzDesk.find("wallet");
-  if (w && !w.hidden) renderWallet(w);
+  if (w && !w.hidden && !typing(w)) renderWallet(w);
   const s = window.gzDesk && window.gzDesk.find("store");
   if (s && !s.hidden && !s.contains(document.activeElement)) renderStore(s);
 }
@@ -273,8 +275,9 @@ async function submit(form) {
       toast("Wallet opened on this device.");
     } else if (kind === "nick") {
       await ensure();
-      await api("/nick", { nick: data.nick });
-      say("Saved.");
+      const j = await api("/nick", { nick: data.nick });
+      const n = document.querySelector('[data-bk-form="nick"] [data-note]');
+      if (n) n.textContent = j.me && j.me.nick ? `Saved. You are ${j.me.nick} now.` : "Saved. Your name is cleared.";
     } else if (kind === "admin") {
       store.set("gl-admin", String(data.key || ""));
       openInbox();

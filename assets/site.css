@@ -358,6 +358,14 @@ html.tall .paint>.stb>span:first-child{display:none}
 .pt-cut-hint{min-height:58px;margin:0;padding:5px 6px;background:var(--tip);border:1px solid #000}
 .pt-cut-row{display:flex;flex-wrap:wrap;gap:6px;margin:0}
 .pt-cut-row .btn{flex:1;min-width:0;padding:0 8px}
+.pt-pick-a{gap:6px}
+.pt-pick-a .btn{min-width:0}
+.pt-cut-side input[type=range]{width:100%;margin:4px 0 0;padding:0;background:none;box-shadow:none;accent-color:var(--navy)}
+.pt-imp-f{display:flex;flex-direction:column;gap:2px}
+.pt-imp-mode .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
+.pt-imp-board{position:relative}
+.pt-imp-board.over canvas{outline:3px dashed #fff;outline-offset:-10px}
+.pt-imp-drop{position:absolute;inset:8px;display:flex;align-items:center;justify-content:center;padding:36px;text-align:center;font-weight:bold;color:#4a2c0e;pointer-events:none}
 html.tall .pt-pick{left:8px;right:8px;top:auto;bottom:8px;width:auto}
 html.tall .pt-cut-b{flex-direction:column;align-items:center}
 html.tall .pt-cut-tools{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
@@ -716,6 +724,8 @@ html.tall .cm-side{width:100%}
 .ex-why td.down{color:#9a5b00}
 .bk-nick{display:flex;align-items:flex-end;gap:6px}
 .bk-nick label{flex:1;margin:0}
+.bk-nick{flex-wrap:wrap}
+.bk-nick .bk-note{flex-basis:100%}
 .bk-items{display:flex;flex-wrap:wrap;gap:4px}
 .bk-items span{padding:2px;background:#d9ecf7;box-shadow:var(--sunken)}
 p>.px,li .px,td .px,.mu-price .px{display:inline-block;vertical-align:-3px}
