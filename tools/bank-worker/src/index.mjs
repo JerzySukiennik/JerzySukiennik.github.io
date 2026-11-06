@@ -1,9 +1,10 @@
 /* Gzowo Bank: szyszki wallets, the GZM and GZF coins priced from real data (Narew at Pułtusk, plot activity, Jurek's GitHub pushes,
-   Gzowo wind, rocket launches) and player trades, plus the shop, daily quests, the museum art market and Jurek's feedback inbox. */
+   Gzowo wind, rocket launches) and player trades, plus the shop, daily quests, the museum art market, Haiku buying drawings off the wall and Jurek's feedback inbox. */
 
 const RTDB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const MODEL = "claude-haiku-5-5";
-const START = 50, DAILY = 20, FEE = 0.01, DAY = 86400000;
+const START = 50, DAILY = 20, FEE = 0.01, DAY = 86400000, HANG_PAY = 20;
+const WALL_SELLS = 5, WALL_LOOKS = 25, WALL_INK = 50000, WALL_KEY = /^[a-z0-9]{24}$/, STROKE_ID = /^[-_A-Za-z0-9]{20}$/;
 const COINS = { gzm: { base: 10, liq: 3000 }, gzf: { base: 3, liq: 1000 } };
 
 const WORDS = ("acorn amber anchor apple arrow aspen badge baker banjo barn basil beach beacon bean beaver berry birch biscuit "
@@ -390,35 +391,37 @@ function tidy(t, max) {
   return end > max / 3 ? cut.slice(0, end + 1) : cut.slice(0, cut.lastIndexOf(" ")).replace(/[,;:]$/, "") + "...";
 }
 
-async function critic(env, b64, title, about) {
+const MUSEUM = "You are Haiku, the friendly art critic of the Gzowo Museum on gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. Visitors paint in a small MS Paint style editor. Judge effort, creativity, composition and colour on a 1 to 10 scale: 1-2 an accidental scribble or empty canvas, 3-4 a quick doodle, 5-6 a clear picture with some care, 7-8 a detailed and thoughtful picture, 9-10 genuinely impressive. Be honest but warm. Mark it unsafe if the picture, title or description shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.";
+const BUYER = "You are Haiku, the art buyer of the Gzowo wall on gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. Visitors spray paint on one long shared brick wall with spray cans, chalk, neon, masking tape and stencils. A visitor wants to sell you one drawing they made there; you see it cut out from the wall with the wall behind it. Judge effort, creativity, composition and colour on a 1 to 10 scale: 1-2 a random scribble or a few lines, 3-4 a quick doodle, 5-6 a clear picture or tag with some care, 7-8 a detailed and thoughtful piece, 9-10 genuinely impressive graffiti. Be honest but warm. Mark it unsafe if it shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.";
+
+async function critic(env, system, b64, type, text) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({
-      model: MODEL, max_tokens: 400, thinking: { type: "disabled" },
-      system: "You are Haiku, the friendly art critic of the Gzowo Museum on gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. Visitors paint in a small MS Paint style editor. Judge effort, creativity, composition and colour on a 1 to 10 scale: 1-2 an accidental scribble or empty canvas, 3-4 a quick doodle, 5-6 a clear picture with some care, 7-8 a detailed and thoughtful picture, 9-10 genuinely impressive. Be honest but warm. Mark it unsafe if the picture, title or description shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.",
+      model: MODEL, max_tokens: 400, thinking: { type: "disabled" }, system,
       tools: [{
-        name: "review", description: "Record the review of the painting.",
+        name: "review", description: "Record the review of the picture.",
         input_schema: {
           type: "object", additionalProperties: false, required: ["score", "safe", "comment"],
           properties: {
             score: { type: "integer", minimum: 1, maximum: 10 },
             safe: { type: "boolean" },
-            comment: { type: "string", description: "One or two short playful sentences in English about this painting, at most 200 characters." },
+            comment: { type: "string", description: "One or two short playful sentences in English about this picture, at most 200 characters." },
           },
         },
       }],
       tool_choice: { type: "tool", name: "review" },
       messages: [{ role: "user", content: [
-        { type: "image", source: { type: "base64", media_type: "image/png", data: b64 } },
-        { type: "text", text: `Title: ${title}\nDescription: ${about || "(none)"}` },
+        { type: "image", source: { type: "base64", media_type: type, data: b64 } },
+        { type: "text", text },
       ] }],
     }),
   });
-  if (!res.ok) throw new Fail("The critic is out for lunch, try again in a minute", 503);
+  if (!res.ok) throw new Fail("Haiku is out for lunch, try again in a minute", 503);
   const data = await res.json();
   const use = (data.content || []).find((c) => c.type === "tool_use");
-  if (!use) throw new Fail("The critic is out for lunch, try again in a minute", 503);
+  if (!use) throw new Fail("Haiku is out for lunch, try again in a minute", 503);
   return { score: clamp(Math.round(+use.input.score || 1), 1, 10), safe: use.input.safe !== false, comment: tidy(String(use.input.comment || ""), 240) };
 }
 
@@ -437,21 +440,21 @@ async function hang(env, req, w, body) {
   const used = await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = 'art'").bind(w.id, today()).first();
   const n = used ? used.n : 0;
   if (n >= COUNT_ONLY.art) throw new Fail("That's six paintings today, the museum walls need a rest");
-  const review = await critic(env, b64, title, about);
+  const review = await critic(env, MUSEUM, b64, "image/png", `Title: ${title}\nDescription: ${about || "(none)"}`);
   if (!review.safe) throw new Fail("The museum can't hang this one");
   await bump(env, w.id, "art", COUNT_ONLY.art);
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
-  const paid = n < 3 && review.score >= 3 ? review.score * 5 : 0;
+  const paid = n < 3 && review.score >= 3 ? HANG_PAY : 0;
   await env.DB.prepare("INSERT INTO art (id, author, owner, title, about, price, forsale, score, comment, t, img, w, h, sales) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)")
     .bind(id, w.id, w.id, title, about, price, body.forsale === false ? 0 : 1, review.score, review.comment, Date.now(), b64, size.w, size.h).run();
   await env.DB.prepare("INSERT INTO art_hist (art, t, seller, buyer, price) VALUES (?, ?, NULL, ?, 0)").bind(id, Date.now(), w.id).run();
-  if (paid) await credit(env, w.id, paid, "art", `critic gave ${review.score}/10`);
-  return { ok: true, id, score: review.score, comment: review.comment, paid, me: await view(env, await me(env, w.id)) };
+  if (paid) await credit(env, w.id, paid, "art", "hung a painting in the museum");
+  return { ok: true, id, paid, me: await view(env, await me(env, w.id)) };
 }
 
-const ART_COLS = "a.id, a.author, a.owner, a.title, a.about, a.price, a.forsale, a.score, a.comment, a.t, a.w, a.h, a.sales, au.nick an, ow.nick onick";
+const ART_COLS = "a.id, a.author, a.owner, a.title, a.about, a.price, a.forsale, a.t, a.w, a.h, a.sales, au.nick an, ow.nick onick";
 const artOut = (a, id) => ({
-  id: a.id, title: a.title, about: a.about, price: a.price, forsale: !!a.forsale, score: a.score, comment: a.comment, t: a.t, w: a.w, h: a.h, sales: a.sales,
+  id: a.id, title: a.title, about: a.about, price: a.price, forsale: !!a.forsale, t: a.t, w: a.w, h: a.h, sales: a.sales,
   author: a.an || "anon " + a.author.slice(0, 4), owner: a.onick || "anon " + a.owner.slice(0, 4), mine: a.owner === id, made: a.author === id,
 });
 
@@ -501,6 +504,105 @@ async function purchase(env, w, artId, body) {
   if (royalty) ops.push(env.DB.prepare("UPDATE wallets SET szy = szy + ? WHERE id = ?").bind(royalty, a.author), ledger(env, a.author, "art", royalty, 0, 0, `10% from resale of "${a.title}"`));
   await env.DB.batch(ops);
   return { ok: true, art: await piece(env, artId, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+const wallOf = (req) => (plotOf(req) === "plotDev" ? ["muralWallDev", "muralWallTrashDev"] : ["muralWall", "muralWallTrash"]);
+const tag12 = async (s) => (await sha(s)).slice(0, 12);
+
+async function strokesOf(req, ids) {
+  if (!Array.isArray(ids) || !ids.length || ids.length > 800) throw new Fail("That drawing didn't arrive");
+  const seen = new Set(), list = [];
+  for (const x of ids) {
+    if (!Array.isArray(x) || !Number.isInteger(x[0]) || x[0] < 0 || x[0] >= 1e8 || typeof x[1] !== "string" || !STROKE_ID.test(x[1]) || seen.has(x[1])) throw new Fail("That drawing didn't arrive");
+    seen.add(x[1]);
+    list.push({ p: x[0], id: x[1] });
+  }
+  const ps = [...new Set(list.map((x) => x.p))];
+  if (ps.length > 6) throw new Fail("That drawing is too spread out");
+  const far = wallOf(req)[0], data = await Promise.all(ps.map((p) => rtdb(`${far}/${p}.json`)));
+  const by = new Map(ps.map((p, i) => [p, data[i] && typeof data[i] === "object" ? data[i] : {}]));
+  return list.map((x) => ({ ...x, v: by.get(x.p)[x.id] || null }));
+}
+
+async function owned(list, key, wid) {
+  const a = WALL_KEY.test(String(key || "")) ? await tag12("gzowo-wall-a:" + key) : null, u = wid ? await tag12("gzowo-wall-u:" + wid) : null;
+  for (const s of list) {
+    if (!s.v || typeof s.v !== "object" || typeof s.v.d !== "string") throw new Fail("Part of that drawing is gone already", 409);
+    if (!((a && s.v.a === a) || (u && s.v.u === u))) throw new Fail("Only the painter can sell that drawing", 403);
+  }
+  if (!list.some((s) => s.v.k !== "e")) throw new Fail("There's no paint in that one");
+}
+
+const sigOf = async (list) => sha(list.map((s) => [s.v.k, s.v.c, s.v.w, s.v.z, s.v.o, s.v.h, s.v.d].join("|")).sort().join("\n"));
+
+function inkOf(v) {
+  if (v.k === "e") return 0;
+  const sc = 2 ** -(Number.isInteger(v.z) ? clamp(v.z, 0, 30) : 0), n = String(v.d).split(",").map(Number), w = clamp(+v.w || 12, 3, 200) * sc;
+  let len = 0;
+  for (let i = 2; i + 1 < n.length; i += 2) len += Math.hypot(n[i] - n[i - 2], n[i + 1] - n[i - 1]);
+  return (len * sc + w) * w;
+}
+
+async function wallQuote(env, req, w, body) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(body.img || ""));
+  if (!m || m[1].length > 700000) throw new Fail("The drawing didn't arrive");
+  const sold = await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = 'wallsell'").bind(w.id, today()).first();
+  if (sold && sold.n >= WALL_SELLS) throw new Fail("Haiku already bought five of your drawings today, come back tomorrow");
+  const list = await strokesOf(req, body.ids);
+  await owned(list, body.key, w.id);
+  const sig = await sigOf(list);
+  if (await env.DB.prepare("SELECT 1 FROM wall_sold WHERE sig = ?").bind(sig).first()) throw new Fail("Haiku already bought this one");
+  await ipLimit(env, req, "wallq", 60);
+  if (!(await bump(env, w.id, "wallq", WALL_LOOKS))) throw new Fail("Haiku has looked at enough of your drawings today, come back tomorrow");
+  const r = await critic(env, BUYER, m[1], "image/jpeg", "Here is my drawing from the wall. How good is it?");
+  if (!r.safe) throw new Fail("Haiku won't buy this one");
+  const ink = list.reduce((s, x) => s + inkOf(x.v), 0);
+  const szy = clamp(Math.round(r.score * 10 * clamp(Math.sqrt(ink / WALL_INK), 0.1, 1)), 1, 100);
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  await env.DB.prepare("INSERT INTO wall_quotes (id, w, wall, ids, sig, szy, t) VALUES (?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, w.id, wallOf(req)[0], JSON.stringify(list.map((x) => [x.p, x.id])), sig, szy, Date.now()).run();
+  const p = await prices(env);
+  return { quote: id, szy, score: r.score, comment: r.comment, gzm: r6(szy / p.gzm), gzf: r6(szy / p.gzf) };
+}
+
+async function wallSell(env, req, w, body) {
+  const pay = ["szy", "gzm", "gzf"].includes(body.pay) ? body.pay : null;
+  if (!pay) throw new Fail("Pick how Haiku pays you");
+  const q = await env.DB.prepare("SELECT * FROM wall_quotes WHERE id = ? AND w = ?").bind(String(body.quote || ""), w.id).first();
+  if (!q || Date.now() - q.t > 15 * 60000 || q.wall !== wallOf(req)[0]) throw new Fail("That offer ran out, ask Haiku again", 410);
+  const list = await strokesOf(req, JSON.parse(q.ids));
+  if (list.some((x) => !x.v)) throw new Fail("Part of that drawing is gone already", 409);
+  if ((await sigOf(list)) !== q.sig) throw new Fail("The drawing changed, ask Haiku again", 409);
+  const del = await env.DB.prepare("DELETE FROM wall_quotes WHERE id = ?").bind(q.id).run();
+  if (!del.meta.changes) throw new Fail("Already sold", 409);
+  if (!(await bump(env, w.id, "wallsell", WALL_SELLS))) throw new Fail("Haiku already bought five of your drawings today, come back tomorrow");
+  const undo = () => env.DB.batch([
+    env.DB.prepare("DELETE FROM wall_sold WHERE sig = ?").bind(q.sig),
+    env.DB.prepare("UPDATE earns SET n = n - 1 WHERE w = ? AND day = ? AND kind = 'wallsell' AND n > 0").bind(w.id, today()),
+  ]);
+  const claim = await env.DB.prepare("INSERT OR IGNORE INTO wall_sold (sig, w, t) VALUES (?, ?, ?)").bind(q.sig, w.id, Date.now()).run();
+  if (!claim.meta.changes) { await env.DB.prepare("UPDATE earns SET n = n - 1 WHERE w = ? AND day = ? AND kind = 'wallsell' AND n > 0").bind(w.id, today()).run(); throw new Fail("Haiku already bought this one"); }
+  const [far, bin] = wallOf(req), patch = {};
+  for (const x of list) {
+    const { t, ...rest } = x.v;
+    patch[`${far}/${x.p}/${x.id}`] = null;
+    patch[`${bin}/${x.p}/${x.id}`] = { ...rest, e: { ".sv": "timestamp" } };
+  }
+  const res = await fetch(`${RTDB}/.json`, { method: "PATCH", body: JSON.stringify(patch) }).catch(() => null);
+  if (!res || !res.ok) { await undo(); throw new Fail("The wall didn't let go of it, try again", 503); }
+  let got;
+  if (pay === "szy") {
+    got = q.szy;
+    await credit(env, w.id, got, "wall", "Haiku bought a drawing from the wall");
+  } else {
+    const p = await prices(env);
+    got = r6(q.szy / p[pay]);
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE wallets SET ${pay} = ${pay} + ?1, seen = ?2 WHERE id = ?3`).bind(got, Date.now(), w.id),
+      ledger(env, w.id, "wall", 0, pay === "gzm" ? got : 0, pay === "gzf" ? got : 0, "Haiku bought a drawing from the wall"),
+    ]);
+  }
+  return { ok: true, pay, got, me: await view(env, await me(env, w.id)) };
 }
 
 async function history(env, w) {
@@ -593,6 +695,7 @@ async function tick(env) {
     env.DB.prepare("DELETE FROM earns WHERE day < ?").bind(new Date(now - 3 * DAY).toISOString().slice(0, 10)),
     env.DB.prepare("DELETE FROM ipday WHERE day < ?").bind(new Date(now - 3 * DAY).toISOString().slice(0, 10)),
     env.DB.prepare("DELETE FROM ledger WHERE t < ?").bind(now - 90 * DAY),
+    env.DB.prepare("DELETE FROM wall_quotes WHERE t < ?").bind(now - DAY),
   ]);
 }
 
@@ -652,6 +755,8 @@ async function route(req, env, ctx) {
   if (method === "POST" && path === "/trade") return trade(env, await need(), body);
   if (method === "POST" && path === "/buy") return buy(env, await need(), body);
 
+  if (method === "POST" && path === "/wall/quote") return wallQuote(env, req, await need(), body);
+  if (method === "POST" && path === "/wall/sell") return wallSell(env, req, await need(), body);
   if (method === "GET" && path === "/art") return gallery(env, id);
   if (method === "POST" && path === "/art") return hang(env, req, await need(), body);
   const art = /^\/art\/([a-f0-9]{16})(\/(img|price|buy))?$/.exec(path);

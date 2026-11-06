@@ -516,7 +516,7 @@ function hangDialog() {
   d.innerHTML = `<form class="gp-dlg gp-hang" data-gp-hang><p><b>Hang it in the Gzowo Museum</b></p><img alt="Your painting" src="${P.cv.toDataURL("image/png")}">
 <label>Title<input name="title" maxlength="40" required></label><label>About it<textarea name="about" maxlength="200" rows="2"></textarea></label>
 <label>Price in szyszki<input name="price" type="number" min="1" max="1000000" value="50" required></label><label class="gp-chk"><input type="checkbox" name="forsale" checked> For sale</label>
-<p class="bk-note">Haiku, the museum critic, looks at every painting and pays up to 50 szyszki for a good one (three a day). You keep 10% every time it is sold again later.</p>
+<p class="bk-note">You get 20 szyszki for each of your first three paintings a day, and 10% every time it is sold again later.</p>
 <p class="bk-row"><button class="btn go" type="submit">Hang it</button><button class="btn" type="button" data-gp-cancel>Cancel</button></p><p class="bk-note" data-note></p></form>`;
   d.querySelector("[name=title]").focus();
 }
@@ -524,12 +524,12 @@ function hangDialog() {
 async function hang(f) {
   const note = f.querySelector("[data-note]"), btn = f.querySelector("[type=submit]");
   btn.disabled = true;
-  note.textContent = "The critic is looking at it...";
+  note.textContent = "Hanging it up...";
   try {
     await ensure();
     const j = await api("/art", { title: f.title.value, about: f.about.value, price: +f.price.value, forsale: f.forsale.checked, img: P.cv.toDataURL("image/png") });
-    f.closest("[data-gp-dlg]").innerHTML = `<div class="gp-dlg"><p><b>It's on the wall!</b></p><p class="gp-score">${j.score}/10</p><p>"${esc(j.comment)}"<br>- Haiku, museum critic</p><p>${j.paid ? `The critic paid you ${j.paid} szyszki.` : "No payout this time, but it hangs in the museum now."}</p><p class="bk-row"><button class="btn go" type="button" data-museum="${j.id}">See it in the museum</button><button class="btn" type="button" data-gp-cancel>Keep painting</button></p></div>`;
-    if (j.paid) toast(`+${j.paid} from the museum critic (${j.score}/10)`);
+    f.closest("[data-gp-dlg]").innerHTML = `<div class="gp-dlg"><p><b>It's on the wall!</b></p><p>${j.paid ? `You got ${j.paid} szyszki for it.` : "No payout this time, but it hangs in the museum now."}</p><p class="bk-row"><button class="btn go" type="button" data-museum="${j.id}">See it in the museum</button><button class="btn" type="button" data-gp-cancel>Keep painting</button></p></div>`;
+    if (j.paid) toast(`+${j.paid} for hanging a painting in the museum`);
     window.dispatchEvent(new CustomEvent("gz:art", { detail: j.id }));
   } catch (e) { note.textContent = e.message; btn.disabled = false; }
 }

@@ -368,6 +368,18 @@ html.tall .paint>.stb>span:first-child{display:none}
 .wv-ring::after{content:"";position:absolute;left:50%;top:50%;width:2px;height:2px;margin:-1px 0 0 -1px;background:#000;box-shadow:0 0 0 1px #fff}
 .wv-kind{position:absolute;left:0;top:0;display:flex;align-items:center;gap:4px;min-width:0;padding:2px 8px 2px 4px;white-space:nowrap;pointer-events:auto;will-change:transform}
 .wv-kind svg{flex:none}
+.wv-sell{position:absolute;left:0;top:0;display:flex;align-items:center;gap:4px;min-width:0;padding:2px 8px 2px 5px;white-space:nowrap;pointer-events:auto;will-change:transform}
+.wv-sell svg{flex:none}
+.wv-selbox{position:absolute;left:0;top:0;z-index:62;pointer-events:none;outline:2px dashed #fff;box-shadow:0 0 0 2px #000,inset 0 0 0 2px #000;will-change:transform}
+.paint .pt-sell{width:min(300px,calc(100% - 16px))}
+.pt-sell-b{padding:6px 8px 8px}
+.pt-sell-b p{margin:0 0 8px}
+.pt-sell-i{text-align:center}
+.pt-sell-i img{max-width:100%;max-height:160px;image-rendering:pixelated;box-shadow:var(--sunken)}
+.pt-sell-c{font-style:italic}
+.pt-sell-pay{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.pt-sell-pay .btn{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;padding-left:2px;padding-right:2px;white-space:nowrap}
+.pt-sell-n{font-size:11px;color:#444}
 .pt-kinds .pt-pick-g{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
 .pt-kinds .pt-pk canvas{width:80px;height:50px;image-rendering:pixelated}
 .pt-kinds .pt-pk>button[aria-pressed="true"] span{color:#fff;background:var(--sel)}
@@ -380,7 +392,7 @@ html.tall .paint>.stb>span:first-child{display:none}
 .pt-caps .pt-pk>button[aria-pressed="true"] span{color:#fff;background:var(--sel)}
 .wv-tl{z-index:70;transition:opacity .6s ease}
 .wv-tl.out{opacity:0}
-.wv.tl .wv-l>canvas+canvas,.wv.tl .wv-ov,.wv.tl .wv-ink,.wv.tl .wv-who,.wv.tl .wv-kinds,.wv.tl .wv-ring{visibility:hidden}
+.wv.tl .wv-l>canvas+canvas,.wv.tl .wv-ov,.wv.tl .wv-ink,.wv.tl .wv-who,.wv.tl .wv-kinds,.wv.tl .wv-ring,.wv.tl .wv-selbox{visibility:hidden}
 .pt-lapse{position:absolute;left:50%;bottom:10px;z-index:80;display:flex;align-items:center;gap:8px;max-width:calc(100% - 16px);padding:4px 6px;background:var(--face);box-shadow:var(--raised);transform:translateX(-50%);pointer-events:auto;white-space:nowrap}
 .pt-lapse-d{min-width:142px}
 .pt-bar{flex:none;width:180px;height:18px;padding:2px;background:#fff;box-shadow:var(--sunken)}
@@ -871,8 +883,6 @@ html.tall .ex-chart{height:160px}
 .mu-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:3px}
 .mu-price{display:inline-flex;align-items:center;gap:3px;font-weight:bold}
 .mu-price.no{color:#7a6650;font-weight:normal}
-.mu-sc{padding:0 5px;color:#fff;background:var(--navy);font:bold 11px/16px var(--mono)}
-.mu-sc.big{flex:none;padding:0 8px;font-size:18px;line-height:30px}
 .mu-fr{position:relative;display:block;padding:10px;border:0;background:#c9962e;box-shadow:inset 2px 2px #f6d77a,inset -2px -2px #6b4410,inset 0 0 0 5px #b07e22,6px 8px 0 rgba(0,0,0,.28);cursor:pointer;transition:transform .15s}
 .mu-fr img{display:block;border:6px solid #f4ecd8;background:#fff;box-shadow:0 0 0 1px #6b4410;image-rendering:pixelated}
 .mu-fr.wood{background:#7a4a2a;box-shadow:inset 2px 2px #a8703f,inset -2px -2px #3a2416,6px 8px 0 rgba(0,0,0,.28)}
@@ -891,8 +901,6 @@ button.mu-fr:hover,button.mu-fr:focus-visible{transform:translateY(-3px)}
 .mu-d-info h4{margin:14px 0 4px}
 .mu-d-info p{margin:4px 0}
 .mu-d-ab{font-style:italic}
-.mu-d-crit{display:flex;align-items:center;gap:10px;margin:8px 0;padding:6px 8px;background:var(--tip);border:1px solid #000}
-.mu-d-crit em{color:#555;font-size:11px}
 .mu-d-price{display:flex;align-items:center;gap:4px;font-size:16px}
 .mu-d-own{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .mu-d-own label{display:flex;align-items:center;gap:4px}
@@ -960,7 +968,6 @@ html.tall .mu-d{flex-direction:column;align-items:center}
 .gp-dlg label{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
 form[data-gp-new] label,.gp-chk{flex-direction:row!important;align-items:center;gap:6px}
 .gp-hang img{display:block;max-width:100%;max-height:150px;margin:0 auto 8px;box-shadow:0 0 0 1px #000;image-rendering:pixelated}
-.gp-score{margin:6px 0!important;font:bold 34px var(--mono);text-align:center}
 html.tall .gp-menu>button:not(.btn){padding:0 5px}
 html.tall .gp-hangb{width:100%;margin:2px 0 0}
 html.tall .gp-sw{flex:1;grid-template-columns:repeat(14,1fr)}

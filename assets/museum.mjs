@@ -18,7 +18,7 @@ const ART = {
   plant: [".....gg.....", "..g.glg..g..", ".glgglggglg.", "glgglgglgglg", ".glgglgglgl.", "..gglgglgg..", "....glg.....", ".....g......", "..pppppppp..",
     "..pqqqqqqp..", "...pqqqqp...", "...pqqqqp...", "....pppp...."],
 };
-const FILTERS = [["all", "All"], ["sale", "For sale"], ["top", "Top rated"], ["mine", "Mine"]];
+const FILTERS = [["all", "All"], ["sale", "For sale"], ["sold", "Most sold"], ["mine", "Mine"]];
 
 const M = { el: null, hall: null, list: [], filter: "all", loading: null, io: null, spot: null, detail: null };
 const fmt = (n) => Math.floor(n).toLocaleString("en-US");
@@ -42,11 +42,11 @@ function shown() {
   let l = M.list.slice();
   if (M.filter === "sale") l = l.filter((a) => a.forsale && !a.mine);
   if (M.filter === "mine") l = l.filter((a) => a.mine || a.made);
-  if (M.filter === "top") l.sort((a, b) => b.score - a.score || b.t - a.t);
+  if (M.filter === "sold") l.sort((a, b) => b.sales - a.sales || b.t - a.t);
   return l;
 }
 
-function frameCls(a) { return a.score >= 8 ? "gold" : a.score >= 5 ? "wood" : "plain"; }
+function frameCls(a) { return a.sales >= 3 ? "gold" : a.sales >= 1 ? "wood" : "plain"; }
 
 function piece(a, i, mw, mh) {
   const [w, h] = fit(a.w, a.h, mw, mh);
@@ -54,7 +54,7 @@ function piece(a, i, mw, mh) {
   const price = a.forsale ? `<span class="mu-price">${cone(14)}${fmt(a.price)}</span>` : `<span class="mu-price no">Not for sale</span>`;
   const deco = i % 5 === 3 ? pix("plant", 4) : i % 3 === 1 ? pix("bench", 5) : "";
   return `<div class="mu-p" style="--pw:${w}px"><div class="mu-sp"></div><div class="mu-w">
-<div class="mu-plq"><b class="mu-tt">${esc(a.title)}</b><span class="mu-by">by ${esc(a.author)}</span>${owner}${a.about ? `<span class="mu-ab">${esc(a.about)}</span>` : ""}<span class="mu-row">${price}<span class="mu-sc" title="Museum critic score">${a.score}/10</span></span></div>
+<div class="mu-plq"><b class="mu-tt">${esc(a.title)}</b><span class="mu-by">by ${esc(a.author)}</span>${owner}${a.about ? `<span class="mu-ab">${esc(a.about)}</span>` : ""}<span class="mu-row">${price}</span></div>
 <button class="mu-fr ${frameCls(a)}" type="button" data-art="${a.id}" aria-label="${esc(a.title)} by ${esc(a.author)}"><img data-src="${img(a.id)}" width="${w}" height="${h}" alt=""></button>
 </div><div class="mu-fl">${deco}</div></div>`;
 }
@@ -68,7 +68,7 @@ function render() {
   M.el.querySelector("[data-mu-n]").textContent = M.loading && !M.list.length ? "Opening the doors..." : `${l.length} painting${l.length === 1 ? "" : "s"}`;
   const empty = !M.loading && !l.length
     ? `<div class="mu-p mu-empty"><div class="mu-sp"></div><div class="mu-w"><p class="mu-plq"><b>${M.filter === "mine" ? "Nothing of yours here yet" : M.filter === "sale" ? "Nothing for sale right now" : "The walls are empty"}</b><span>Paint something at the easel and hang it here.</span></p></div><div class="mu-fl"></div></div>` : "";
-  hall.querySelector(".mu-strip").innerHTML = `<div class="mu-p mu-door"><div class="mu-sp"></div><div class="mu-w mu-ez"><button class="mu-easel" type="button" data-paint>${pix("easel", Math.max(4, Math.min(7, Math.floor(H / 90))))}<span class="mu-plq"><b>Paint your own</b><span>Gzowo Paint, 22 tools. The critic pays up to 50 szyszki for a good one and you get 10% of every resale.</span></span></button></div><div class="mu-fl"></div></div>${l.map((a, i) => piece(a, i, mw, mh)).join("")}${empty}`;
+  hall.querySelector(".mu-strip").innerHTML = `<div class="mu-p mu-door"><div class="mu-sp"></div><div class="mu-w mu-ez"><button class="mu-easel" type="button" data-paint>${pix("easel", Math.max(4, Math.min(7, Math.floor(H / 90))))}<span class="mu-plq"><b>Paint your own</b><span>Gzowo Paint, 22 tools. Hang it here for 20 szyszki (three a day) and you get 10% of every resale.</span></span></button></div><div class="mu-fl"></div></div>${l.map((a, i) => piece(a, i, mw, mh)).join("")}${empty}`;
   watch();
 }
 
@@ -168,7 +168,6 @@ function detailBody(a) {
   } else act = `<p class="bk-note">Not for sale right now. The owner can put it up again any time.</p>`;
   return `<div class="mu-d"><div class="mu-d-img"><div class="mu-fr ${frameCls(a)}"><img src="${img(a.id)}" width="${w}" height="${h}" alt="${esc(a.title)}"></div></div>
 <div class="mu-d-info"><h3>${esc(a.title)}</h3><p>by <b>${esc(a.author)}</b>${a.owner !== a.author ? `, owned by <b>${esc(a.owner)}</b>` : ""}</p>${a.about ? `<p class="mu-d-ab">${esc(a.about)}</p>` : ""}
-<div class="mu-d-crit"><span class="mu-sc big">${a.score}/10</span><p>"${esc(a.comment || "...")}"<br><em>Haiku, museum critic</em></p></div>
 <p class="mu-d-price">${a.forsale ? `${cone(16)}<b>${fmt(a.price)}</b>` : "<b>Not for sale</b>"}</p>${act}<p class="bk-note" data-mu-note></p>
 <h4>History</h4><ol class="mu-d-hist">${(a.hist || []).map(histLine).join("")}</ol></div></div>`;
 }

@@ -15,7 +15,7 @@
 import { icon } from "/assets/views.mjs";
 import { wallArt, WALL_SM, WALL_SKY, WALL_GRASS, WALL_KINDS, setWallKinds, wallSwatch } from "/assets/map.mjs";
 import { picker, cutter, simplify } from "/assets/stencil.mjs";
-import { me as wallet } from "/assets/bank.mjs";
+import { me as wallet, code as walletCode, api, ensure, toast, cone } from "/assets/bank.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
@@ -33,7 +33,8 @@ const SIZES = [3, 6, 12, 22, 40];
 const RUBS = [6, 12, 22, 40, 70];
 const TAPES = [8, 14, 22, 34, 52];
 const RAINBOW = ["#ff2d2d", "#ff8a00", "#ffe600", "#38e03b", "#00e5ff", "#2f6bff", "#b14bff"];
-const HEX = /^#[0-9a-f]{6}$/;
+const HEX = /^#[0-9a-f]{6}$/, TAG = /^[0-9a-f]{12}$/, GAP = 36;
+const sha = async (s) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))), (x) => x.toString(16).padStart(2, "0")).join("");
 const TAPE = "#e6d49c", TAPE_HI = "#f5ebc8", TAPE_LO = "#d0bb7e", CARD = "#c49a5e";
 const MAX_TAPES = 30, MAX_SHEETS = 8, M_MAX = 4000, S_MAX = 9000, Q_MAX = 1000, SHEET_M = 0.12;
 const BRUSH = ["spray", "chalk", "neon", "bands"];
@@ -733,6 +734,8 @@ export function createMural(el, opts) {
   let geoV = 0, ovDirty = new Set(), ring = null, ringD = 0, ringOk = false, viewBox = null;
   let ink = null, who = null, inkRaf = 0, liveSrc = null, liveTree = {}, liveTimer = 0, head = "std", canCursor = true;
   let wallKinds = {}, loaded = false, kindsEl = null, kindPick = null, kindFor = -1, colPop = null, recent = RECENT0.slice(), recentKey = "", sampling = false, cpHsv = [0, 1, 1], cpOld = "#ff0000", sv = null, hu = null, hexIn = null;
+  let tagA = "", tagU = "", tagCode = null, wallKey = "", sellV = 0, sellMemo = null, sellEl = null, sellPop = null, sellBox = null, selling = null;
+  const blankMemo = new Map(), blankJobs = new Set();
   function tile(p, cv) {
     const r = p < 2 ? SX : SX / 2;
     cv.width = Math.round(WX * r); cv.height = Math.round(WY * r);
@@ -760,6 +763,26 @@ export function createMural(el, opts) {
       if (Array.isArray(m) && typeof m[0] === "string" && !(m[0] in mine)) { mine[m[0]] = m[1] || m[0]; minePanel[m[0]] = Number.isInteger(m[2]) ? m[2] : 0; order.push(m[0]); }
     });
   } catch (e) {}
+
+  async function tags() {
+    const code = String(walletCode() || "");
+    if (tagCode === code && tagA) return;
+    tagCode = code;
+    try {
+      let k = localStorage.getItem("gl-wall-key");
+      if (!k || !/^[a-z0-9]{24}$/.test(k)) { k = Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => (b % 36).toString(36)).join(""); localStorage.setItem("gl-wall-key", k); }
+      wallKey = k;
+      tagA = (await sha("gzowo-wall-a:" + k)).slice(0, 12);
+    } catch (e) {}
+    try {
+      const w = code.toLowerCase().split(/[^a-z]+/).filter(Boolean);
+      tagU = w.length === 12 ? (await sha("gzowo-wall-u:" + (await sha("gzowo-bank:" + w.join(" "))).slice(0, 24))).slice(0, 12) : "";
+    } catch (e) { tagU = ""; }
+    sellV++;
+    placeSells();
+  }
+  tags();
+  addEventListener("gz:wallet", () => tags());
 
   const saveMine = () => { try { localStorage.setItem(MINE_KEY, JSON.stringify(order.slice(-MAX_MINE).map((id) => [id, mine[id], minePanel[id]]))); } catch (e) {} };
   const remember = (id, g, p) => { if (!(id in mine)) order.push(id); mine[id] = g; minePanel[id] = p; saveMine(); };
@@ -1455,6 +1478,7 @@ export function createMural(el, opts) {
       if (onHandle(sh, P, v)) { startDrag(e, sh, true, w); return; }
     }
     for (let i = sheets.length - 1; i >= 0; i--) if (sheets[i].stuck && inside(sheets[i].stuck.poly, w)) { startDrag(e, sheets[i], false, w); return; }
+    closeSell();
     pick.open();
   }
   function startDrag(e, sh, turn, at) {
@@ -1950,6 +1974,7 @@ export function createMural(el, opts) {
     if (!list.length || op.id > list[list.length - 1].id) list.push(op);
     else { let i = list.length; while (i > 0 && list[i - 1].id > op.id) i--; list.splice(i, 0, op); }
     touchOp(op, painted);
+    sellV++;
     if (ghosts.delete(op.id)) inkSoon();
     if (!painted && op.mask) layers.forEach((L) => { if (wants(L, op)) rerender(L); });
     where();
@@ -1959,6 +1984,7 @@ export function createMural(el, opts) {
     const P = panels.get(p), i = P ? P.ops.findIndex((o) => o.id === id) : -1;
     if (i === -1) return null;
     const it = P.ops.splice(i, 1)[0];
+    sellV++;
     nearMap(it, redraw);
     lod.forEach((t) => {
       if (!hits(it, t.v.x0, t.v.y0, t.x1, t.y1)) return;
@@ -2022,8 +2048,8 @@ export function createMural(el, opts) {
     const d = pts.map((n, i) => (n + (i % 2 ? oy : ox)) * sc), ids = idsOf(v.q);
     sh.forEach((x, i) => { x.key = ids.s[i] || null; });
     const mask = tp.length || sh.length ? { tapes: tp, tapeIds: tp.map((_, i) => ids.t[i] || null), sheets: sh } : null;
-    const h = v.k === "d" && HEAD_IDS.has(v.h) ? v.h : undefined;
-    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined });
+    const h = v.k === "d" && HEAD_IDS.has(v.h) ? v.h : undefined, a = TAG.test(v.a) ? v.a : undefined, u = TAG.test(v.u) ? v.u : undefined;
+    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u });
   }
 
   function add(P, id, v) {
@@ -2096,7 +2122,43 @@ export function createMural(el, opts) {
     placeKinds();
     if (kindPick && !kindPick.hidden) markKinds();
   }
-  const emptyPanel = (p) => { const P = panels.get(p); return !(P && P.ops.length) && !(live && live.p === p); };
+  function erased(op) {
+    const [x0, y0, x1, y1] = op.bb, over = opsIn(x0, y0, x1, y1).filter((e) => e.k === "e" && e.id > op.id);
+    if (!over.length) return false;
+    const key = over.length + ":" + over[over.length - 1].id;
+    if (op.er && op.er.key === key) return op.er.v;
+    const span = Math.max(x1 - x0, y1 - y0, 1e-6), r = Math.min(512 / span, Math.max(96 / span, 2 / op.w)), v = { x0, y0, r }, cv = document.createElement("canvas");
+    cv.width = Math.max(1, Math.ceil((x1 - x0) * r)); cv.height = Math.max(1, Math.ceil((y1 - y0) * r));
+    const c = cv.getContext("2d", { willReadFrequently: true });
+    paintOp(op, c, v);
+    over.forEach((e) => paintOp(e, c, v));
+    reset(c);
+    const px = c.getImageData(0, 0, cv.width, cv.height).data, most = Math.max(4, (px.length / 4) * 0.002);
+    let n = 0;
+    for (let i = 3; i < px.length && n <= most; i += 4) if (px[i] > 90) n++;
+    op.er = { key, v: n <= most };
+    return op.er.v;
+  }
+  const measure = (p) => opsIn(p * WX, 0, (p + 1) * WX, WY).filter((o) => o.k !== "e").every(erased);
+  function blank(p) {
+    if (live && live.p === p) return false;
+    const P = panels.get(p);
+    if (!P || !P.ops.length) return true;
+    if (!P.ops.some((o) => o.k === "e")) return false;
+    const key = P.ops.length + ":" + P.ops[P.ops.length - 1].id, m = blankMemo.get(p);
+    if (m && m.key === key) return m.v;
+    if (!blankJobs.has(p)) {
+      blankJobs.add(p);
+      setTimeout(() => {
+        blankJobs.delete(p);
+        const Q = panels.get(p);
+        if (!Q || !Q.ops.length) return;
+        blankMemo.set(p, { key: Q.ops.length + ":" + Q.ops[Q.ops.length - 1].id, v: measure(p) });
+        placeKinds();
+      }, 80);
+    }
+    return false;
+  }
   function placeKinds() {
     if (!kindsEl) return;
     const off = !active || !!lapse || !loaded;
@@ -2104,7 +2166,7 @@ export function createMural(el, opts) {
     if (off) return;
     const ppu = k0 * Z, x0 = cx - W / 2 / ppu, x1 = cx + W / 2 / ppu, top = (-12 * ARTY - cy) * ppu + H / 2, want = new Map();
     if (top > 30 && top < H - 20) for (let p = Math.max(0, Math.floor(x0 / WX)); p <= Math.floor(x1 / WX); p++) {
-      if (!emptyPanel(p)) continue;
+      if (!blank(p)) continue;
       const a = Math.max(x0, p * WX), b = Math.min(x1, (p + 1) * WX);
       if ((b - a) * ppu >= 170) want.set(p, ((a + b) / 2 - cx) * ppu + W / 2);
     }
@@ -2116,7 +2178,7 @@ export function createMural(el, opts) {
         el.type = "button";
         el.className = "btn wv-kind";
         el.dataset.kindP = String(p);
-        el.title = "Change what this piece of wall is made of. It only works while nobody has painted on it.";
+        el.title = "Change what this piece of wall is made of. It only works while there is no paint left on it.";
         kindsEl.append(el);
       }
       const name = kindName(wallKinds[p]);
@@ -2132,22 +2194,176 @@ export function createMural(el, opts) {
     markKinds();
     if (pick) pick.close();
     if (caps) caps.hidden = true;
+    closeSell();
     kindPick.hidden = false;
   }
   function setKind(p, id) {
-    if (!emptyPanel(p)) { flash("SOMEBODY ALREADY PAINTED THIS PIECE, ITS WALL STAYS"); return; }
-    const before = wallKinds[p] || "brick", next = { ...wallKinds }, url = DB + "/" + FAR + "/kinds/" + p + ".json";
+    if (!blank(p)) { flash("SOMEBODY ALREADY PAINTED THIS PIECE, ITS WALL STAYS"); return; }
+    const before = wallKinds[p] || "brick", next = { ...wallKinds }, P = panels.get(p), gone = P ? P.ops.filter((o) => !o.local) : [], patch = {};
     if (before === id) return;
     if (id === "brick") delete next[p]; else next[p] = id;
+    gone.forEach((it) => { patch[pathOf(p) + "/" + it.id] = null; patch[binOf(p) + "/" + it.id] = { ...body(it), e: { ".sv": "timestamp" } }; });
+    patch[FAR + "/kinds/" + p] = id === "brick" ? null : id;
+    if (P) P.ops.slice().forEach((it) => { drop(p, it.id); forget(it.id); });
     applyKinds(next);
-    fetch(url, id === "brick" ? { method: "DELETE" } : { method: "PUT", body: JSON.stringify(id) })
+    fetch(DB + "/.json", { method: "PATCH", body: JSON.stringify(patch) })
       .then((r) => { if (!r.ok) throw r.status; })
       .catch(() => {
         const back = { ...wallKinds };
         if (before === "brick") delete back[p]; else back[p] = before;
+        gone.forEach((it) => insert(it, false));
         applyKinds(back);
+        sync();
         flash("COULD NOT CHANGE THE WALL HERE, SOMEBODY MAY HAVE PAINTED IT");
       });
+  }
+
+  const owns = (o) => !o.local && ((!!tagA && o.a === tagA) || (!!tagU && o.u === tagU));
+  function drawings() {
+    if (sellMemo && sellMemo.v === sellV) return sellMemo.list;
+    const own = [], rub = [];
+    panels.forEach((P) => P.ops.forEach((o) => { if (owns(o)) (o.k === "e" ? rub : own).push(o); }));
+    own.sort((a, b) => a.bb[0] - b.bb[0]);
+    const up = own.map((_, i) => i), root = (i) => { while (up[i] !== i) i = up[i] = up[up[i]]; return i; };
+    for (let i = 0; i < own.length; i++) {
+      const a = own[i].bb;
+      for (let j = i + 1; j < own.length && own[j].bb[0] <= a[2] + GAP; j++) {
+        const b = own[j].bb;
+        if (b[1] <= a[3] + GAP && b[3] >= a[1] - GAP) up[root(j)] = root(i);
+      }
+    }
+    const groups = new Map();
+    own.forEach((o, i) => {
+      const r = root(i);
+      let g = groups.get(r);
+      if (!g) groups.set(r, (g = { ops: [], bb: [Infinity, Infinity, -Infinity, -Infinity] }));
+      g.ops.push(o);
+      g.bb = [Math.min(g.bb[0], o.bb[0]), Math.min(g.bb[1], o.bb[1]), Math.max(g.bb[2], o.bb[2]), Math.max(g.bb[3], o.bb[3])];
+    });
+    const list = [...groups.values()].filter((g) => g.ops.some((o) => !erased(o))).map((g) => {
+      rub.forEach((e) => { if (hits(e, g.bb[0], g.bb[1], g.bb[2], g.bb[3])) g.ops.push(e); });
+      g.ops.sort(older);
+      g.key = g.ops.find((o) => o.k !== "e").id;
+      return g;
+    });
+    sellMemo = { v: sellV, list };
+    return list;
+  }
+
+  function placeSells() {
+    if (!sellEl) return;
+    const off = !active || !!lapse || !loaded || (!tagA && !tagU);
+    if (sellEl.hidden !== off) sellEl.hidden = off;
+    if (off) { outline(null); return; }
+    const ppu = k0 * Z, x0 = cx - W / 2 / ppu, x1 = cx + W / 2 / ppu, y = (WY + 5 * ARTY - cy) * ppu + H / 2, want = new Map();
+    if (y > 10 && y < H - 30) {
+      const xs = [];
+      drawings().filter((g) => g.bb[2] > x0 && g.bb[0] < x1).sort((a, b) => b.bb[2] - b.bb[0] - (a.bb[2] - a.bb[0])).forEach((g) => {
+        const sx = ((Math.max(x0, g.bb[0]) + Math.min(x1, g.bb[2])) / 2 - cx) * ppu + W / 2;
+        if (xs.some((x) => Math.abs(x - sx) < 84)) return;
+        xs.push(sx);
+        want.set(g.key, sx);
+      });
+    }
+    sellEl.querySelectorAll("[data-sell]").forEach((el) => { if (!want.has(el.dataset.sell)) el.remove(); });
+    want.forEach((sx, key) => {
+      let el = [...sellEl.children].find((b) => b.dataset.sell === key);
+      if (!el) {
+        el = document.createElement("button");
+        el.type = "button";
+        el.className = "btn wv-sell";
+        el.dataset.sell = key;
+        el.title = "Sell this drawing to Haiku. It disappears from the wall and you get szyszki or coins.";
+        el.innerHTML = `${cone(14)}<span>Sell</span>`;
+        sellEl.append(el);
+      }
+      el.style.transform = `translate(${sx.toFixed(1)}px,${y.toFixed(1)}px) translate(-50%,0)`;
+    });
+    outline(selling ? selling.g : hoverSell());
+  }
+  function hoverSell() {
+    const b = sellEl && sellEl.querySelector("[data-sell]:hover, [data-sell]:focus-visible");
+    return b ? drawings().find((g) => g.key === b.dataset.sell) || null : null;
+  }
+  function outline(g) {
+    if (!sellBox) return;
+    if (!g || !active) { sellBox.hidden = true; return; }
+    const ppu = k0 * Z;
+    sellBox.hidden = false;
+    sellBox.style.transform = `translate(${((g.bb[0] - cx) * ppu + W / 2).toFixed(1)}px,${((g.bb[1] - cy) * ppu + H / 2).toFixed(1)}px)`;
+    sellBox.style.width = ((g.bb[2] - g.bb[0]) * ppu).toFixed(1) + "px";
+    sellBox.style.height = ((g.bb[3] - g.bb[1]) * ppu).toFixed(1) + "px";
+  }
+
+  function snap(g) {
+    const x0 = g.bb[0] - 8, y0 = Math.max(-12 * ARTY, g.bb[1] - 8), x1 = g.bb[2] + 8, y1 = Math.max(y0 + 10, Math.min(WY + 30, g.bb[3] + 8));
+    const s = Math.min(2, TS / Math.max(x1 - x0, y1 - y0)), v = { x0, y0, r: s };
+    const cv = document.createElement("canvas"), pc = document.createElement("canvas");
+    cv.width = pc.width = Math.max(16, Math.ceil((x1 - x0) * s));
+    cv.height = pc.height = Math.max(16, Math.ceil((y1 - y0) * s));
+    const c = cv.getContext("2d"), q = pc.getContext("2d");
+    backdrop(c, v, x1, y1);
+    g.ops.forEach((op) => paintOp(op, q, v));
+    reset(q);
+    c.drawImage(pc, 0, 0);
+    return cv.toDataURL("image/jpeg", 0.86);
+  }
+
+  const n3 = (n) => (Math.round(n * 1000) / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 });
+  function sellText(html, msg) {
+    const b = sellPop.querySelector("[data-sell-b]");
+    b.innerHTML = html;
+    if (msg !== undefined) b.querySelector("[data-sell-msg]").textContent = msg;
+    return b;
+  }
+  function closeSell() {
+    selling = null;
+    if (sellPop) sellPop.hidden = true;
+    outline(hoverSell());
+  }
+  async function startSell(key) {
+    const g = drawings().find((x) => x.key === key);
+    if (!g) return;
+    if (pick) pick.close();
+    if (caps) caps.hidden = true;
+    if (kindPick) kindPick.hidden = true;
+    if (colPop) colPop.hidden = true;
+    const run = (selling = { g, quote: null });
+    outline(g);
+    const img = snap(g);
+    sellPop.hidden = false;
+    sellText(`<p class="pt-sell-i"><img alt="Your drawing" src="${img}"></p><p data-sell-msg></p>`, "Haiku is looking at your drawing...");
+    try {
+      await ensure();
+      const j = await api("/wall/quote", { ids: g.ops.map((o) => [o.p, o.id]), key: wallKey, img });
+      if (selling !== run) return;
+      run.quote = j;
+      const b = sellText(`<p class="pt-sell-i"><img alt="Your drawing" src="${img}"></p><p class="pt-sell-c" data-sell-msg></p>
+<p>Haiku gives it <b>${j.score}/10</b> and offers you:</p>
+<p class="pt-sell-pay"><button class="btn go" type="button" data-sell-pay="szy">${cone(14)} ${j.szy} szyszki</button><button class="btn" type="button" data-sell-pay="gzm">${n3(j.gzm)} GZM</button><button class="btn" type="button" data-sell-pay="gzf">${n3(j.gzf)} GZF</button></p>
+<p class="pt-sell-n">Pick how you want to be paid. The drawing disappears from the wall when you sell it. Haiku buys up to five drawings a day from each wallet.</p>
+<p class="bk-row"><button class="btn" type="button" data-sell-x>Keep it</button></p>`, `"${j.comment}"`);
+      b.querySelector("[data-sell-pay]").focus();
+    } catch (e) {
+      if (selling !== run) return;
+      sellText(`<p class="pt-sell-i"><img alt="Your drawing" src="${img}"></p><p data-sell-msg></p><p class="bk-row"><button class="btn" type="button" data-sell-x>OK</button></p>`, e.message);
+    }
+  }
+  async function finishSell(pay, btn) {
+    const run = selling;
+    if (!run || !run.quote) return;
+    sellPop.querySelectorAll("[data-sell-pay]").forEach((b) => { b.disabled = true; });
+    btn.textContent = "Selling...";
+    try {
+      const j = await api("/wall/sell", { quote: run.quote.quote, pay });
+      run.g.ops.forEach((o) => { const P = panels.get(o.p); if (P) P.seen[o.id] = true; drop(o.p, o.id); forget(o.id); });
+      sync();
+      if (selling === run) closeSell();
+      toast(`Haiku bought your drawing: +${pay === "szy" ? j.got + " szyszki" : n3(j.got) + " " + pay.toUpperCase()}`);
+    } catch (e) {
+      if (selling !== run) return;
+      sellText(`<p data-sell-msg></p><p class="bk-row"><button class="btn" type="button" data-sell-x>OK</button></p>`, e.message);
+    }
   }
 
   const body = (it) => {
@@ -2158,6 +2374,8 @@ export function createMural(el, opts) {
     if (it.m) b.m = it.m;
     if (it.s) b.s = it.s;
     if (it.q) b.q = it.q;
+    if (it.a) b.a = it.a;
+    if (it.u) b.u = it.u;
     return b;
   };
 
@@ -2206,6 +2424,8 @@ export function createMural(el, opts) {
   }
 
   function send(it) {
+    if (!it.a && tagA) it.a = tagA;
+    if (!it.u && tagU) it.u = tagU;
     pack(it);
     remember(it.id, it.g || it.id, it.p);
     posted++;
@@ -2300,7 +2520,7 @@ export function createMural(el, opts) {
     const zl = Math.max(0, Math.ceil(Math.log2(Z) - 1e-9)), k = tool === "eraser" ? "e" : tool === "chalk" ? "c" : "d";
     const c = k === "e" ? undefined : k === "c" ? hex : tool === "neon" ? "n" + hex : tool === "bands" ? "bands" : color;
     const h = tool === "spray" && head !== "std" ? head : undefined;
-    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES)) / Z, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl) };
+    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES)) / Z, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined };
     if (c && c !== "bands") keepColor(c[0] === "n" ? c.slice(1) : c);
     panel(p).seen[live.id] = true;
     layers.forEach((L) => { if (wants(L, live) && !L.tile && !L.job) rerender(L, true); });
@@ -2363,6 +2583,7 @@ export function createMural(el, opts) {
     const v = viewNow(), ppu = k0 * Z, list = opsIn(v.x0, v.y0, v.x0 + W / ppu, v.y0 + H / ppu);
     if (!list.length) { flash("NOTHING HAS BEEN PAINTED HERE YET"); return; }
     if (pick) pick.close();
+    closeSell();
     const cv = document.createElement("canvas");
     cv.className = "wv-tl";
     cv.width = Math.max(1, Math.round(W * DPR())); cv.height = Math.max(1, Math.round(H * DPR()));
@@ -2559,13 +2780,38 @@ export function createMural(el, opts) {
     kindPick.setAttribute("aria-label", "Wall type");
     kindPick.innerHTML = `<header class="tb"><h2 class="tb-t">Wall type</h2><span class="tb-btns"><button class="tb-x" type="button" data-kind-x aria-label="Close"></button></span></header>` +
       `<div class="pt-pick-g">${WALL_KINDS.map(([id, name]) => `<span class="pt-pk"><button type="button" data-kind="${id}" title="${name}"><canvas></canvas><span>${name}</span></button></span>`).join("")}</div>` +
-      `<p class="pt-kinds-n">Only a piece nobody has painted on yet can change.</p>`;
+      `<p class="pt-kinds-n">Only a piece with no paint left on it can change. Rubbed out paint is cleared away when it changes.</p>`;
     chrome.append(kindPick);
     kindPick.addEventListener("click", (e) => {
       const b = e.target.closest("button");
       if (!b) return;
       if (b.dataset.kind) setKind(kindFor, b.dataset.kind);
       kindPick.hidden = true;
+    });
+    sellBox = document.createElement("div");
+    sellBox.className = "wv-selbox";
+    sellBox.hidden = true;
+    view.append(sellBox);
+    sellEl = document.createElement("div");
+    sellEl.className = "wv-kinds wv-sells";
+    sellEl.hidden = true;
+    view.append(sellEl);
+    sellEl.addEventListener("pointerdown", (e) => e.stopPropagation());
+    sellEl.addEventListener("click", (e) => { const b = e.target.closest("[data-sell]"); if (b) startSell(b.dataset.sell); });
+    sellEl.addEventListener("pointerover", () => { if (!selling) outline(hoverSell()); });
+    sellEl.addEventListener("pointerout", () => { if (!selling) requestAnimationFrame(() => outline(hoverSell())); });
+    sellPop = document.createElement("div");
+    sellPop.className = "pt-pick pt-sell";
+    sellPop.hidden = true;
+    sellPop.setAttribute("role", "dialog");
+    sellPop.setAttribute("aria-label", "Sell to Haiku");
+    sellPop.innerHTML = `<header class="tb"><h2 class="tb-t">Sell to Haiku</h2><span class="tb-btns"><button class="tb-x" type="button" data-sell-x aria-label="Close"></button></span></header><div class="pt-sell-b" data-sell-b></div>`;
+    chrome.append(sellPop);
+    sellPop.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.hasAttribute("data-sell-x")) closeSell();
+      else if (b.dataset.sellPay) finishSell(b.dataset.sellPay, b);
     });
     caps = document.createElement("div");
     caps.className = "pt-pick pt-caps";
@@ -2753,6 +2999,7 @@ export function createMural(el, opts) {
       paintOp({ id: "-cap-" + id + col, p: 0, k: "d", c: col, h: id === "std" ? undefined : id, w: 6 * d, d: pts }, x, { x0: 0, y0: 0, r: 1 });
       b.setAttribute("aria-pressed", String(id === head));
     });
+    closeSell();
     caps.hidden = false;
   }
 
@@ -2765,6 +3012,7 @@ export function createMural(el, opts) {
     const text = (m > 0 ? `${m} m from the start` : "The start of the wall") + zoom + `, ${n} ${n === 1 ? "stroke" : "strokes"} here`;
     if (text !== said) { said = text; chrome.querySelector("[data-where]").textContent = text; }
     placeKinds();
+    placeSells();
   }
 
   const curColor = () => (tool === "bands" ? "rainbow" : tool === "chalk" || tool === "neon" ? hex : color);
@@ -2781,6 +3029,7 @@ export function createMural(el, opts) {
     if (pick) pick.close();
     caps.hidden = true;
     if (kindPick) kindPick.hidden = true;
+    closeSell();
     colPop.hidden = false;
   }
   function cpSet(c, commit) {
@@ -2955,6 +3204,8 @@ export function createMural(el, opts) {
       if (colPop) colPop.hidden = true;
       sampling = false;
       if (kindsEl) kindsEl.hidden = true;
+      if (sellEl) sellEl.hidden = true;
+      closeSell();
       if (chrome) chrome.hidden = true;
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
       shown.forEach((t) => t.el.remove());

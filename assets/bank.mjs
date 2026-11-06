@@ -23,6 +23,7 @@ const fmt = (n) => Math.floor(n).toLocaleString("en-US");
 const coins = (n) => (Math.round(n * 1000) / 1000).toLocaleString("en-US", { maximumFractionDigits: 3 });
 export const cone = (size = 16) => icon("cone", size);
 export const me = () => S.me;
+export const code = () => S.code;
 export const pulse = () => S.pulse;
 
 export async function api(path, body, opts = {}) {
@@ -142,7 +143,8 @@ function todayTab(m) {
   return `<div class="bk-pad"><p class="bk-sub">Daily payout</p><p>${m.daily ? `<button class="btn go" type="button" data-bk="daily">Collect 20 szyszki</button>` : "Collected today. The next one is tomorrow."}</p>
 <p class="bk-sub">Quests for today</p><ul class="bk-quests">${m.quests.map((q) => `<li><span>${esc(q.text)}</span><span class="bk-bar"><i style="width:${(100 * q.have) / q.need}%"></i></span><span>${q.have}/${q.need}</span>${q.done ? "<em>done</em>" : q.have >= q.need ? `<button class="btn go" type="button" data-quest="${q.slot}">+${q.reward}</button>` : `<em>+${q.reward}</em>`}</li>`).join("")}</ul>
 <p class="bk-sub">Ways to earn today</p><table class="bk-caps"><tbody>${caps.map(([k, [n, cap]]) => `<tr><td>${esc(LABEL[k])}</td><td>${n}/${cap}</td></tr>`).join("")}
-<tr><td>Painting hung in the museum</td><td>critic pays up to 50</td></tr></tbody></table></div>`;
+<tr><td>Painting hung in the museum</td><td>20 each, three a day</td></tr>
+<tr><td>Drawing sold to Haiku from the wall</td><td>up to 100, five a day</td></tr></tbody></table></div>`;
 }
 
 async function historyTab(el) {

@@ -314,12 +314,18 @@
           },
           "h": {
             ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+          },
+          "a": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
+          },
+          "u": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
           }
         }
       },
       "kinds": {
         "$p": {
-          ".write": "!root.child('muralWall').child($p).exists()",
+          ".write": "!newData.parent().parent().child($p).exists()",
           ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
         }
       }
@@ -363,6 +369,12 @@
             ".validate": "newData.isString()"
           },
           "h": {
+            ".validate": "newData.isString()"
+          },
+          "a": {
+            ".validate": "newData.isString()"
+          },
+          "u": {
             ".validate": "newData.isString()"
           }
         }
@@ -410,12 +422,18 @@
           },
           "h": {
             ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+          },
+          "a": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
+          },
+          "u": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
           }
         }
       },
       "kinds": {
         "$p": {
-          ".write": "!root.child('muralWallDev').child($p).exists()",
+          ".write": "!newData.parent().parent().child($p).exists()",
           ".validate": "$p.length <= 8 && $p.matches(/^(0|[1-9][0-9]*)$/) && newData.isString() && newData.val().matches(/^(whitebrick|darkbrick|yellowbrick|cinder|concrete|plaster|whitewall|pinkwall|stone|sandstone|marble|planks|plywood|logs|corrugated|shutter|diamond|corten|tiles|greentiles|glass|blackboard)$/)"
         }
       }
@@ -459,6 +477,12 @@
             ".validate": "newData.isString()"
           },
           "h": {
+            ".validate": "newData.isString()"
+          },
+          "a": {
+            ".validate": "newData.isString()"
+          },
+          "u": {
             ".validate": "newData.isString()"
           }
         }
