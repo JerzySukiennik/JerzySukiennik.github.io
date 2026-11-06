@@ -3334,6 +3334,37 @@ export function createMural(el, opts) {
     DPR_OV = 0;
     reset(c);
   }
+  let liveCv = null, nullCtx = null;
+  function liveInto(c, v, Wc, Hc, d) {
+    if (!live || !live.mask || !live.d.length) return;
+    DPR_OV = d || 0;
+    if (!nullCtx) nullCtx = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d");
+    [["tape", drawTapes], ["sheet", drawSheets], ["flap", drawFlaps]].forEach(([kind, draw]) => {
+      const L = { kind, cache: null, tile: null }, sink = [];
+      if (!layerOn(L) || !wants(L, live)) return;
+      draw(L, nullCtx, v, Wc, Hc, sink);
+      reset(nullCtx);
+      if (!sink.length) return;
+      if (!liveCv) liveCv = document.createElement("canvas");
+      if (liveCv.width !== Wc || liveCv.height !== Hc) { liveCv.width = Wc; liveCv.height = Hc; }
+      const q = liveCv.getContext("2d");
+      q.setTransform(1, 0, 0, 1, 0, 0);
+      reset(q);
+      q.clearRect(0, 0, Wc, Hc);
+      paintOp(live, q, v, kind, alive);
+      reset(q);
+      sink.forEach((p) => { c.save(); c.clip(p.path, p.rule); c.drawImage(liveCv, 0, 0); c.restore(); });
+    });
+    DPR_OV = 0;
+    reset(c);
+  }
+  function liveBox() {
+    if (!live || !live.mask || !live.d.length) return null;
+    const b = live.p * WX, R = live.w * 4.5 + 8;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (let i = 0; i < live.d.length; i += 2) { x0 = Math.min(x0, live.d[i]); x1 = Math.max(x1, live.d[i]); y0 = Math.min(y0, live.d[i + 1]); y1 = Math.max(y1, live.d[i + 1]); }
+    return [b + x0 - R, y0 - R, b + x1 + R, y1 + R];
+  }
   const moving = () => !!(peels.length || lifts.length || tapeDrag || sheetDrag || rip || liftDrag || sheets.some((sh) => sh.flip));
   function propBoxes() {
     const out = [...tapes, ...sheets].map((q) => q.bb);
@@ -3375,6 +3406,9 @@ export function createMural(el, opts) {
     tiles: ext,
     ops: (x0, y0, x1, y1) => opsIn(x0, y0, x1, y1),
     drawProps: propsInto,
+    drawLive: liveInto,
+    liveBox,
+    liveKey: () => (live && live.mask ? live.id + ":" + live.d.length : ""),
     propsKey: () => geoV + ":" + (moving() ? performance.now().toFixed(0) : "0") + ":" + tool,
     propBoxes,
     inkV: () => inkV,

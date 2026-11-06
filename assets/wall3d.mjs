@@ -199,7 +199,7 @@ function start() {
   const boxGeo = new THREE.BoxGeometry(1, 1, 1);
   function box(w, h, d, mat, x = 0, y = 0, z = 0) { const m = new THREE.Mesh(boxGeo, mat); m.scale.set(w, h, d); m.position.set(x, y, z); return m; }
 
-  const W3 = { panels: new Map(), tiles: new Set(), jobs: new Set(), bgq: [], propsKey: "", inkV: -1, inkTiles: new Set(), propTiles: new Set() };
+  const W3 = { panels: new Map(), tiles: new Set(), jobs: new Set(), bgq: [], propsKey: "", inkV: -1, liveKey: "", inkTiles: new Set(), propTiles: new Set() };
   const holder = document.createElement("div");
   const core = createMural(holder, { headless: true, onExit() {} });
   let aim = null, pickOpen = false;
@@ -354,9 +354,35 @@ function start() {
     return t.ov;
   }
   const meets = (bb, t, m = 30) => bb[2] + m > t.v.x0 && bb[0] - m < t.x1 && bb[3] + m > t.v.y0 && bb[1] - m < t.y1;
+  function withLive(t) {
+    const ov = t.ov, id = W3.liveKey.split(":")[0];
+    if (ov.liveId !== id) {
+      if (!ov.base) ov.base = canvas(ov.cv.width, ov.cv.height);
+      const b = ov.base.getContext("2d");
+      b.globalCompositeOperation = "copy";
+      b.drawImage(ov.cv, 0, 0);
+      b.globalCompositeOperation = "source-over";
+      ov.liveId = id;
+    } else {
+      ov.c.setTransform(1, 0, 0, 1, 0, 0);
+      ov.c.globalAlpha = 1;
+      ov.c.globalCompositeOperation = "copy";
+      ov.c.drawImage(ov.base, 0, 0);
+      ov.c.globalCompositeOperation = "source-over";
+    }
+    api.drawLive(ov.c, ov.v, ov.cv.width, ov.cv.height, 1.4);
+    ov.tex.needsUpdate = true;
+  }
   function overlays() {
-    const key = api.propsKey(), iv = api.inkV();
-    if (key === W3.propsKey && iv === W3.inkV) return;
+    const key = api.propsKey(), iv = api.inkV(), lk = api.liveKey();
+    const full = key !== W3.propsKey || iv !== W3.inkV || (!!W3.liveKey && !lk);
+    if (!full && lk === W3.liveKey) return;
+    W3.liveKey = lk;
+    const lb = lk ? api.liveBox() : null;
+    if (!full) {
+      if (lb) W3.propTiles.forEach((t) => { if (t.ov && t.ov.mesh.visible && meets(lb, t, 0)) withLive(t); });
+      return;
+    }
     W3.propsKey = key; W3.inkV = iv;
     const boxes = api.propBoxes(), inks = api.inks(), want = new Set();
     W3.tiles.forEach((t) => { if (boxes.some((b) => meets(b, t)) || inks.some((o) => o.bb && meets(o.bb, t, 10))) want.add(t); });
@@ -371,6 +397,7 @@ function start() {
       c.globalAlpha = 1;
       c.globalCompositeOperation = "source-over";
       c.clearRect(0, 0, ov.cv.width, ov.cv.height);
+      ov.liveId = "";
       if (has) {
         api.drawProps(c, ov.v, ov.cv.width, ov.cv.height, 1.4);
         inks.forEach((o) => { if (o.bb && meets(o.bb, t, 10)) paintOp(o, c, ov.v); });
@@ -378,6 +405,7 @@ function start() {
       }
       ov.mesh.visible = has;
       ov.tex.needsUpdate = true;
+      if (has && lb && meets(lb, t, 0)) withLive(t);
     });
   }
 
