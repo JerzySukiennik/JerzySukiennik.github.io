@@ -13,7 +13,7 @@ export const SPR = {
   exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300],
 };
 export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
-const DOM = ["wall", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
+const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
 export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
 export const FACE = { x: 2 / 404, y: (13 + TALL - UP_ROWS) / WALL_ROWS, w: 400 / 404, h: (129 + UP_ROWS) / WALL_ROWS };
 const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
