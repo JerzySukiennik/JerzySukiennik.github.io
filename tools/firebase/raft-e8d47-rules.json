@@ -767,9 +767,6 @@
           "n": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
-          "i": {
-            ".validate": "newData.isBoolean()"
-          },
           "c": {
             ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
           },
@@ -778,6 +775,9 @@
           },
           "fw": {
             ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
+          "l": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 64 && newData.val() % 1 === 0"
           },
           "$other": {
             ".validate": false
@@ -904,9 +904,6 @@
           "n": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
-          "i": {
-            ".validate": "newData.isBoolean()"
-          },
           "c": {
             ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
           },
@@ -915,6 +912,9 @@
           },
           "fw": {
             ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
+          },
+          "l": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 64 && newData.val() % 1 === 0"
           },
           "$other": {
             ".validate": false

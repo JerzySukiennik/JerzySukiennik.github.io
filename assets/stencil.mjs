@@ -1,9 +1,11 @@
 /* Gzowo Labs wall stencils: the ready made cardboard stencils, the cutting board where visitors cut their own with a knife, a hole punch,
    glue and letters, stencils cut automatically from a picture, and the tracing that turns a cut sheet into smooth outlines the wall
-   clips spray paint to. A picture is cropped to what is in it, its background is flood filled from the edge so light parts inside an
-   outline stay, and every hole remembers the color it was cut from so its rim can be drawn in it. Outlines are normalized to 0..1. */
+   clips spray paint to. A picture is cropped to what is in it and its background is flood filled from the edge so light parts inside an
+   outline stay. In Colors mode the picture is split into color layers, each traced on its own and grown a pixel so neighbors overlap:
+   on the wall the stencil shows one layer at a time, so painting every layer in its color gives back the whole picture, and with all
+   layers open the overlaps cancel into thin cardboard bridges. Every hole remembers its color for its rim. Outlines are normalized 0..1. */
 
-const N = 256, NI = 512, QI = NI / N, BG_TOL = 40, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
+const N = 256, NI = 512, QI = NI / N, BG_TOL = 40, PIC_BUDGET = 2000, H_MAX = 8900, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
 const PUNCH = [6, 12, 22], TEXT = [0.13, 0.2, 0.3], CARD = "#c49a5e";
 const PASTE = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘V" : "Ctrl+V";
 
@@ -102,7 +104,7 @@ export function simplify(pts, eps) {
 
 function area(p) { let s = 0; for (let i = 0; i < p.length; i += 2) { const j = (i + 2) % p.length; s += p[i] * p[j + 1] - p[j] * p[i + 1]; } return s / 2; }
 
-export function trace(f, n = N, budget = BUDGET, speck = 2) {
+function loopsOf(f, n, speck) {
   const P = n + 2, ids = P * P * 2, adj = new Int32Array(ids * 2).fill(-1), xy = new Float32Array(ids * 2);
   const at = (x, y) => (x < 0 || y < 0 || x >= n || y >= n ? 0 : f[y * n + x]);
   const hid = (x, y) => ((y + 1) * P + x + 1) * 2, vid = (x, y) => ((y + 1) * P + x + 1) * 2 + 1;
@@ -142,13 +144,21 @@ export function trace(f, n = N, budget = BUDGET, speck = 2) {
     } while (cur !== s && cur !== -1 && guard++ < 1e6);
     if (pts.length >= 6 && Math.abs(area(pts)) >= speck) loops.push(pts);
   }
-  loops.sort((p, q) => Math.abs(area(q)) - Math.abs(area(p)));
-  const total = (r) => r.reduce((s, l) => s + l.length, 0);
-  let eps = 0.3, res = loops.map((l) => simplify(l, eps));
-  while (total(res) > budget && eps < 2.5) { eps *= 1.35; res = loops.map((l) => simplify(l, eps)); }
-  res = res.filter((l) => l.length >= 6);
+  return loops;
+}
+
+function fit(items, n, budget) {
+  items.sort((p, q) => Math.abs(area(q.pts)) - Math.abs(area(p.pts)));
+  const total = (r) => r.reduce((s, l) => s + l.pts.length, 0), at = (eps) => items.map((l) => ({ pts: simplify(l.pts, eps), tag: l.tag }));
+  let eps = 0.3, res = at(eps);
+  while (total(res) > budget && eps < 2.5 * (n / N)) { eps *= 1.35; res = at(eps); }
+  res = res.filter((l) => l.pts.length >= 6);
   while (res.length > 1 && total(res) > budget) res.pop();
-  return res.map((l) => Float64Array.from(l, (v) => Math.min(1, Math.max(0, v / n))));
+  return res.map((l) => ({ pts: Float64Array.from(l.pts, (v) => Math.min(1, Math.max(0, v / n))), tag: l.tag }));
+}
+
+export function trace(f, n = N, budget = BUDGET, speck = 2) {
+  return fit(loopsOf(f, n, speck).map((pts) => ({ pts, tag: 0 })), n, budget).map((l) => l.pts);
 }
 
 const cache = new Map();
@@ -202,6 +212,13 @@ export function saved() {
 function store(list) { try { localStorage.setItem(KEY, JSON.stringify(list.slice(-MAX))); } catch (e) {} }
 function raw() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
 function keep(name, holes, colors) {
+  holes = holes.slice(); colors = colors ? colors.slice() : null;
+  while (holes.length > 1 && enc(holes).length > H_MAX) {
+    let k = 0;
+    holes.forEach((h, i) => { if (Math.abs(area(h)) < Math.abs(area(holes[k]))) k = i; });
+    holes.splice(k, 1);
+    if (colors) colors.splice(k, 1);
+  }
   const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 5), list = raw().filter((s) => s && s.id), c = colors && colors.some(Boolean) ? colors.join(",") : "";
   list.push(c ? { id, n: name, h: enc(holes), c } : { id, n: name, h: enc(holes) });
   store(list);
@@ -381,6 +398,21 @@ function erode(f) {
   return o;
 }
 
+function grow(f) {
+  const o = new Float32Array(NI * NI);
+  for (let y = 0; y < NI; y++) for (let x = 0; x < NI; x++) {
+    let m = 0;
+    for (let dy = -1; dy <= 1 && m < 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const u = x + dx, v = y + dy;
+      if (u >= 0 && v >= 0 && u < NI && v < NI && f[v * NI + u] > m) m = f[v * NI + u];
+    }
+    o[y * NI + x] = m;
+  }
+  return o;
+}
+
+const hexOf = (c) => c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+
 function shrink(f) {
   const o = new Float32Array(N * N);
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
@@ -402,17 +434,17 @@ function importer(host, { onSave, onEdit }) {
     `<div class="pt-cut-b"><div class="pt-cut-board pt-imp-board"><canvas width="${VIEW_PX}" height="${VIEW_PX}"></canvas><span class="pt-imp-drop" data-imp-drop>Pick a picture, paste one with ${PASTE} or drop it here</span></div>` +
     `<div class="pt-cut-side"><p class="pt-cut-row"><button class="btn" type="button" data-imp-file>Pick a file...</button><button class="btn" type="button" data-imp-paste>Paste</button></p>` +
     `<input type="file" accept="image/*" hidden data-imp-input>` +
-    `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="colors" title="Every color gets its own hole, with a cardboard gap where two colors meet">Colors</button><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
+    `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="colors" title="Every color becomes its own layer of the stencil">Colors</button><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
     `<label><span data-imp-thr-l>Threshold</span><input type="range" min="1" max="254" step="1" value="128" data-imp-thr></label>` +
     `<label>Smoothing<input type="range" min="0" max="4" step="1" value="1" data-imp-soft></label>` +
-    `<p class="pt-cut-hint" data-imp-hint></p>` +
+    `<p class="pt-cut-hint" data-imp-hint></p><p class="pt-imp-lay" data-imp-lay hidden></p>` +
     `<label>Name<input type="text" data-imp-name maxlength="20" placeholder="My stencil" autocomplete="off"></label>` +
     `<p class="pt-cut-row"><button class="btn" type="button" data-imp-edit>Edit in cutter</button><button class="btn" type="button" data-imp-save>Save and use</button></p></div></div></div>`;
   host.append(box);
   box.hidden = true;
   const cv = box.querySelector("canvas"), x = cv.getContext("2d"), input = box.querySelector("[data-imp-input]"), board = box.querySelector(".pt-imp-board");
   const thrEl = box.querySelector("[data-imp-thr]"), softEl = box.querySelector("[data-imp-soft]"), nameEl = box.querySelector("[data-imp-name]");
-  let src = null, mode = "dark", holes = [], colors = null, raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
+  let src = null, mode = "dark", holes = [], colors = null, layers = [], look = -1, raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
   const hint = (s) => { box.querySelector("[data-imp-hint]").textContent = s; };
 
   function gaps(thr) {
@@ -447,6 +479,66 @@ function importer(host, { onSave, onEdit }) {
     return blur(f, soft);
   }
 
+  function layered() {
+    const D = 255 - +thrEl.value, { r, g, b, al, bg } = src, T = NI * NI, flat = new Map();
+    let fg = 0;
+    for (let y = 1; y < NI - 1; y++) for (let x = 1; x < NI - 1; x++) {
+      const i = y * NI + x;
+      if (al[i] < 0.5 || bg[i]) continue;
+      fg++;
+      let e = 0;
+      for (let k = 0; k < 8; k++) { const j = i + NEAR[k][1] * NI + NEAR[k][0]; e = Math.max(e, Math.abs(r[i] - r[j]) + Math.abs(g[i] - g[j]) + Math.abs(b[i] - b[j])); }
+      if (e > 40) continue;
+      const key = (r[i] >> 3) * 1024 + (g[i] >> 3) * 32 + (b[i] >> 3), q = flat.get(key) || [0, 0, 0, 0];
+      q[0] += r[i]; q[1] += g[i]; q[2] += b[i]; q[3]++;
+      flat.set(key, q);
+    }
+    let cl = [];
+    [...flat.values()].sort((p, q) => q[3] - p[3]).forEach((q) => {
+      const c = [q[0] / q[3], q[1] / q[3], q[2] / q[3]];
+      let best = -1, bd = Infinity;
+      cl.forEach((k, i) => { const d = Math.hypot(c[0] - k.c[0], c[1] - k.c[1], c[2] - k.c[2]); if (d < bd) { bd = d; best = i; } });
+      if (best >= 0 && (bd < D || cl.length >= 10)) { const k = cl[best], w = k.n + q[3]; k.c = k.c.map((v, j) => (v * k.n + c[j] * q[3]) / w); k.n = w; }
+      else cl.push({ c, n: q[3] });
+    });
+    cl = cl.filter((k) => k.n >= Math.max(24, fg * 0.004));
+    if (!cl.length) return { holes: [], colors: null, layers: [] };
+    const lab = new Int8Array(T).fill(-1);
+    for (let i = 0; i < T; i++) {
+      if (al[i] < 0.5 || bg[i]) continue;
+      let best = 0, bd = Infinity;
+      for (let k = 0; k < cl.length; k++) { const c = cl[k].c, d = (r[i] - c[0]) ** 2 + (g[i] - c[1]) ** 2 + (b[i] - c[2]) ** 2; if (d < bd) { bd = d; best = k; } }
+      lab[i] = best;
+    }
+    const out = Int8Array.from(lab), cnt = new Int16Array(cl.length), sizes = new Float64Array(cl.length);
+    for (let y = 1; y < NI - 1; y++) for (let x = 1; x < NI - 1; x++) {
+      const i = y * NI + x;
+      if (lab[i] < 0) continue;
+      cnt.fill(0);
+      let top = lab[i], tn = 0;
+      for (let k = 0; k < 8; k++) { const l = lab[i + NEAR[k][1] * NI + NEAR[k][0]]; if (l >= 0 && ++cnt[l] > tn) { tn = cnt[l]; top = l; } }
+      if (tn >= 5) out[i] = top;
+    }
+    for (let i = 0; i < T; i++) if (out[i] >= 0) sizes[out[i]]++;
+    const order = cl.map((_, k) => k).filter((k) => sizes[k] > 0).sort((p, q) => sizes[q] - sizes[p]);
+    const soft = Math.max(1, +softEl.value * QI), speck = (4 + +softEl.value * 6) * QI * QI, items = [];
+    order.forEach((k) => {
+      const m = new Float32Array(T);
+      for (let i = 0; i < T; i++) if (out[i] === k) m[i] = 1;
+      loopsOf(blur(grow(m), soft), NI, speck).forEach((pts) => items.push({ pts, tag: k }));
+    });
+    const res = fit(items, NI, PIC_BUDGET), used = new Set(res.map((l) => l.tag));
+    return { holes: res.map((l) => l.pts), colors: res.map((l) => hexOf(cl[l.tag].c)), layers: order.filter((k) => used.has(k)).map((k) => hexOf(cl[k].c)) };
+  }
+
+  function chips() {
+    const el = box.querySelector("[data-imp-lay]");
+    el.hidden = layers.length < 2;
+    if (el.hidden) { el.innerHTML = ""; return; }
+    el.innerHTML = `<span>${layers.length} layers</span>` + `<button type="button" class="pt-imp-chip pt-imp-all" data-imp-l="-1" title="All layers at once" aria-pressed="${look < 0}">All</button>` +
+      layers.map((c, i) => `<button type="button" class="pt-imp-chip" data-imp-l="${i}" title="Only the #${c} layer" aria-pressed="${look === i}" style="background:#${c}"></button>`).join("");
+  }
+
   function colorsOf(loops, f) {
     const at = (px, py) => { const u = Math.round(px - 0.5), v = Math.round(py - 0.5); return u < 0 || v < 0 || u >= NI || v >= NI ? -1 : v * NI + u; };
     const out = loops.map((h) => {
@@ -475,16 +567,25 @@ function importer(host, { onSave, onEdit }) {
   function draw() {
     const s = cv.width;
     cardboard(x, s);
-    if (holes.length) cutHoles(x, holes, s, colors);
+    if (!holes.length) return;
+    if (look >= 0 && layers[look]) { const keepI = holes.map((_, i) => colors[i] === layers[look]); cutHoles(x, holes.filter((_, i) => keepI[i]), s, colors.filter((_, i) => keepI[i])); }
+    else cutHoles(x, holes, s, colors);
   }
   function rebuild() {
     raf = 0;
-    if (!src) { holes = []; colors = null; draw(); return; }
-    const f = field();
-    holes = trace(f, NI, BUDGET, (4 + +softEl.value * 6) * QI * QI);
-    colors = holes.length ? colorsOf(holes, f) : null;
+    if (!src) { holes = []; colors = null; layers = []; look = -1; chips(); draw(); return; }
+    if (mode === "colors") ({ holes, colors, layers } = layered());
+    else {
+      const f = field(), c = (holes = trace(f, NI, PIC_BUDGET, (4 + +softEl.value * 6) * QI * QI)).length ? colorsOf(holes, f) : null, n = new Map();
+      if (c) c.forEach((h) => { if (h) n.set(h, (n.get(h) || 0) + 1); });
+      const top = [...n.entries()].sort((p, q) => q[1] - p[1])[0];
+      colors = top ? holes.map(() => top[0]) : null;
+      layers = [];
+    }
+    if (look >= layers.length) look = -1;
+    chips();
     draw();
-    hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? "Every color is its own hole, with a strip of cardboard where colors meet. More gaps cuts finer details apart." : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
+    hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? (layers.length > 1 ? `Every color is its own layer. On the wall the color square in the corner of the stencil opens one layer at a time and picks its color: spray them one by one and the whole picture comes out. Click a color here to see its layer.` : "Only one color here. Slide Color detail up to split the picture into more colors.") : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
   }
   const soon = () => { if (!raf) raf = requestAnimationFrame(rebuild); };
   function sync() {
@@ -492,7 +593,7 @@ function importer(host, { onSave, onEdit }) {
     box.querySelector('[data-imp-mode="shape"]').disabled = !(src && src.cutout);
     thrEl.disabled = !src || mode === "shape";
     if (levels[mode] !== undefined) thrEl.value = String(levels[mode]);
-    box.querySelector("[data-imp-thr-l]").textContent = mode === "colors" ? "Color gaps" : "Threshold";
+    box.querySelector("[data-imp-thr-l]").textContent = mode === "colors" ? "Color detail" : "Threshold";
     softEl.disabled = !src;
     box.querySelector("[data-imp-drop]").hidden = !!src;
     box.querySelector("[data-imp-edit]").disabled = box.querySelector("[data-imp-save]").disabled = !src;
@@ -577,7 +678,8 @@ function importer(host, { onSave, onEdit }) {
     if (b.hasAttribute("data-imp-x")) { hide(); return; }
     if (b.hasAttribute("data-imp-file")) { input.click(); return; }
     if (b.hasAttribute("data-imp-paste")) { paste(); return; }
-    if (b.dataset.impMode) { mode = b.dataset.impMode; sync(); soon(); return; }
+    if (b.dataset.impMode) { mode = b.dataset.impMode; look = -1; sync(); soon(); return; }
+    if (b.dataset.impL !== undefined) { look = +b.dataset.impL; chips(); draw(); return; }
     const name = (nameEl.value || "").trim().slice(0, 20) || "My stencil";
     if (b.hasAttribute("data-imp-edit") && src) { const f = shrink(field()); hide(); onEdit(f, name); return; }
     if (b.hasAttribute("data-imp-save")) {

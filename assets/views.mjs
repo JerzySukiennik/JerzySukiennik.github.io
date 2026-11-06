@@ -186,7 +186,7 @@ export function newestBody(ctx) {
 export function newsWin(ctx) {
   const items = ctx.projects.slice(0, 4).map((p, i) =>
     `<li><a href="/p/${esc(p.slug)}/" data-nav>${icon(i === 0 ? "star" : SICON[sectionOf(p)])}<span>${i === 0 ? "New: " : ""}${esc(p.name)}</span></a></li>`).join("");
-  return win({ id: "news", title: "News", icon: "globe", cls: "w-news", body: `<ul class="news">${items}</ul><p class="news-more"><a href="#" data-open="newest">&#8594; More updates...</a></p>` });
+  return win({ id: "news", title: "News", icon: "globe", cls: "w-news", hidden: true, body: `<ul class="news">${items}</ul><p class="news-more"><a href="#" data-open="newest">&#8594; More updates...</a></p>` });
 }
 
 export function reviewsWin() {
@@ -226,7 +226,7 @@ export function routeWindow(ctx, path) {
       body: key === "rockets" ? rocketsBody(ctx) : explorer(ctx, key),
       status: `<span>${key === "rockets" ? ctx.rockets.fleet.length : inSec(ctx, key).length} object(s)</span><span>${esc(countLabel(ctx, key))}</span>` };
   }
-  return { id: "welcome", route: "/", title: "Welcome to Gzowo Labs", icon: "computer", cls: "w-welcome", body: welcomeBody(ctx) };
+  return { id: "welcome", route: "/", title: "Welcome to Gzowo Labs", icon: "computer", cls: "w-welcome", hidden: true, body: welcomeBody(ctx) };
 }
 
 export function startMenu(ctx) {

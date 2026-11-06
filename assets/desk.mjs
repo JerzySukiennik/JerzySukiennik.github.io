@@ -16,6 +16,7 @@ import { createBank } from "/assets/bank.mjs";
 import { createExchange } from "/assets/exchange.mjs";
 import { createMuseum } from "/assets/museum.mjs";
 import { createCoaster } from "/assets/coaster.mjs";
+import { createBlimps } from "/assets/blimps.mjs";
 import "/assets/paint.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
@@ -92,6 +93,7 @@ function layout() {
     s.style.setProperty("--s", b.k.toFixed(3));
   });
   life.layout(geo);
+  blimps.layout(geo);
   weather.layout(geo);
   launch.layout(geo);
   garden.layout(geo);
@@ -232,7 +234,7 @@ addEventListener("popstate", () => {
   });
   renderTasks();
   lockForWindows();
-  go(path, false);
+  if (path === "/") setTitle(null); else go(path, false);
 });
 
 function renderTasks() {
@@ -305,6 +307,7 @@ document.addEventListener("click", (e) => {
   if (a && a.origin === location.origin && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey && e.button === 0) {
     e.preventDefault();
     if (a.dataset.ring) { const ring = JSON.parse(a.dataset.ring); go("/p/" + ring[Math.floor(Math.random() * ring.length)] + "/"); return; }
+    if (a.pathname === "/" && a.closest(".ql")) { shutDown("map"); return; }
     go(a.pathname);
     return;
   }
@@ -375,6 +378,7 @@ window.gzDesk = {
 
 const mural = createMural(muralEl, { onExit: () => exitWall() });
 const life = createLife(world);
+const blimps = createBlimps(world, { calm });
 const weather = createWeather({ world, mapCanvas });
 const launch = createLaunch(world), garden = createGarden(world), fishing = createFishing(world);
 const hangar = createHangar(world), board = createBoard(world), claw = createClaw(world), folks = createFolks(world);
@@ -438,6 +442,7 @@ function enterWall(p = 0) {
   desk.classList.add("is-painting");
   life.pause(true);
   folks.pause(true);
+  blimps.pause(true);
   weather.stop();
   aim();
   setTimeout(() => { if (painting) { mural.enter(wallP); mural.resize(); } }, calm ? 0 : 680);
@@ -449,6 +454,7 @@ function exitWall() {
   mural.exit();
   life.pause(false);
   folks.pause(false);
+  blimps.pause(false);
   if (mural.made()) setTimeout(() => window.dispatchEvent(new CustomEvent("gz:painted")), 900);
   world.style.transform = "";
   desk.classList.remove("is-painting");
@@ -537,7 +543,10 @@ function init() {
     const art = world.querySelector("[data-wall-art]");
     if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k));
   });
-  (window.requestIdleCallback || ((f) => setTimeout(f, 1500)))(() => data());
+  data().then((d) => {
+    const news = (V.newsWin(d).match(/<ul class="news">[\s\S]*?<\/ul>/) || [""])[0], tag = V.esc(d.site.tagline).replace(/\. /g, ".<br>");
+    blimps.notes({ welcome: `<img class="bl-logo" src="/assets/gzowo-labs-fire.webp" alt="Gzowo Labs" width="515" height="93"><span class="bl-tag">${tag}</span>`, news: `<b class="bl-h">News</b>${news}` });
+  }).catch(() => {});
   desk.classList.add("is-ready");
 }
 

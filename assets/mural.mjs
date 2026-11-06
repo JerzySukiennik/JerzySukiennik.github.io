@@ -4,8 +4,9 @@
    Brushes are spray with a box of swappable caps, chalk, neon and a rainbow can, plus an eraser anyone can use. Masking tape and cardboard
    stencils are shared: everyone sees them, everyone's paint stops at them and anyone peels them off like stickers, a strip by its end and a
    stencil by its folded corner; let go halfway and the peeled part stays folded back, masking and taking paint on its back. A stencil
-   flips inside out with the round button in its corner, and a stencil cut from a picture draws each hole's rim in the color it came
-   from. A piece of wall nobody has painted yet can be switched to another surface with the button above it. Every stroke carries the outlines it was masked by and the ids of the tape and cardboard it landed on, so the paint on a
+   cut from a picture is a stack of color layers: the color square in its corner opens one layer at a time and loads that color, so
+   painting them in turn gives back the picture, and each hole's rim is drawn in its color. Overlays keep their cardboard and tape in a
+   cached picture and only redraw the paint while someone sprays, and masks are built once per stroke. A piece of wall nobody has painted yet can be switched to another surface with the button above it. Every stroke carries the outlines it was masked by and the ids of the tape and cardboard it landed on, so the paint on a
    strip shows for everyone and leaves the same crisp edge when it comes off. A stroke keeps the precision of the zoom it was drawn at, so whole
    pictures fit inside one brick. The view is drawn in tiles at many resolutions like a map, the timelapse replays the paint in view in the
    order it went on. The wall comes over one stream; while the wall is open a second small stream carries the tape, the stencils, the other
@@ -28,15 +29,6 @@ const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14, S
 const RB = 2, TS = 512, MAXZ = 2 ** 30, MINZ = 0.45, ART = 2.5, ARTY = 323 / 129;
 const UNDO_KEY = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘Z" : "Ctrl+Z";
 const PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
-const HUES = [
-  ["red", "#ffb8b8", "#fb6a6a", "#ff0000", "#8e0b0b"], ["orange", "#ffd5b8", "#fba66a", "#ff6a00", "#8e420b"], ["gold", "#ffebb8", "#fbd26a", "#ffb700", "#8e690b"],
-  ["yellow", "#fffbb8", "#fbf46a", "#fff200", "#8e870b"], ["lime", "#deffb8", "#b7fb6a", "#88ff00", "#518e0b"], ["green", "#b8ffc9", "#6afb8e", "#00ff40", "#0b8e2c"],
-  ["teal", "#b8fff3", "#6afbe3", "#00ffd4", "#0b8e78"], ["cyan", "#b8f1ff", "#6adefb", "#00ccff", "#0b748e"], ["blue", "#b8cfff", "#6a9afb", "#0055ff", "#0b378e"],
-  ["indigo", "#c1b8ff", "#7d6afb", "#2200ff", "#1d0b8e"], ["purple", "#e7b8ff", "#cb6afb", "#aa00ff", "#620b8e"], ["pink", "#ffb8e5", "#fb6ac6", "#ff00a1", "#8e0b5e"],
-];
-const SHADES = ["pale ", "light ", "", "dark "];
-const NEUTRALS = [["#ffffff", "white"], ["#d4d4d4", "light gray"], ["#a8a8a8", "gray"], ["#7c7c7c", "mid gray"], ["#505050", "dark gray"], ["#262626", "charcoal"],
-  ["#000000", "black"], ["#ffe0c4", "peach"], ["#f0b98d", "tan"], ["#c98a5b", "caramel"], ["#8a5a36", "brown"], ["#4f3220", "dark brown"]];
 const SIZES = [3, 6, 12, 22, 40];
 const RUBS = [6, 12, 22, 40, 70];
 const TAPES = [8, 14, 22, 34, 52];
@@ -61,8 +53,13 @@ const headSize = (h) => (HEADS.find((x) => x[0] === h) || HEADS[0])[3];
 const HINTS = {
   paint: TOUCH ? "Two fingers walk and pinch to zoom in forever. Hold still and the paint drips." : `Wheel zooms in forever, A and D walk, W and S climb. Hold still and the paint drips, ${UNDO_KEY} takes back your strokes.`,
   tape: "Drag to lay a strip of masking tape, everyone's paint stops at its edge. Grab the end and peel it like a sticker, let go halfway and it stays.",
-  stencil: "Drag a stencil to move it, the arrow corner turns and sizes it, the round button flips it. Peel the folded corner like a sticker.",
+  stencil: "Drag a stencil to move it, the arrow corner turns and sizes it. A picture stencil has a color square: click it to open one color layer at a time. Peel the folded corner like a sticker.",
 };
+const RECENT0 = ["#ff0000", "#000000", "#ffffff", "#ffe600", "#0055ff", "#00ff40", "#ff00a1", "#ff6a00", "#8a5a36", "chrome"];
+const toHex = (c) => "#" + c.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+const hsv2rgb = (h, s, v) => { const f = (n) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); }; return [f(5), f(3), f(1)].map((x) => Math.round(x * 255)); };
+const rgb2hsv = ([r, g, b]) => { r /= 255; g /= 255; b /= 255; const mx = Math.max(r, g, b), d = mx - Math.min(r, g, b); let h = 0; if (d) h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4; return [(h * 60 + 360) % 360, mx ? d / mx : 0, mx]; };
+const shadesOf = (c) => [0.75, 0.5, 0.25].map((t) => mix(c, "#ffffff", t)).concat([c], [0.2, 0.4, 0.6, 0.8].map((t) => mix(c, "#000000", t)));
 const FLIP_MS = 320, KIND_IDS = new Set(WALL_KINDS.slice(1).map((k) => k[0]));
 const kindName = (id) => (WALL_KINDS.find((k) => k[0] === id) || WALL_KINDS[0])[1];
 
@@ -583,6 +580,20 @@ function peelOf(F) {
   return [C + Math.cos(a) * len, C + Math.sin(a) * len];
 }
 const peelP = (F) => { if (!F) return 0; const C = -SHEET_M, dx = F[0] - C, dy = F[1] - C, len = Math.hypot(dx, dy) || 1; return len / (2 * (1 + 2 * SHEET_M) * ((dx + dy) / len)); };
+function layerize(cols, holes) {
+  if (!cols) return { layers: [], hl: null };
+  const L = [], hl = cols.map((c) => {
+    if (!c) return -1;
+    const rgb = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+    let k = L.findIndex((q) => Math.hypot(q.rgb[0] - rgb[0], q.rgb[1] - rgb[1], q.rgb[2] - rgb[2]) < 40);
+    if (k < 0) { L.push({ hex: c, rgb, a: 0 }); k = L.length - 1; }
+    return k;
+  });
+  holes.forEach((h, i) => { if (hl[i] >= 0) L[hl[i]].a += Math.abs(area(h)); });
+  const order = L.map((_, i) => i).sort((a, b) => L[b].a - L[a].a || a - b), at = [];
+  order.forEach((o, i) => (at[o] = i));
+  return { layers: order.map((o) => L[o].hex), hl: hl.map((k) => (k < 0 ? -1 : at[k])) };
+}
 const tFlap = (id) => !!id && id.includes(":");
 const sFlap = (key) => !!key && key.indexOf(":") !== key.lastIndexOf(":");
 
@@ -603,39 +614,51 @@ function maskIn(op, v, W, H, alive) {
 }
 
 function clips(mk, mode) {
-  const box = (c) => { c.moveTo(mk.x0, mk.y0); c.lineTo(mk.x1, mk.y0); c.lineTo(mk.x1, mk.y1); c.lineTo(mk.x0, mk.y1); c.closePath(); };
-  const card = (c, s, outer) => { c.beginPath(); if (outer) box(c); trail(c, s.sheet); s.holes.forEach((h) => trail(c, h)); c.clip("evenodd"); };
-  const off = (c, p) => { c.beginPath(); box(c); trail(c, p); c.clip("evenodd"); };
-  const flaps = (c) => { mk.tapes.forEach((t) => { if (t.flap) off(c, t.poly); }); mk.sheets.forEach((s) => { if (s.flap) card(c, s, true); }); };
-  if (mode === "wall") return [(c) => { mk.sheets.forEach((s) => card(c, s, true)); mk.tapes.forEach((t) => off(c, t.poly)); }];
+  const path = (polys) => { const p = new Path2D(); polys.forEach((q) => { p.moveTo(q[0], q[1]); for (let i = 2; i < q.length; i += 2) p.lineTo(q[i], q[i + 1]); p.closePath(); }); return p; };
+  const box = [mk.x0, mk.y0, mk.x1, mk.y0, mk.x1, mk.y1, mk.x0, mk.y1];
+  const inner = (s) => s.pi || (s.pi = path([s.sheet, ...s.holes])), outer = (s) => s.po || (s.po = path([box, s.sheet, ...s.holes])), off = (t) => t.po || (t.po = path([box, t.poly]));
+  const all = (c, list) => list.forEach((p) => c.clip(p, "evenodd"));
+  if (mode === "wall") { const list = [...mk.sheets.map(outer), ...mk.tapes.map(off)]; return [(c) => all(c, list)]; }
+  const flaps = [...mk.tapes.filter((t) => t.flap).map(off), ...mk.sheets.filter((s) => s.flap).map(outer)];
   if (mode === "tape") {
     const stuck = mk.tapes.filter((t) => !t.flap && t.live);
     if (!stuck.length) return [];
-    return [(c) => {
-      mk.sheets.forEach((s) => card(c, s, true));
-      mk.tapes.forEach((t) => { if (t.flap) off(c, t.poly); });
-      c.beginPath(); stuck.forEach((t) => trail(c, orient(t.poly))); c.clip();
-    }];
+    const u = path(stuck.map((t) => orient(t.poly))), list = [...mk.sheets.filter((s) => !s.flap).map(outer), ...flaps];
+    return [(c) => { all(c, list); c.clip(u); }];
   }
   if (mode === "sheet") {
-    return mk.sheets.map((s, i) => (s.flap || !s.live ? null : (c) => {
-      card(c, s, false);
-      for (let k = i + 1; k < mk.sheets.length; k++) if (!mk.sheets[k].flap) card(c, mk.sheets[k], true);
-      flaps(c);
-    })).filter(Boolean);
+    return mk.sheets.map((s, i) => {
+      if (s.flap || !s.live) return null;
+      const list = [mk.sheets.slice(i + 1).filter((q) => !q.flap).map(outer), flaps].flat(), me = inner(s);
+      return (c) => { c.clip(me, "evenodd"); all(c, list); };
+    }).filter(Boolean);
   }
   const out = [];
-  mk.tapes.forEach((t) => { if (t.flap && t.live) out.push((c) => { c.beginPath(); trail(c, t.poly); c.clip(); }); });
-  mk.sheets.forEach((s) => { if (s.flap && s.live) out.push((c) => card(c, s, false)); });
+  mk.tapes.forEach((t) => { if (t.flap && t.live) { const p = path([t.poly]); out.push((c) => c.clip(p)); } });
+  mk.sheets.forEach((s) => { if (s.flap && s.live) { const p = inner(s); out.push((c) => c.clip(p, "evenodd")); } });
   return out;
 }
 
 const brushOf = (op) => (op.k === "e" ? rubber : op.k === "c" ? chalk : op.c === "bands" ? bands : op.c[0] === "n" ? neon : sprayer);
+const reachOf = (op, v) => op.w * v.r * (op.k === "e" ? 0.6 : op.c === "bands" || (op.c && op.c[0] === "n") ? 4.5 : 3.4) + 6;
 function painterFor(op, c, v, mode = "wall", alive) {
   if (!op.mask) return brushOf(op)(op, c, v);
-  const fs = clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode), ps = fs.map(() => brushOf(op)(op, c, v));
-  const run = (k) => (x, y) => fs.forEach((f, i) => { c.save(); f(c); ps[i][k](x, y); c.restore(); });
-  return { add: run("add"), end: run("end") };
+  const fs = clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode), ps = fs.map(() => brushOf(op)(op, c, v)), R = reachOf(op, v);
+  let lx = null, ly = null;
+  return {
+    add(x, y) {
+      const ax = lx === null ? x : lx, ay = lx === null ? y : ly, W = c.canvas.width, H = c.canvas.height;
+      lx = x; ly = y;
+      if (Math.max(ax, x) + R < 0 || Math.max(ay, y) + R < 0 || Math.min(ax, x) - R > W || Math.min(ay, y) - R > H) { ps.forEach((p) => p.add(x, y)); return; }
+      fs.forEach((f, i) => {
+        c.save();
+        c.beginPath(); c.rect(Math.min(ax, x) - R, Math.min(ay, y) - R, Math.abs(x - ax) + 2 * R, Math.abs(y - ay) + 2 * R); c.clip();
+        f(c); ps[i].add(x, y);
+        c.restore();
+      });
+    },
+    end() { fs.forEach((f, i) => { c.save(); f(c); ps[i].end(); c.restore(); }); },
+  };
 }
 const reset = (c) => { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; };
 const at = (op, i, v) => [(op.p * WX + op.d[i] - v.x0) * v.r, (op.d[i + 1] - v.y0) * v.r];
@@ -650,7 +673,13 @@ function paintOp(op, c, v, mode = "wall", alive) {
     p.end();
   };
   if (!op.mask) { draw(); reset(c); return; }
-  for (const f of clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode)) { c.save(); f(c); draw(); c.restore(); }
+  const bb = op.bb ? [(op.bb[0] - v.x0) * v.r - 2, (op.bb[1] - v.y0) * v.r - 2, (op.bb[2] - op.bb[0]) * v.r + 4, (op.bb[3] - op.bb[1]) * v.r + 4] : null;
+  for (const f of clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode)) {
+    c.save();
+    if (bb) { c.beginPath(); c.rect(bb[0], bb[1], bb[2], bb[3]); c.clip(); }
+    f(c); draw();
+    c.restore();
+  }
   reset(c);
 }
 const older = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -680,6 +709,11 @@ const ICONS = {
   lapse: '<circle cx="8" cy="8" r="6.5" fill="#fff" stroke="#000"/><path d="M8 4v4h3" fill="none" stroke="#000"/><path d="M1 1h4L1 5z" fill="#000080"/>',
   caps: '<rect x="5" y="8" width="9" height="7" fill="#e0e0e0" stroke="#000"/><rect x="7" y="5" width="5" height="3" fill="#fff" stroke="#000"/><rect x="6" y="6" width="1" height="1" fill="#000"/><rect x="1" y="3" width="1" height="1" fill="#ff2d2d"/><rect x="3" y="1" width="1" height="1" fill="#2f6bff"/><rect x="0" y="6" width="1" height="1" fill="#38e03b"/><rect x="3" y="5" width="1" height="1" fill="#ffb700"/>',
   wallk: '<rect x="1" y="4" width="14" height="10" fill="#b9472b"/><path d="M1 7.5h14M1 10.5h14M5 4v3.5M11 4v3.5M8 7.5v3M3 10.5v3.5M13 10.5v3.5" stroke="#e2b698"/><rect x="1" y="4" width="14" height="10" fill="none" stroke="#000"/><path d="M4 1h8l-2-1M12 1l-2 2" fill="none" stroke="#000"/>',
+  undo: '<path d="M6 2v3h4a4.5 4.5 0 0 1 0 9H6v-2h4a2.5 2.5 0 0 0 0-5H6v3L1 6z" fill="#000080" stroke="#000" stroke-width=".5"/>',
+  redo: '<path d="M10 2v3H6a4.5 4.5 0 0 0 0 9h4v-2H6a2.5 2.5 0 0 1 0-5h4v3l5-4z" fill="#000080" stroke="#000" stroke-width=".5"/>',
+  zin: '<circle cx="6.5" cy="6.5" r="4.8" fill="#fff" stroke="#000"/><path d="M10 10l4.5 4.5" stroke="#000" stroke-width="2.4"/><path d="M4 6.5h5M6.5 4v5" stroke="#000" stroke-width="1.4"/>',
+  zout: '<circle cx="6.5" cy="6.5" r="4.8" fill="#fff" stroke="#000"/><path d="M10 10l4.5 4.5" stroke="#000" stroke-width="2.4"/><path d="M4 6.5h5" stroke="#000" stroke-width="1.4"/>',
+  drop: '<path d="M10.5 1.5l4 4-2 2-.8-.8-5.7 5.7-2.5.6.6-2.5 5.7-5.7-.8-.8z" fill="#fff" stroke="#000"/><path d="M2.5 13.5L1 15" stroke="#000"/><path d="M11 2l3 3" stroke="#808080"/>',
   cancur: '<path d="M1 1v9l2.5-2.5L5 11l1.5-.7L5 7h3.5z" fill="#fff" stroke="#000"/><rect x="10" y="7" width="5" height="8" fill="#ff0000" stroke="#000"/><rect x="11" y="5" width="3" height="2" fill="#fff" stroke="#000"/><rect x="11" y="10" width="3" height="2" fill="#fff"/>',
 };
 const TOOLS = [["spray", "Spray can"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow spray"], ["eraser", "Eraser, it rubs out any paint"], ["tape", "Masking tape"], ["stencil", "Stencils, ready made or cut your own"]];
@@ -696,8 +730,9 @@ export function createMural(el, opts) {
   const SID = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 9), outbox = { patch: {}, timer: 0, busy: false };
   let tapes = [], sheets = [], tapeDrag = null, sheetDrag = null, rip = null, liftDrag = null, peels = [], lifts = [], peelRaf = 0, hoverK = "", tipped = false;
   let lapse = null, lapseEl = null, pick = null, cut = null, caps = null, tapeL = null, sheetL = null, flapL = null, layRaf = 0, ovRaf = 0, hint = "", cardPat = null;
+  let geoV = 0, ovDirty = new Set(), ring = null, ringD = 0, ringOk = false, viewBox = null;
   let ink = null, who = null, inkRaf = 0, liveSrc = null, liveTree = {}, liveTimer = 0, head = "std", canCursor = true;
-  let wallKinds = {}, loaded = false, kindsEl = null, kindPick = null, kindFor = -1;
+  let wallKinds = {}, loaded = false, kindsEl = null, kindPick = null, kindFor = -1, colPop = null, recent = RECENT0.slice(), recentKey = "", sampling = false, cpHsv = [0, 1, 1], cpOld = "#ff0000", sv = null, hu = null, hexIn = null;
   function tile(p, cv) {
     const r = p < 2 ? SX : SX / 2;
     cv.width = Math.round(WX * r); cv.height = Math.round(WY * r);
@@ -715,6 +750,10 @@ export function createMural(el, opts) {
     canCursor = localStorage.getItem("gl-wall-can") !== "0";
     const h = localStorage.getItem("gl-wall-cap");
     if (HEAD_IDS.has(h)) head = h;
+    const sz = localStorage.getItem("gl-wall-size");
+    if (sz !== null && +sz >= 0 && +sz <= 4) size = +sz;
+    const rc = JSON.parse(localStorage.getItem("gl-wall-recent") || "null");
+    if (Array.isArray(rc)) { const ok = rc.filter((c) => typeof c === "string" && (HEX.test(c) || METAL[c] || (c === "rainbow" && rainbow))).slice(0, 10); recent = [...ok, ...RECENT0.filter((c) => !ok.includes(c))].slice(0, 10); }
   } catch (e) {}
   try {
     (JSON.parse(localStorage.getItem(MINE_KEY)) || []).forEach((m) => {
@@ -743,6 +782,8 @@ export function createMural(el, opts) {
     let f = document.querySelector(".wall-flash");
     if (!f) { f = document.createElement("div"); f.className = "wall-flash"; f.setAttribute("role", "status"); document.body.appendChild(f); }
     f.textContent = msg; f.hidden = false;
+    const rb = active && chrome && chrome.querySelector("[data-rb]");
+    f.style.top = rb ? Math.round(rb.getBoundingClientRect().bottom + 10) + "px" : "";
     clearTimeout(flashTimer);
     flashTimer = setTimeout(() => { f.hidden = true; }, 2600);
   }
@@ -962,6 +1003,7 @@ export function createMural(el, opts) {
       L.cache = j.back;
       L.tile = { c: j.c, v: j.v, mode: L.kind, ready: true, layer: L };
       if (live && wants(L, live)) replayLive(L.tile);
+      L.full = true;
       drawLayer(L);
     }
     if (layers.some((L) => L.job)) layRaf = requestAnimationFrame(layerPump);
@@ -979,26 +1021,63 @@ export function createMural(el, opts) {
 
   function drawOverlays() {
     if (ovRaf) { cancelAnimationFrame(ovRaf); ovRaf = 0; }
-    layers.forEach(drawLayer);
+    ovDirty.clear();
+    layers.forEach((L) => { L.full = true; drawLayer(L); });
   }
-  function overlaysSoon() { if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; layers.forEach(drawLayer); }); }
+  function overlaysSoon(list) {
+    if (!list) layers.forEach((L) => { L.full = true; ovDirty.add(L); });
+    else list.forEach((L) => ovDirty.add(L));
+    if (!ovRaf) ovRaf = requestAnimationFrame(() => { ovRaf = 0; const d = [...ovDirty]; ovDirty.clear(); d.forEach(drawLayer); });
+  }
 
   const drawCache = (c, cache, tv, v) => { const k = v.r / tv.r; c.drawImage(cache, (tv.x0 - v.x0) * v.r, (tv.y0 - v.y0) * v.r, cache.width * k, cache.height * k); };
   const px = (p, v) => [(p[0] - v.x0) * v.r, (p[1] - v.y0) * v.r];
   const far = (...n) => n.some((x) => !(Math.abs(x) < 1e6));
+  function paintIn(c, sink, polys, rule, cache, cv, v) {
+    if (sink) { const p = new Path2D(); polys.forEach((q) => { p.moveTo(q[0], q[1]); for (let i = 2; i < q.length; i += 2) p.lineTo(q[i], q[i + 1]); p.closePath(); }); sink.push({ path: p, rule }); return; }
+    if (!cache || !cv) return;
+    c.save(); c.beginPath(); polys.forEach((q) => trail(c, q)); c.clip(rule); drawCache(c, cache, cv, v); c.restore();
+  }
+  const still = (L) => (L === tapeL ? !tapeDrag && !rip && !peels.length : L === sheetL ? !lifts.length && !sheetDrag && !liftDrag && !sheets.some((sh) => sh.flip) : !rip && !liftDrag && !sheetDrag);
 
   function drawLayer(L) {
+    const rect = !L.full && L.dirty;
+    L.full = false; L.dirty = null;
     if (!active) return;
-    if (!layerOn(L)) { if (!L.cv.hidden) L.cv.hidden = true; return; }
+    if (!layerOn(L)) { if (!L.cv.hidden) L.cv.hidden = true; L.base = null; return; }
     L.cv.hidden = false;
-    const c = L.c, v = viewNow(), Wc = L.cv.width, Hc = L.cv.height;
+    const c = L.c, v = viewNow(), Wc = L.cv.width, Hc = L.cv.height, tv = L.tile && L.tile.v, draw = L === tapeL ? drawTapes : L === sheetL ? drawSheets : drawFlaps;
     c.setTransform(1, 0, 0, 1, 0, 0);
     c.globalAlpha = 1;
     c.globalCompositeOperation = "source-over";
+    const key = [v.x0, v.y0, v.r, Wc, Hc, geoV, tool, !!lapse].join();
+    if (rect && still(L) && L.base && L.baseKey === key) {
+      const x0 = Math.max(0, Math.floor(rect[0])), y0 = Math.max(0, Math.floor(rect[1])), x1 = Math.min(Wc, Math.ceil(rect[2])), y1 = Math.min(Hc, Math.ceil(rect[3]));
+      if (x1 <= x0 || y1 <= y0) return;
+      c.save();
+      c.beginPath(); c.rect(x0, y0, x1 - x0, y1 - y0); c.clip();
+      c.clearRect(x0, y0, x1 - x0, y1 - y0);
+      c.drawImage(L.base, x0, y0, x1 - x0, y1 - y0, x0, y0, x1 - x0, y1 - y0);
+      if (L.cache && tv) L.sink.forEach((p) => { c.save(); c.clip(p.path, p.rule); drawCache(c, L.cache, tv, v); c.restore(); });
+      if (L === sheetL && !lapse) sheets.forEach((sh) => { if (tool === "stencil") sheetTools(c, sh, v); layerBtn(c, sh, v); });
+      c.restore();
+      return;
+    }
     c.clearRect(0, 0, Wc, Hc);
-    if (L === tapeL) drawTapes(L, c, v, Wc, Hc);
-    else if (L === sheetL) drawSheets(L, c, v, Wc, Hc);
-    else drawFlaps(L, c, v, Wc, Hc);
+    if (!still(L)) { L.base = null; draw(L, c, v, Wc, Hc, null); return; }
+    if (!L.base || L.baseKey !== key) {
+      const b = L.base && L.base.width === Wc && L.base.height === Hc ? L.base : Object.assign(document.createElement("canvas"), { width: Wc, height: Hc }), x = b.getContext("2d");
+      x.setTransform(1, 0, 0, 1, 0, 0);
+      x.globalAlpha = 1;
+      x.globalCompositeOperation = "source-over";
+      x.clearRect(0, 0, Wc, Hc);
+      L.sink = [];
+      draw(L, x, v, Wc, Hc, L.sink);
+      L.base = b; L.baseKey = key;
+    }
+    c.drawImage(L.base, 0, 0);
+    if (L.cache && tv) L.sink.forEach((p) => { c.save(); c.clip(p.path, p.rule); drawCache(c, L.cache, tv, v); c.restore(); });
+    if (L === sheetL && !lapse) sheets.forEach((sh) => { if (tool === "stencil") sheetTools(c, sh, v); layerBtn(c, sh, v); });
   }
 
   function tapeFill(c, t, v, Wc, Hc, alpha, poly = t.poly) {
@@ -1034,10 +1113,10 @@ export function createMural(el, opts) {
     c.strokeStyle = "rgba(120,92,36,.7)"; c.lineWidth = d; c.stroke();
   }
 
-  function drawTapes(L, c, v, Wc, Hc) {
+  function drawTapes(L, c, v, Wc, Hc, sink) {
     const qs = [], tv = L.tile && L.tile.v;
-    tapes.forEach((t) => { if (!t.stuck) return; const q = tapeFill(c, t, v, Wc, Hc, 1, t.stuck); if (q) qs.push(q); });
-    if (qs.length && L.cache && tv) { c.save(); c.beginPath(); qs.forEach((q) => trail(c, orient(q))); c.clip(); drawCache(c, L.cache, tv, v); c.restore(); }
+    tapes.forEach((t) => { if (!t.stuck) return; const q = tapeFill(c, t, v, Wc, Hc, 1, t.stuck); if (q) qs.push(orient(q)); });
+    if (qs.length) paintIn(c, sink, qs, "nonzero", L.cache, tv, v);
     if (tool === "tape" && !lapse) tapes.forEach((t) => { if (!t.g && !(rip && rip.tape === t)) tab(c, t, v); });
     peels.forEach((P) => P.list.forEach((e) => { const s = peelAt(P, e); ripFrame(c, e.t, v, Wc, Hc, s.p, e.fromB, P.cache, P.v, s.hand, s.fade); }));
     if (tapeDrag) tapeFill(c, { ...tapeDrag, poly: strip(tapeDrag.a, tapeDrag.b, tapeDrag.w, tapeDrag.teeth) }, v, Wc, Hc, 0.85);
@@ -1082,7 +1161,7 @@ export function createMural(el, opts) {
     if (q) flapShape(c, q, fade);
   }
 
-  function tapeFlap(c, t, v, Wc, Hc, cache, cv) {
+  function tapeFlap(c, t, v, Wc, Hc, cache, cv, sink) {
     const q = toCanvas(t.flap, v, Wc, Hc);
     if (!q) return;
     const d = DPR(), P = px(t.foldAt, v), E = px(t.tip, v), L = Math.hypot(E[0] - P[0], E[1] - P[1]);
@@ -1093,7 +1172,7 @@ export function createMural(el, opts) {
       fill = g;
     }
     flapShape(c, q, 1, fill);
-    if (cache && cv) { c.save(); c.beginPath(); trail(c, q); c.clip(); drawCache(c, cache, cv, v); c.restore(); }
+    paintIn(c, sink, [q], "nonzero", cache, cv, v);
   }
 
   function peelAt(P, e) {
@@ -1151,20 +1230,21 @@ export function createMural(el, opts) {
     c.translate(mx, my); c.rotate(sh.a); c.scale(Math.max(0.03, s), 1); c.rotate(-sh.a); c.translate(-mx, -my);
   }
 
-  function drawSheets(L, c, v, Wc, Hc) {
+  function drawSheets(L, c, v, Wc, Hc, sink) {
     const tv = L.tile && L.tile.v, now = performance.now(), tools = tool === "stencil" && !lapse;
     sheets.forEach((sh) => {
       if (sh.flip) {
         const u = clamp((now - sh.flip.t0) / FLIP_MS, 0, 1), G = u < 0.5 ? sh.flip.old : sh, s = Math.abs(Math.cos(Math.PI * u));
         c.save();
         squish(c, sh, v, s);
-        drawFront(c, G, v, Wc, Hc, null, null, 1 - s);
-        if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null);
+        drawFront(c, G, v, Wc, Hc, null, null, 1 - s, null);
+        if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null, null);
         c.restore();
+        if (!lapse) layerBtn(c, sh, v);
         return;
       }
-      drawFront(c, sh, v, Wc, Hc, L.cache, tv, 0);
-      if (tools) sheetTools(c, sh, v);
+      drawFront(c, sh, v, Wc, Hc, L.cache, tv, 0, sink);
+      if (!sink) { if (tools) sheetTools(c, sh, v); if (!lapse) layerBtn(c, sh, v); }
     });
     lifts.forEach((F) => {
       const u = clamp((now - F.t0) / F.dur, 0, 1), dt = (now - F.t0) / 1000, d = DPR(), G = F.g, s = 1 + 0.08 * u;
@@ -1172,27 +1252,27 @@ export function createMural(el, opts) {
       c.save();
       c.globalAlpha = 1 - u;
       c.translate(mx + F.vel[0] * dt * d, my + F.vel[1] * dt * d); c.scale(s, s); c.translate(-mx, -my);
-      drawFront(c, G, v, Wc, Hc, F.cache, F.v, 0);
-      if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null);
+      drawFront(c, G, v, Wc, Hc, F.cache, F.v, 0, null);
+      if (G.flapP) sheetFlap(c, G, v, Wc, Hc, null, null, null);
       c.restore();
     });
   }
 
-  function rims(c, holes, cols, v, Wc, Hc, path, d) {
+  function rims(c, holes, cols, open, v, Wc, Hc, path, d) {
     if (!holes || !holes.length) return;
     c.save(); path(); c.clip("evenodd");
     c.lineJoin = "round";
     holes.forEach((h, i) => {
-      const q = toCanvas(h, v, Wc, Hc), col = cols && cols[i];
+      const q = toCanvas(h, v, Wc, Hc), col = cols && cols[i], shut = open && !open[i];
       if (!q) return;
-      c.strokeStyle = col ? "#" + col : "rgba(74,44,14,.8)";
-      c.lineWidth = (col ? 3.4 : 2) * d;
+      c.strokeStyle = shut ? "rgba(74,44,14,.3)" : col ? "#" + col : "rgba(74,44,14,.8)";
+      c.lineWidth = (shut ? 1 : col ? 3.4 : 2) * d;
       c.beginPath(); trail(c, q); c.stroke();
     });
     c.restore();
   }
 
-  function drawFront(c, G, v, Wc, Hc, cache, cv, dim) {
+  function drawFront(c, G, v, Wc, Hc, cache, cv, dim, sink) {
     if (!G.stuck) return;
     const o = toCanvas(G.stuck.poly, v, Wc, Hc);
     if (!o) return;
@@ -1200,13 +1280,13 @@ export function createMural(el, opts) {
     const path = () => { c.beginPath(); trail(c, o); hs.forEach((h) => trail(c, h)); };
     c.save(); c.translate(3 * d, 4 * d); c.fillStyle = "rgba(0,0,0,.32)"; path(); c.fill("evenodd"); c.restore();
     c.fillStyle = cardFill(c, v, G); path(); c.fill("evenodd");
-    if (cache && cv) { c.save(); path(); c.clip("evenodd"); drawCache(c, cache, cv, v); c.restore(); }
-    if (!G.inv) { c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke(); }
-    rims(c, G.holesW, G.cols, v, Wc, Hc, path, d);
+    c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke();
+    rims(c, G.holesW, G.cols, G.open, v, Wc, Hc, path, d);
+    paintIn(c, sink, [o, ...hs], "evenodd", cache, cv, v);
     if (dim > 0.02) { c.fillStyle = `rgba(40,20,0,${(dim * 0.35).toFixed(3)})`; path(); c.fill("evenodd"); }
   }
 
-  function sheetFlap(c, G, v, Wc, Hc, cache, cv) {
+  function sheetFlap(c, G, v, Wc, Hc, cache, cv, sink) {
     const F = G.flapP, o = toCanvas(F.poly, v, Wc, Hc);
     if (!o) return;
     const hs = F.holes.map((h) => toCanvas(h, v, Wc, Hc)).filter(Boolean), d = DPR();
@@ -1220,18 +1300,18 @@ export function createMural(el, opts) {
       fill = g;
     }
     c.fillStyle = fill; path(); c.fill("evenodd");
-    if (cache && cv) { c.save(); path(); c.clip("evenodd"); drawCache(c, cache, cv, v); c.restore(); }
-    if (!G.inv) { c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke(); }
-    rims(c, G.holesF, null, v, Wc, Hc, path, d);
+    c.strokeStyle = "rgba(74,44,14,.75)"; c.lineWidth = d; c.beginPath(); trail(c, o); c.stroke();
+    rims(c, G.holesF, null, G.open, v, Wc, Hc, path, d);
+    paintIn(c, sink, [o, ...hs], "evenodd", cache, cv, v);
   }
 
-  function drawFlaps(L, c, v, Wc, Hc) {
+  function drawFlaps(L, c, v, Wc, Hc, sink) {
     const tv = L.tile && L.tile.v;
     tapes.forEach((t) => {
       if (rip && rip.tape === t) handFlap(c, t, v, Wc, Hc, rip.p, rip.fromB, rip.hand, 1);
-      else if (t.flap) tapeFlap(c, t, v, Wc, Hc, L.cache, tv);
+      else if (t.flap) tapeFlap(c, t, v, Wc, Hc, L.cache, tv, sink);
     });
-    sheets.forEach((sh) => { if (sh.flapP && !sh.flip) sheetFlap(c, sh, v, Wc, Hc, liftDrag && liftDrag.sheet === sh ? null : L.cache, tv); });
+    sheets.forEach((sh) => { if (sh.flapP && !sh.flip) sheetFlap(c, sh, v, Wc, Hc, liftDrag && liftDrag.sheet === sh ? null : L.cache, tv, sink); });
   }
 
   const stuckAt = (sh, u, w) => !sh.fold || sh.fold[0] * u + sh.fold[1] * w >= sh.fold[2];
@@ -1246,23 +1326,23 @@ export function createMural(el, opts) {
       c.strokeStyle = "rgba(74,44,14,.8)"; c.lineWidth = d; c.stroke();
     }
     c.lineWidth = d;
-    if (sh.inv && sh.stuck) {
-      const o = toCanvas(sh.stuck.poly, v, c.canvas.width, c.canvas.height);
-      if (o) { c.save(); c.setLineDash([4 * d, 4 * d]); c.strokeStyle = "rgba(0,0,0,.45)"; c.beginPath(); trail(c, o); c.stroke(); c.restore(); }
-    }
     if (stuckAt(sh, 1 + M, 1 + M)) {
       const [hx, hy] = handleAt(sh, v);
       c.fillStyle = "#fff"; c.strokeStyle = "#000";
       c.fillRect(hx - s, hy - s, s * 2, s * 2); c.strokeRect(hx - s, hy - s, s * 2, s * 2);
       c.beginPath(); c.arc(hx, hy, s * 0.5, -Math.PI * 0.9, Math.PI * 0.4); c.stroke();
     }
-    if (stuckAt(sh, 1 + M, -M)) {
-      const [bx, by] = flipAt(sh, v);
-      c.fillStyle = "#fff"; c.strokeStyle = "#000";
-      c.fillRect(bx - s, by - s, s * 2, s * 2); c.strokeRect(bx - s, by - s, s * 2, s * 2);
-      c.beginPath(); c.arc(bx, by, s * 0.58, 0, Math.PI * 2); c.stroke();
-      c.fillStyle = "#000"; c.beginPath(); c.arc(bx, by, s * 0.58, Math.PI / 2, Math.PI * 1.5); c.closePath(); c.fill();
-    }
+  }
+
+  function layerBtn(c, sh, v) {
+    if (!sh.layers || sh.layers.length < 2 || !stuckAt(sh, 1 + SHEET_M, -SHEET_M)) return;
+    const d = DPR(), s = (TOUCH ? 11 : 8) * d, [bx, by] = flipAt(sh, v);
+    if (far(bx, by)) return;
+    c.fillStyle = "rgba(0,0,0,.3)"; c.fillRect(bx - s + d, by - s + 2 * d, s * 2, s * 2);
+    if (sh.lay >= 0) { c.fillStyle = "#" + sh.layers[sh.lay]; c.fillRect(bx - s, by - s, s * 2, s * 2); }
+    else { const all = sh.layers.slice(0, 5), w = (s * 2) / all.length; all.forEach((col, i) => { c.fillStyle = "#" + col; c.fillRect(bx - s + i * w, by - s, w + 0.5, s * 2); }); }
+    c.strokeStyle = "#fff"; c.lineWidth = d; c.strokeRect(bx - s + d, by - s + d, s * 2 - 2 * d, s * 2 - 2 * d);
+    c.strokeStyle = "#000"; c.strokeRect(bx - s, by - s, s * 2, s * 2);
   }
 
   function foldOf(sh, v) {
@@ -1284,7 +1364,9 @@ export function createMural(el, opts) {
   function shapeSheet(sh) {
     const M = SHEET_M, C = -M, L = [-M, -M, 1 + M, -M, 1 + M, 1 + M, -M, 1 + M];
     const toW = (p) => { const o = new Array(p.length); for (let i = 0; i < p.length; i += 2) { const [x, y] = sheetAt(sh, p[i], p[i + 1]); o[i] = x; o[i + 1] = y; } return o; };
-    const eff = sh.inv ? [L, ...sh.st.holes] : sh.st.holes;
+    sh.open = sh.lay >= 0 && sh.hl ? sh.hl.map((k) => k < 0 || k === sh.lay) : null;
+    const eff = sh.open ? sh.st.holes.filter((_, i) => sh.open[i]) : sh.st.holes;
+    geoV++;
     sh.outline = toW(L);
     sh.holesW = sh.st.holes.map(toW);
     sh.stuck = { poly: sh.outline, holes: eff.map(toW) };
@@ -1306,6 +1388,7 @@ export function createMural(el, opts) {
     sh.bb = boxOf(sh.flapP ? [...sh.outline, ...sh.flapP.poly] : sh.outline);
   }
   function shapeTape(t) {
+    geoV++;
     t.poly = strip(t.a, t.b, t.w, t.teeth);
     t.stuck = t.poly; t.flap = null; t.tag = null;
     const g = Math.abs(t.g || 0);
@@ -1325,7 +1408,7 @@ export function createMural(el, opts) {
   const canvasPt = (e) => { const r = view.getBoundingClientRect(), d = DPR(); return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; };
   const reachPx = () => (TOUCH ? 24 : 12) * DPR();
   const onHandle = (sh, P, v) => { if (!stuckAt(sh, 1 + SHEET_M, 1 + SHEET_M)) return false; const [hx, hy] = handleAt(sh, v); return Math.hypot(P[0] - hx, P[1] - hy) <= reachPx(); };
-  const onFlip = (sh, P, v) => { if (!stuckAt(sh, 1 + SHEET_M, -SHEET_M)) return false; const [bx, by] = flipAt(sh, v); return Math.hypot(P[0] - bx, P[1] - by) <= reachPx(); };
+  const onLayer = (sh, P, v) => { if (!sh.layers || sh.layers.length < 2 || sh.flip || !stuckAt(sh, 1 + SHEET_M, -SHEET_M)) return false; const [bx, by] = flipAt(sh, v); return Math.hypot(P[0] - bx, P[1] - by) <= reachPx() * 1.15; };
   function onFold(sh, P, v) {
     const f = foldOf(sh, v), rx = P[0] - f.x0, ry = P[1] - f.y0, a1 = rx * f.u[0] + ry * f.u[1], a2 = rx * f.w[0] + ry * f.w[1], m = 8 * DPR();
     return a1 > -m && a2 > -m && a1 + a2 < f.ts * 1.2 + m;
@@ -1351,7 +1434,7 @@ export function createMural(el, opts) {
     if (sheets.filter(inView).length >= MAX_SHEETS) { flash("TOO MANY STENCILS HERE, PEEL ONE OFF FIRST"); return; }
     const ppu = k0 * Z, p = Math.max(0, Math.floor(cx / WX)), { holes, cols } = decHoles(encHoles(st.holes), st.colors ? st.colors.join(",") : "");
     if (!holes.length) return;
-    const sh = { id: pushId(), kind: "s", p, x: cx, y: cy, s: (Math.min(W, H) * 0.5) / ppu, a: 0, v: vtag(), name: String(st.name || "").slice(0, 20), st: { holes }, cols, inv: false, f: null };
+    const sh = { id: pushId(), kind: "s", p, x: cx, y: cy, s: (Math.min(W, H) * 0.5) / ppu, a: 0, v: vtag(), name: String(st.name || "").slice(0, 20), st: { holes }, cols, ...layerize(cols, holes), lay: -1, f: null };
     shapeSheet(sh);
     props.set(sh.id, sh);
     reindex();
@@ -1368,7 +1451,6 @@ export function createMural(el, opts) {
     for (let i = sheets.length - 1; i >= 0; i--) {
       const sh = sheets[i];
       if (sh.flip) continue;
-      if (onFlip(sh, P, v)) { flipSheet(sh); return; }
       if (onPeel(sh, P, w, v)) { startLift(e, sh); return; }
       if (onHandle(sh, P, v)) { startDrag(e, sh, true, w); return; }
     }
@@ -1398,15 +1480,19 @@ export function createMural(el, opts) {
     drawOverlays();
   }
 
-  function flipSheet(sh) {
+  function nextLayer(sh) {
+    if (!sh.layers || sh.layers.length < 2) return;
     sh.flip = { t0: performance.now(), old: { ...sh } };
-    sh.inv = !sh.inv; sh.f = null; sh.v = vtag();
+    sh.lay = sh.lay + 1 < sh.layers.length ? sh.lay + 1 : -1;
+    sh.f = null; sh.v = vtag();
     shapeSheet(sh);
     reindex();
     forgetLayer(sheetL); forgetLayer(flapL);
     rerender(sheetL, true); rerender(flapL, true);
-    pushProp(sh, { i: sh.inv || null, v: sh.v, fu: null, fw: null });
+    pushProp(sh, { l: sh.lay >= 0 ? sh.lay : null, v: sh.v, fu: null, fw: null });
     flushProp(sh);
+    if (sh.lay >= 0) { pickColor("#" + sh.layers[sh.lay]); sync(); }
+    flash(sh.lay >= 0 ? `LAYER ${sh.lay + 1} OF ${sh.layers.length}: SPRAY IT IN THIS COLOR, THEN CLICK THE SQUARE FOR THE NEXT ONE` : "ALL LAYERS OPEN AGAIN");
     loop();
     drawOverlays();
   }
@@ -1437,7 +1523,7 @@ export function createMural(el, opts) {
     liftDrag = null;
     const sh = D.sheet, [vx, vy] = speed(D.m), fast = Math.hypot(vx, vy) > 900, p = peelP(sh.f);
     const n = sh.fold ? [sh.fold[0] * Math.cos(sh.a) - sh.fold[1] * Math.sin(sh.a), sh.fold[0] * Math.sin(sh.a) + sh.fold[1] * Math.cos(sh.a)] : [Math.SQRT1_2, Math.SQRT1_2];
-    if (!cancel && props.has(sh.id) && (done || (fast && p > 0.05 && vx * n[0] + vy * n[1] > 0))) {
+    if (!cancel && props.has(sh.id) && (done || p >= 0.9 || (fast && p > 0.05 && vx * n[0] + vy * n[1] > 0))) {
       let vel = [vx, vy];
       if (Math.hypot(vx, vy) < 300) vel = [n[0] * 650, n[1] * 650 - 150];
       clearTimeout(sh.pt); sh.pend = null;
@@ -1499,7 +1585,7 @@ export function createMural(el, opts) {
     if (!R) return;
     rip = null;
     const t = R.tape, [vx, vy] = speed(R.m), fast = Math.hypot(vx, vy) > 900, A = R.fromB ? t.b : t.a, pull = vx * (R.hand[0] - A[0]) + vy * (R.hand[1] - A[1]) > 0;
-    if (!cancel && props.has(t.id) && (done || (fast && R.p > 0.05 && pull))) {
+    if (!cancel && props.has(t.id) && (done || R.p >= 0.9 || (fast && R.p > 0.05 && pull))) {
       const ppu = k0 * Z;
       let dir = [vx / ppu, vy / ppu];
       if (Math.hypot(vx, vy) < 300) { const fx = R.hand[0] - A[0], fy = R.hand[1] - A[1], l = Math.hypot(fx, fy) || 1; dir = [((fx / l) * 700) / ppu, ((fy / l) * 700) / ppu]; }
@@ -1528,7 +1614,7 @@ export function createMural(el, opts) {
     if (tapes.filter(inView).length >= MAX_TAPES) { flash("THAT IS A LOT OF TAPE HERE, PEEL SOME OFF FIRST"); return; }
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
     const a = wallPoint(e.clientX, e.clientY);
-    tapeDrag = { id: e.pointerId, a, b: a, w: TAPES[size] / (k0 * Z), teeth: Array.from({ length: 8 }, () => Math.round(Math.random() * 9) / 9) };
+    tapeDrag = { id: e.pointerId, a, b: a, w: sizeOf(TAPES) / (k0 * Z), teeth: Array.from({ length: 8 }, () => Math.round(Math.random() * 9) / 9) };
     drawOverlays();
   }
   function layTape() {
@@ -1559,6 +1645,7 @@ export function createMural(el, opts) {
   }
 
   function reindex() {
+    geoV++;
     tapes = []; sheets = [];
     alive.t.clear(); alive.s.clear();
     props.forEach((q) => {
@@ -1585,7 +1672,7 @@ export function createMural(el, opts) {
   function wire(q) {
     const b = q.p * WX;
     if (q.kind === "t") return { k: "t", p: q.p, ax: q.a[0] - b, ay: q.a[1], bx: q.b[0] - b, by: q.b[1], w: q.w, e: q.teeth.map((x) => Math.round(clamp(x, 0, 1) * 9)).join(""), ...(q.g ? { g: q.g } : {}), t: SV };
-    return { k: "s", p: q.p, x: q.x - b, y: q.y, s: q.s, r: q.a, h: encHoles(q.st.holes), v: q.v, n: q.name || "", ...(q.cols ? { c: q.cols.join(",") } : {}), ...(q.inv ? { i: true } : {}), ...(q.f ? peelFields(q) : {}), t: SV };
+    return { k: "s", p: q.p, x: q.x - b, y: q.y, s: q.s, r: q.a, h: encHoles(q.st.holes), v: q.v, n: q.name || "", ...(q.cols ? { c: q.cols.join(",") } : {}), ...(q.lay >= 0 ? { l: q.lay } : {}), ...(q.f ? peelFields(q) : {}), t: SV };
   }
   function propOf(id, v) {
     if (!v || typeof v !== "object" || !/^[-_A-Za-z0-9]{1,24}$/.test(id) || !Number.isInteger(v.p) || v.p < 0) return null;
@@ -1600,7 +1687,8 @@ export function createMural(el, opts) {
       if (![v.x, v.y, v.s, v.r].every(isNum) || v.s <= 0 || typeof v.h !== "string" || typeof v.v !== "string") return null;
       const { holes, cols } = decHoles(v.h, typeof v.c === "string" ? v.c : "");
       if (!holes.length) return null;
-      const sh = { id, kind: "s", p: v.p, x: b + v.x, y: v.y, s: v.s, a: v.r, v: v.v, name: typeof v.n === "string" ? v.n.slice(0, 20) : "", st: { holes }, cols, inv: v.i === true, f: isNum(v.fu) && isNum(v.fw) ? peelOf([v.fu, v.fw]) : null };
+      const lz = layerize(cols, holes);
+      const sh = { id, kind: "s", p: v.p, x: b + v.x, y: v.y, s: v.s, a: v.r, v: v.v, name: typeof v.n === "string" ? v.n.slice(0, 20) : "", st: { holes }, cols, ...lz, lay: Number.isInteger(v.l) && v.l >= 0 && v.l < lz.layers.length ? v.l : -1, f: isNum(v.fu) && isNum(v.fw) ? peelOf([v.fu, v.fw]) : null };
       shapeSheet(sh);
       return sh;
     }
@@ -1631,10 +1719,10 @@ export function createMural(el, opts) {
     const old = props.get(id);
     if (old && old.kind !== q.kind) return;
     if (old && (held(old) || old.pend)) return;
-    const moved = !!old && q.kind === "s" && (old.v !== q.v || old.inv !== q.inv), folded = !!old && (q.kind === "t" ? old.g !== q.g : !same(old.f, q.f));
+    const moved = !!old && q.kind === "s" && (old.v !== q.v || old.lay !== q.lay), folded = !!old && (q.kind === "t" ? old.g !== q.g : !same(old.f, q.f));
     if (old) {
-      if (q.kind === "s" && old.inv !== q.inv) { old.flip = { t0: performance.now(), old: { ...old } }; loop(); }
-      ["p", "a", "b", "w", "teeth", "g", "x", "y", "s", "v", "name", "st", "cols", "inv", "f"].forEach((k) => { if (k in q) old[k] = q[k]; });
+      if (q.kind === "s" && old.lay !== q.lay) { old.flip = { t0: performance.now(), old: { ...old } }; loop(); }
+      ["p", "a", "b", "w", "teeth", "g", "x", "y", "s", "v", "name", "st", "cols", "layers", "hl", "lay", "f"].forEach((k) => { if (k in q) old[k] = q[k]; });
       if (old.kind === "t") shapeTape(old); else shapeSheet(old);
     } else props.set(id, q);
     reindex();
@@ -1829,13 +1917,15 @@ export function createMural(el, opts) {
   function hover(e) {
     if (lapse || e.buttons || !view) return;
     let k = "";
-    if (tool === "tape") k = ripAt(e) ? "grab" : "";
+    const P = canvasPt(e), v = viewNow();
+    if (sheets.some((sh) => onLayer(sh, P, v))) k = "pointer";
+    else if (tool === "tape") k = ripAt(e) ? "grab" : "";
     else if (tool === "stencil") {
-      const P = canvasPt(e), v = viewNow(), w = wallPoint(e.clientX, e.clientY);
-      k = sheets.some((sh) => onFlip(sh, P, v)) ? "pointer" : sheets.some((sh) => onPeel(sh, P, w, v)) ? "grab" : sheets.some((sh) => onHandle(sh, P, v)) ? "nwse-resize" : sheets.some((sh) => sh.stuck && inside(sh.stuck.poly, w)) ? "move" : "pointer";
+      const w = wallPoint(e.clientX, e.clientY);
+      k = sheets.some((sh) => onPeel(sh, P, w, v)) ? "grab" : sheets.some((sh) => onHandle(sh, P, v)) ? "nwse-resize" : sheets.some((sh) => sh.stuck && inside(sh.stuck.poly, w)) ? "move" : "pointer";
     }
     if (k === hoverK) return;
-    if (k) { hoverK = k; view.style.cursor = k; } else cursor();
+    if (k) { hoverK = k; view.style.cursor = k; if (ring) ring.hidden = true; } else cursor();
   }
 
   function touchOp(op, painted) {
@@ -2184,14 +2274,24 @@ export function createMural(el, opts) {
     live.d.push(x, y);
     const i = live.d.length - 2;
     shown.forEach((t) => { if (t.ready && t.L === level && !live.ps.has(t)) replayLive(t); });
-    if (live.mask) layers.forEach((L) => { if (L.tile && wants(L, live) && !live.ps.has(L.tile)) replayLive(L.tile); });
+    if (live.mask) layers.forEach((L) => { if (L.tile && wants(L, live) && !live.ps.has(L.tile)) { replayLive(L.tile); L.full = true; } });
     live.ps.forEach((pt, t) => {
       if (pt.n === live.d.length) return;
       pt.add(...at(live, i, t.v));
       pt.n = live.d.length;
       reset(t.c);
     });
-    if (live.mask) overlaysSoon();
+    if (live.mask) {
+      const v = viewNow(), ov = [];
+      layers.forEach((L) => {
+        if (!L.tile || !live.ps.has(L.tile)) return;
+        const tv = L.tile.v, R = reachOf(live, tv), [x1, y1] = at(live, i, tv), [x0, y0] = i >= 2 ? at(live, i - 2, tv) : [x1, y1], k = v.r / tv.r, ox = (tv.x0 - v.x0) * v.r, oy = (tv.y0 - v.y0) * v.r;
+        const r = [ox + (Math.min(x0, x1) - R) * k, oy + (Math.min(y0, y1) - R) * k, ox + (Math.max(x0, x1) + R) * k, oy + (Math.max(y0, y1) + R) * k];
+        L.dirty = L.dirty ? [Math.min(L.dirty[0], r[0]), Math.min(L.dirty[1], r[1]), Math.max(L.dirty[2], r[2]), Math.max(L.dirty[3], r[3])] : r;
+        ov.push(L);
+      });
+      if (ov.length) overlaysSoon(ov);
+    }
     if (live.ink) pushLive({});
     lastSample = performance.now();
   }
@@ -2200,7 +2300,8 @@ export function createMural(el, opts) {
     const zl = Math.max(0, Math.ceil(Math.log2(Z) - 1e-9)), k = tool === "eraser" ? "e" : tool === "chalk" ? "c" : "d";
     const c = k === "e" ? undefined : k === "c" ? hex : tool === "neon" ? "n" + hex : tool === "bands" ? "bands" : color;
     const h = tool === "spray" && head !== "std" ? head : undefined;
-    live = { id: pushId(), p, k, c, h, w: (k === "e" ? RUBS[size] : SIZES[size]) / Z, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl) };
+    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES)) / Z, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl) };
+    if (c && c !== "bands") keepColor(c[0] === "n" ? c.slice(1) : c);
     panel(p).seen[live.id] = true;
     layers.forEach((L) => { if (wants(L, live) && !L.tile && !L.job) rerender(L, true); });
     inkStart(live);
@@ -2316,6 +2417,9 @@ export function createMural(el, opts) {
   }
 
   function place() {
+    viewBox = null;
+    const rb = chrome.querySelector("[data-rb]");
+    if (rb) chrome.style.setProperty("--rbb", Math.round(rb.getBoundingClientRect().bottom - chrome.getBoundingClientRect().top) + "px");
     const r = view.parentNode.getBoundingClientRect(), f = frame(r.width, r.height);
     W = r.width; H = r.height; k0 = f.k; faceTop = f.top;
     ytop = -faceTop / k0; ybot = ytop + H / k0;
@@ -2345,44 +2449,50 @@ export function createMural(el, opts) {
     walkRaf = requestAnimationFrame(stride);
   }
 
+  const sizeOf = (arr) => { const v = clamp(size, 0, arr.length - 1), i = Math.min(arr.length - 2, Math.floor(v)); return arr[i] * Math.pow(arr[i + 1] / arr[i], v - i); };
+  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : tool === "eraser" ? sizeOf(RUBS) * k0 : sizeOf(SIZES) * k0 * (tool === "spray" ? headSize(head) : 1));
+  const ringFor = () => (TOUCH || lapse || sampling || tool === "stencil" ? 0 : brushPx());
+  function placeRing(e) {
+    if (!ring || e.pointerType === "touch") return;
+    const r = viewBox || (viewBox = view.getBoundingClientRect());
+    ring.style.transform = `translate(${(e.clientX - r.left - ringD / 2).toFixed(1)}px,${(e.clientY - r.top - ringD / 2).toFixed(1)}px)`;
+    const on = !hoverK && ringFor() > 0;
+    if (ring.hidden === on) ring.hidden = !on;
+  }
   function cursor() {
     if (!view) return;
     hoverK = "";
+    const d = ringFor();
+    ringD = Math.max(4, Math.round(d));
+    if (ring) {
+      ring.style.width = ring.style.height = ringD + "px";
+      ring.firstChild.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" ? "#ffffff" : tool === "bands" ? "rainbow" : tool === "spray" ? color : hex);
+      if (!d) ring.hidden = true;
+    }
     if (lapse) { view.style.cursor = "progress"; return; }
+    if (sampling) { view.style.cursor = "crosshair"; return; }
     if (tool === "stencil") { view.style.cursor = "pointer"; return; }
-    const tape = tool === "tape", base = tape ? TAPES[size] : (tool === "eraser" ? RUBS : SIZES)[size] * (tool === "spray" ? headSize(head) : 1);
-    const d = Math.round(clamp(base * k0, 6, 64)), s = d + 4, c = s / 2;
-    let svg;
+    if (TOUCH) return;
     if (canCursor && (tool === "spray" || tool === "bands")) {
       const tint = tool === "bands" ? "rainbow" : color, stops = tint === "rainbow" ? RAINBOW.map((h, i) => [i / (RAINBOW.length - 1), h]) : METAL[tint];
-      const fill = stops ? "url(#r)" : tint, ox = Math.round(c + d * 0.36 + 7), oy = Math.round(c + d * 0.36 + 3), w = ox + 20, h = oy + 36;
+      const fill = stops ? "url(#r)" : tint, g = Math.min(ringD, 84) / 2, ox = Math.round(2 + g * 0.72 + 7), oy = Math.round(2 + g * 0.72 + 3), w = ox + 20, h = oy + 36;
       const defs = stops ? '<defs><linearGradient id="r"' + (METAL[tint] ? ' x2="0" y2="1"' : "") + ">" + stops.map(([o, q]) => '<stop offset="' + o + '" stop-color="' + q + '"/>').join("") + "</linearGradient></defs>" : "";
-      const mist = [0.32, 0.55, 0.74].map((t, i) => '<circle cx="' + (ox + 5 + (c - ox - 5) * t).toFixed(1) + '" cy="' + (oy + 2 + (c - oy - 2) * t).toFixed(1) + '" r="' + (1.4 - i * 0.3) + '" fill="' + fill + '" fill-opacity=".7"/>').join("");
-      svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" shape-rendering="crispEdges">' + defs +
-        '<circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="' + fill + '" fill-opacity=".35" stroke="#000" shape-rendering="auto"/><circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff" shape-rendering="auto"/>' + mist +
+      const mist = [0.32, 0.55, 0.74].map((t, i) => '<circle cx="' + (ox + 5 + (2 - ox - 5) * t).toFixed(1) + '" cy="' + (oy + 2 + (2 - oy - 2) * t).toFixed(1) + '" r="' + (1.4 - i * 0.3) + '" fill="' + fill + '" fill-opacity=".7"/>').join("");
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + w + '" height="' + h + '" shape-rendering="crispEdges">' + defs + mist +
         '<rect x="' + (ox + 5) + '" y="' + oy + '" width="6" height="4" fill="#fff" stroke="#000"/><rect x="' + (ox + 4) + '" y="' + (oy + 1) + '" width="2" height="2" fill="#000"/>' +
         '<rect x="' + (ox + 1) + '" y="' + (oy + 4) + '" width="14" height="5" fill="' + fill + '" stroke="#000"/>' +
         '<rect x="' + ox + '" y="' + (oy + 9) + '" width="16" height="25" fill="' + fill + '" stroke="#000"/>' +
         '<rect x="' + (ox + 1) + '" y="' + (oy + 16) + '" width="14" height="8" fill="#fff" fill-opacity=".85"/><rect x="' + (ox + 3) + '" y="' + (oy + 18) + '" width="10" height="1" fill="#000"/><rect x="' + (ox + 3) + '" y="' + (oy + 21) + '" width="6" height="1" fill="#000"/>' +
         '<rect x="' + (ox + 3) + '" y="' + (oy + 10) + '" width="2" height="5" fill="#fff" fill-opacity=".6"/><rect x="' + (ox + 3) + '" y="' + (oy + 25) + '" width="2" height="7" fill="#fff" fill-opacity=".6"/>' +
         '<rect x="' + (ox + 1) + '" y="' + (oy + 32) + '" width="14" height="2" fill="#7c7c7c"/></svg>';
-      view.style.cursor = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + Math.round(c) + " " + Math.round(c) + ", crosshair";
+      view.style.cursor = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") 2 2, crosshair';
       return;
     }
-    if (tool === "eraser") {
-      svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '"><circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="#fff" fill-opacity=".45" stroke="#000"/><circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff"/></svg>';
-    } else {
-      const tint = tape ? TAPE : tool === "bands" ? "rainbow" : tool === "spray" ? color : hex;
-      const stops = tint === "rainbow" ? RAINBOW.map((h, i) => [i / (RAINBOW.length - 1), h]) : METAL[tint];
-      const fill = stops ? "url(#r)" : tint, ring = tool === "neon" ? '<circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 - 1) + '" fill="none" stroke="#fff" stroke-width="2"/>' : "";
-      const defs = stops ? '<defs><linearGradient id="r"' + (METAL[tint] ? ' x2="0" y2="1"' : "") + ">" + stops.map(([o, h]) => '<stop offset="' + o + '" stop-color="' + h + '"/>').join("") + "</linearGradient></defs>" : "";
-      svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + s + '" height="' + s + '">' + defs + '<circle cx="' + c + '" cy="' + c + '" r="' + d / 2 + '" fill="' + fill + '" fill-opacity="' + (tape || tool === "chalk" ? ".75" : ".55") + '" stroke="#000"/>' + ring + '<circle cx="' + c + '" cy="' + c + '" r="' + (d / 2 + 1) + '" fill="none" stroke="#fff"/></svg>';
-    }
-    view.style.cursor = 'url("data:image/svg+xml,' + encodeURIComponent(svg) + '") ' + Math.round(c) + " " + Math.round(c) + ", crosshair";
+    view.style.cursor = "none";
   }
 
+
   const swatchBg = (hex) => (hex === "rainbow" ? "linear-gradient(135deg," + RAINBOW.join(",") + ")" : METAL[hex] ? metalBg(hex) : hex);
-  const swatch = (hex, name) => `<button type="button" class="pt-c" data-color="${hex}" aria-label="${name}" title="${name}" style="background:${swatchBg(hex)}"></button>`;
   const two = () => { const [a, b] = [...touches.values()]; return { x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2, d: Math.hypot(a[0] - b[0], a[1] - b[1]) || 1 }; };
 
   function pickColor(c) {
@@ -2393,31 +2503,25 @@ export function createMural(el, opts) {
   }
 
   function build() {
-    const colors = [];
-    for (let s = 0; s < 4; s++) HUES.forEach((h) => colors.push(swatch(h[s + 1], SHADES[s] + h[0])));
-    NEUTRALS.forEach((n) => colors.push(swatch(n[0], n[1])));
     chrome = document.createElement("div");
     chrome.className = "paint";
     chrome.setAttribute("role", "dialog");
     chrome.setAttribute("aria-label", "The Wall, spray paint");
     chrome.hidden = true;
+    const rbB = (attrs, ico, label, title) => `<button type="button" class="rb-b" ${attrs} title="${title || label}">${T16(ico)}<span>${label}</span></button>`;
+    const grp = (name, body, cls = "") => `<div class="rb-g${cls}"><div class="rb-t">${body}</div><div class="rb-n">${name}</div></div>`;
+    const tl = (list) => list.map(([t, title]) => rbB(`data-tool="${t}"`, ICONS[t], { bands: "Rainbow" }[t] || title.split(",")[0].replace("Spray can", "Spray").replace("Masking tape", "Tape").replace("Stencils", "Stencil"), title)).join("");
     chrome.innerHTML =
       `<header class="tb"><span class="tb-i">${icon("bricks")}</span><h2 class="tb-t">The Wall - Paint</h2><span class="tb-btns"><button class="tb-x" type="button" data-pt-close aria-label="Back to the map"></button></span></header>` +
-      `<nav class="mb" aria-hidden="true"><span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>I</u>mage</span><span><u>C</u>olors</span><span><u>H</u>elp</span></nav>` +
-      `<div class="pt-mid"><div class="pt-tools">` +
-      TOOLS.map(([t, title]) => `<button type="button" class="pt-t" data-tool="${t}" title="${title}" aria-label="${title}">${T16(ICONS[t])}</button>`).join("") +
-      `<button type="button" class="pt-t" data-caps title="Spray caps" aria-label="Spray caps">${T16(ICONS.caps)}</button>` +
-      (TOUCH ? "" : `<button type="button" class="pt-t" data-cancur title="Spray can cursor" aria-label="Spray can cursor">${T16(ICONS.cancur)}</button>`) +
-      `<button type="button" class="pt-t" data-lapse title="Timelapse: watch this part of the wall get painted" aria-label="Timelapse">${T16(ICONS.lapse)}</button>` +
-      `<button type="button" class="pt-t" data-undo title="Take back your last stroke (${UNDO_KEY})">&#8630;</button>` +
-      `<button type="button" class="pt-t" data-redo title="Put it back (Shift+${UNDO_KEY})">&#8631;</button>` +
-      `<button type="button" class="pt-t" data-zoom="in" title="Zoom in (E or the wheel)">+</button>` +
-      `<button type="button" class="pt-t" data-zoom="out" title="Zoom out (Q or the wheel)">&#8722;</button>` +
-      `<div class="pt-sizes">${SIZES.map((_, i) => `<button type="button" class="pt-s" data-size="${i}" title="Size ${i + 1}" aria-label="Size ${i + 1}"><i style="width:${[2, 4, 6, 9, 12][i]}px;height:${[2, 4, 6, 9, 12][i]}px"></i></button>`).join("")}</div>` +
-      `</div><div class="pt-hole">` +
+      `<div class="rb" data-rb>` +
+      grp("Paint", tl(TOOLS.slice(0, 4))) + grp("Cover", tl(TOOLS.slice(4))) +
+      grp("Cap", rbB("data-caps", ICONS.caps, "Standard ▾", "Spray caps")) +
+      grp("Size", `<input type="range" min="0" max="4" step="0.05" data-size aria-label="Brush size"><span class="rb-dot"><i data-dot></i></span>`, " rb-size") +
+      grp("Color", `<button type="button" class="rb-b rb-cur" data-colbtn title="Pick any color"><i data-cur></i><span>Color ▾</span></button><span class="rb-rec" data-recent></span>`) +
+      grp("History", rbB("data-undo", ICONS.undo, "Undo", `Take back your last stroke (${UNDO_KEY})`) + rbB("data-redo", ICONS.redo, "Redo", `Put it back (Shift+${UNDO_KEY})`) + rbB("data-lapse", ICONS.lapse, "Replay", "Timelapse: watch this part of the wall get painted")) +
+      grp("View", rbB('data-zoom="in"', ICONS.zin, "Zoom in", "Zoom in (E or the wheel)") + rbB('data-zoom="out"', ICONS.zout, "Zoom out", "Zoom out (Q or the wheel)") + (TOUCH ? "" : rbB("data-cancur", ICONS.cancur, "Can cursor", "Show a spray can next to the brush"))) +
+      `</div><div class="pt-mid"><div class="pt-hole">` +
       `<div class="pt-lapse" role="status" hidden><span class="pt-lapse-d" data-lapse-date></span><span class="pt-bar"><i></i></span><button class="btn" type="button" data-lapse-stop>Stop</button></div></div></div>` +
-      `<div class="pt-pal"><span class="pt-cur" data-cur title="Your color"></span><div class="pt-metal">${swatch("chrome", "chrome")}${swatch("gold", "gold")}</div><div class="pt-cs">${colors.join("")}<button type="button" class="pt-c pt-rb" data-color="rainbow" aria-label="rainbow" title="rainbow" style="background:${swatchBg("rainbow")}" hidden></button></div>` +
-      `<label class="btn pt-more" title="Any color you like">Edit colors...<input type="color" value="#ff0000" aria-label="Pick any color"></label></div>` +
       `<footer class="stb"><span data-where>The start of the wall</span><span data-hint>${HINTS.paint}</span><span class="stb-act"><button class="btn" type="button" data-pt-close>Back to the map</button></span></footer>`;
     document.body.appendChild(chrome);
     view = document.createElement("div");
@@ -2437,6 +2541,11 @@ export function createMural(el, opts) {
     who = document.createElement("div");
     who.className = "wv-who";
     view.append(who);
+    ring = document.createElement("div");
+    ring.className = "wv-ring";
+    ring.hidden = true;
+    ring.innerHTML = "<i></i>";
+    view.append(ring);
     kindsEl = document.createElement("div");
     kindsEl.className = "wv-kinds";
     kindsEl.hidden = true;
@@ -2477,6 +2586,37 @@ export function createMural(el, opts) {
       caps.hidden = true;
       sync();
     });
+    colPop = document.createElement("div");
+    colPop.className = "pt-pick rb-pop";
+    colPop.hidden = true;
+    colPop.setAttribute("role", "dialog");
+    colPop.setAttribute("aria-label", "Color");
+    colPop.innerHTML = `<header class="tb"><h2 class="tb-t">Color</h2><span class="tb-btns"><button class="tb-x" type="button" data-cp-x aria-label="Close"></button></span></header>` +
+      `<div class="cp"><div class="cp-top"><canvas class="cp-sv"></canvas><canvas class="cp-hue"></canvas></div>` +
+      `<div class="cp-row"><span class="cp-cmp" title="Before and now"><i data-cp-old></i><i data-cp-new></i></span><input class="cp-hex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Color code"><button class="btn cp-drop" type="button" data-cp-drop title="Then click the wall to take a color from it">${T16(ICONS.drop)}From the wall</button></div>` +
+      `<div class="cp-lab">Lighter or darker</div><div class="cp-line" data-cp-sh></div><div class="cp-lab">Recent</div><div class="cp-line" data-cp-re></div>` +
+      `<div class="cp-sp"><button class="btn" type="button" data-color="chrome">Chrome</button><button class="btn" type="button" data-color="gold">Gold</button><button class="btn" type="button" data-color="rainbow" data-cp-rb hidden>Rainbow</button></div></div>`;
+    chrome.append(colPop);
+    sv = colPop.querySelector(".cp-sv"); hu = colPop.querySelector(".cp-hue"); hexIn = colPop.querySelector(".cp-hex");
+    const dragOn = (cv, f) => {
+      const go = (e) => { const r = cv.getBoundingClientRect(); f(clamp((e.clientX - r.left) / r.width, 0, 1), clamp((e.clientY - r.top) / r.height, 0, 1)); };
+      const end = () => { if (!cv.onpointermove) return; cv.onpointermove = null; cpSet(curColor(), true); };
+      cv.addEventListener("pointerdown", (e) => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (err) {} go(e); cv.onpointermove = go; });
+      cv.addEventListener("pointerup", end);
+      cv.addEventListener("pointercancel", end);
+    };
+    dragOn(sv, (x, y) => { cpHsv = [cpHsv[0], x, 1 - y]; cpSet(toHex(hsv2rgb(...cpHsv)), false); });
+    dragOn(hu, (x, y) => { cpHsv = [Math.min(359.9, y * 360), cpHsv[1] || 1, cpHsv[2] || 1]; cpSet(toHex(hsv2rgb(...cpHsv)), false); });
+    hexIn.addEventListener("input", () => { const v = hexIn.value.trim().toLowerCase(), c = v[0] === "#" ? v : "#" + v; if (HEX.test(c)) { cpHsv = rgb2hsv(rgbOf(c)); cpSet(c, false); } });
+    hexIn.addEventListener("change", () => cpSet(curColor(), true));
+    hexIn.addEventListener("keydown", (e) => e.stopPropagation());
+    colPop.addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      if (b.hasAttribute("data-cp-x")) { colPop.hidden = true; sampling = false; sync(); return; }
+      if (b.hasAttribute("data-cp-drop")) { sampling = !sampling; if (sampling) flash("CLICK THE WALL TO TAKE ITS COLOR"); sync(); return; }
+      if (b.dataset.color) { const c = b.dataset.color; if (HEX.test(c)) cpHsv = rgb2hsv(rgbOf(c)); cpSet(c, true); }
+    });
     lapseEl = chrome.querySelector(".pt-lapse");
     pick = picker(chrome, { onPick: placeStencil, onCut: () => cut.open(), onPicture: (f) => cut.picture(f) });
     cut = cutter(chrome, { onSave: placeStencil });
@@ -2488,23 +2628,22 @@ export function createMural(el, opts) {
       if (lapse) return;
       if (b.hasAttribute("data-undo")) { undo(); return; }
       if (b.hasAttribute("data-redo")) { redoLast(); return; }
-      if (b.hasAttribute("data-caps")) { if (caps.hidden) openCaps(); else caps.hidden = true; pick.close(); sync(); return; }
+      if (b.hasAttribute("data-caps")) { if (caps.hidden) openCaps(); else caps.hidden = true; pick.close(); colPop.hidden = true; sampling = false; sync(); return; }
       if (b.hasAttribute("data-cancur")) { canCursor = !canCursor; try { localStorage.setItem("gl-wall-can", canCursor ? "1" : "0"); } catch (err) {} sync(); return; }
       if (b.dataset.zoom) { const r = view.getBoundingClientRect(); zoomAt(b.dataset.zoom === "in" ? 2 : 0.5, r.left + W / 2, r.top + H / 2); return; }
       if (b.dataset.tool) {
         const t = b.dataset.tool;
-        if (t === "stencil") { if (!sheets.some(inView) || tool === "stencil") pick.toggle(); }
+        if (t === "stencil") { if (!sheets.some(inView) || tool === "stencil") { pick.toggle(); if (pick.shown) { colPop.hidden = true; sampling = false; } } }
         else pick.close();
         caps.hidden = true;
         tool = t;
         if (BRUSH.includes(t)) brush = t;
       }
-      if (b.dataset.color) pickColor(b.dataset.color);
-      if (b.dataset.size) size = +b.dataset.size;
+      if (b.hasAttribute("data-colbtn")) { if (colPop.hidden) openColor(); else { colPop.hidden = true; sampling = false; } sync(); return; }
+      if (b.dataset.color) { const c = b.dataset.color; pickColor(c); if (HEX.test(c)) cpHsv = rgb2hsv(rgbOf(c)); }
       sync();
     });
-    chrome.querySelector("input[type=color]").addEventListener("input", (e) => { pickColor(e.target.value.toLowerCase()); sync(); });
-    if (rainbow) chrome.querySelector(".pt-rb").hidden = false;
+    chrome.querySelector("[data-size]").addEventListener("input", (e) => { size = +e.target.value; try { localStorage.setItem("gl-wall-size", String(size)); } catch (err) {} sync(); });
 
     view.addEventListener("wheel", (e) => {
       if (!active) return;
@@ -2536,10 +2675,17 @@ export function createMural(el, opts) {
       }
       if (e.button !== 0 || live || pinch || tapeDrag || sheetDrag || rip || liftDrag) return;
       e.preventDefault();
+      if (sampling) { sampleAt(e); return; }
+      if (!colPop.hidden) { colPop.hidden = true; sync(); }
       if (pick.shown) pick.close();
       if (!caps.hidden) { caps.hidden = true; sync(); }
       if (!kindPick.hidden) kindPick.hidden = true;
       here(e);
+      placeRing(e);
+      {
+        const P = canvasPt(e), v = viewNow(), hit = sheets.slice().reverse().find((sh) => onLayer(sh, P, v));
+        if (hit) { nextLayer(hit); return; }
+      }
       if (tool === "tape") { startTape(e); return; }
       if (tool === "stencil") { grabSheet(e); return; }
       if (posted >= MAX_POSTS) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
@@ -2554,6 +2700,7 @@ export function createMural(el, opts) {
       if (!tick) tick = requestAnimationFrame(hold);
     });
     view.addEventListener("pointermove", (e) => {
+      placeRing(e);
       if (touches.has(e.pointerId)) touches.set(e.pointerId, [e.clientX, e.clientY]);
       if (pinch) {
         if (touches.size < 2) return;
@@ -2592,7 +2739,7 @@ export function createMural(el, opts) {
     };
     view.addEventListener("pointerup", up);
     view.addEventListener("pointercancel", up);
-    view.addEventListener("pointerleave", (e) => { if (e.pointerType !== "touch" && !live) pushLive({ x: -1e6 }); });
+    view.addEventListener("pointerleave", (e) => { if (ring) ring.hidden = true; if (e.pointerType !== "touch" && !live) pushLive({ x: -1e6 }); });
   }
 
   function openCaps() {
@@ -2620,25 +2767,99 @@ export function createMural(el, opts) {
     placeKinds();
   }
 
+  const curColor = () => (tool === "bands" ? "rainbow" : tool === "chalk" || tool === "neon" ? hex : color);
+  function keepColor(c) {
+    if (!c || recent[0] === c) return;
+    recent = [c, ...recent.filter((x) => x !== c)].slice(0, 10);
+    try { localStorage.setItem("gl-wall-recent", JSON.stringify(recent)); } catch (e) {}
+  }
+  function openColor() {
+    cpOld = curColor();
+    cpHsv = rgb2hsv(rgbOf(HEX.test(cpOld) ? cpOld : hex));
+    const g = chrome.querySelector("[data-colbtn]").closest(".rb-g"), r = g.getBoundingClientRect(), cr = chrome.getBoundingClientRect();
+    colPop.style.left = Math.round(clamp(r.left - cr.left, 8, cr.width - 290)) + "px";
+    if (pick) pick.close();
+    caps.hidden = true;
+    if (kindPick) kindPick.hidden = true;
+    colPop.hidden = false;
+  }
+  function cpSet(c, commit) {
+    if (commit) { pickColor(c); keepColor(c); sync(); return; }
+    color = c;
+    if (HEX.test(c)) hex = c;
+    chrome.querySelector("[data-cur]").style.background = swatchBg(curColor());
+    cursor();
+    cpShow();
+  }
+  function cpPaint() {
+    const d = DPR();
+    [sv, hu].forEach((cv) => { const w = Math.round(cv.clientWidth * d), h = Math.round(cv.clientHeight * d); if (w && cv.width !== w) cv.width = w; if (h && cv.height !== h) cv.height = h; });
+    const x = sv.getContext("2d"), w = sv.width, h = sv.height, y = hu.getContext("2d"), hw = hu.width, hh = hu.height;
+    x.fillStyle = toHex(hsv2rgb(cpHsv[0], 1, 1)); x.fillRect(0, 0, w, h);
+    let g = x.createLinearGradient(0, 0, w, 0); g.addColorStop(0, "#fff"); g.addColorStop(1, "rgba(255,255,255,0)"); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    g = x.createLinearGradient(0, 0, 0, h); g.addColorStop(0, "rgba(0,0,0,0)"); g.addColorStop(1, "#000"); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.lineWidth = 1.5 * d; x.strokeStyle = cpHsv[2] > 0.6 && cpHsv[1] < 0.5 ? "#000" : "#fff";
+    x.beginPath(); x.arc(cpHsv[1] * w, (1 - cpHsv[2]) * h, 5 * d, 0, Math.PI * 2); x.stroke();
+    const hg = y.createLinearGradient(0, 0, 0, hh);
+    for (let i = 0; i <= 6; i++) hg.addColorStop(i / 6, toHex(hsv2rgb(i * 60, 1, 1)));
+    y.fillStyle = hg; y.fillRect(0, 0, hw, hh);
+    const yy = (cpHsv[0] / 360) * hh;
+    y.fillStyle = "#000"; y.fillRect(0, yy - 1.5 * d, hw, 3 * d); y.fillStyle = "#fff"; y.fillRect(0, yy - 0.5 * d, hw, d);
+  }
+  function cpShow() {
+    if (!colPop || colPop.hidden) return;
+    const c = curColor(), sw = (h) => `<button type="button" class="cp-sw${h === c ? " on" : ""}" data-color="${h}" title="${h}" style="background:${swatchBg(h)}"></button>`;
+    colPop.querySelector("[data-cp-new]").style.background = swatchBg(c);
+    colPop.querySelector("[data-cp-old]").style.background = swatchBg(cpOld);
+    if (document.activeElement !== hexIn) hexIn.value = HEX.test(c) ? c : c === "rainbow" ? "rainbow" : c;
+    colPop.querySelector("[data-cp-sh]").innerHTML = shadesOf(HEX.test(c) ? c : hex).map(sw).join("");
+    colPop.querySelector("[data-cp-re]").innerHTML = recent.map(sw).join("");
+    colPop.querySelector("[data-cp-rb]").hidden = !rainbow;
+    colPop.querySelector("[data-cp-drop]").setAttribute("aria-pressed", String(sampling));
+    cpPaint();
+  }
+  function sampleAt(e) {
+    sampling = false;
+    const r = view.getBoundingClientRect(), d = DPR(), sx = (e.clientX - r.left) * d, sy = (e.clientY - r.top) * d, [wx, wy] = wallPoint(e.clientX, e.clientY);
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 1;
+    const x = cv.getContext("2d"), t = [...shown].filter((q) => q.ready && wx >= q.v.x0 && wy >= q.v.y0 && wx < q.x1 && wy < q.y1).sort((a, b) => b.L - a.L)[0];
+    x.fillStyle = WALL_SKY; x.fillRect(0, 0, 1, 1);
+    if (t) { const px = (wx - t.v.x0) * t.v.r, py = (wy - t.v.y0) * t.v.r; x.drawImage(t.bg, px, py, 1, 1, 0, 0, 1, 1); x.drawImage(t.cv, px, py, 1, 1, 0, 0, 1, 1); }
+    layers.forEach((L) => { if (!L.cv.hidden) x.drawImage(L.cv, sx, sy, 1, 1, 0, 0, 1, 1); });
+    const px = x.getImageData(0, 0, 1, 1).data, c = toHex([px[0], px[1], px[2]]);
+    cpHsv = rgb2hsv([px[0], px[1], px[2]]);
+    cpSet(c, true);
+    flash("GOT THE COLOR " + c.toUpperCase());
+  }
+
   function sync() {
     if (!chrome) return;
-    const brushy = tool === "spray" || tool === "chalk" || tool === "neon", cur = tool === "spray" ? color : hex;
-    chrome.querySelectorAll("[data-color]").forEach((b) => b.setAttribute("aria-pressed", String(brushy && b.dataset.color === cur)));
-    chrome.querySelectorAll("[data-size]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.size === size)));
+    const cur = curColor();
     chrome.querySelectorAll("[data-tool]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tool === tool)));
     chrome.querySelector("[data-lapse]").setAttribute("aria-pressed", String(!!lapse));
-    chrome.querySelector("[data-cur]").style.background = swatchBg(tool === "bands" ? "rainbow" : tool === "chalk" || tool === "neon" ? hex : color);
+    chrome.querySelector("[data-cur]").style.background = swatchBg(cur);
+    chrome.querySelector("[data-colbtn]").setAttribute("aria-pressed", String(!colPop.hidden));
     chrome.querySelector("[data-undo]").disabled = !mineHere() || !!lapse;
     chrome.querySelector("[data-redo]").disabled = !redo.length || !!lapse;
     const cb = chrome.querySelector("[data-caps]"), hn = (HEADS.find((x) => x[0] === head) || HEADS[0])[1];
     cb.setAttribute("aria-pressed", String(!caps.hidden));
     cb.title = `Spray caps: ${hn} cap on the can`;
+    cb.querySelector("span").textContent = hn + " ▾";
     const cc = chrome.querySelector("[data-cancur]");
     if (cc) cc.setAttribute("aria-pressed", String(canCursor));
+    const si = chrome.querySelector("[data-size]"), dot = chrome.querySelector("[data-dot]"), dd = Math.max(2, Math.min(40, brushPx()));
+    if (document.activeElement !== si) si.value = String(size);
+    dot.style.width = dot.style.height = dd.toFixed(1) + "px";
+    dot.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" ? "#ffffff" : cur);
+    dot.style.boxShadow = tool === "eraser" ? "0 0 0 1px #000" : "";
+    const key = recent.join() + "|" + cur;
+    if (key !== recentKey) { recentKey = key; chrome.querySelector("[data-recent]").innerHTML = recent.map((h) => `<button type="button" data-color="${h}" title="${h}" aria-pressed="${h === cur}" style="background:${swatchBg(h)}"></button>`).join(""); }
     const h = HINTS[tool] || HINTS.paint;
     if (h !== hint) { hint = h; chrome.querySelector("[data-hint]").textContent = h; }
     where();
     if (active) { cursor(); drawOverlays(); }
+    cpShow();
   }
 
   document.addEventListener("keydown", (e) => {
@@ -2649,6 +2870,7 @@ export function createMural(el, opts) {
       else if (pick && pick.shown) pick.close();
       else if (caps && !caps.hidden) { caps.hidden = true; sync(); }
       else if (kindPick && !kindPick.hidden) kindPick.hidden = true;
+      else if (colPop && !colPop.hidden) { colPop.hidden = true; sampling = false; sync(); }
       else if (tapeDrag || sheetDrag || rip || liftDrag) { tapeDrag = null; if (sheetDrag) endDrag(); if (rip) endRip(true); if (liftDrag) endLift(true); drawOverlays(); }
       else opts.onExit();
       return;
@@ -2678,7 +2900,7 @@ export function createMural(el, opts) {
     if (progress < KONAMI.length) return;
     progress = 0; rainbow = true;
     try { localStorage.setItem("gl-rainbow", "1"); } catch (err) {}
-    if (chrome) { chrome.querySelector(".pt-rb").hidden = false; color = "rainbow"; tool = "spray"; brush = "spray"; sync(); }
+    if (chrome) { color = "rainbow"; tool = "spray"; brush = "spray"; keepColor("rainbow"); sync(); }
     flash("SECRET COLOR UNLOCKED: RAINBOW");
   });
 
@@ -2730,6 +2952,8 @@ export function createMural(el, opts) {
       if (cut) cut.close();
       if (caps) caps.hidden = true;
       if (kindPick) kindPick.hidden = true;
+      if (colPop) colPop.hidden = true;
+      sampling = false;
       if (kindsEl) kindsEl.hidden = true;
       if (chrome) chrome.hidden = true;
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
