@@ -3,9 +3,11 @@
    The brick wall is drawn pixel by pixel so it stays sharp when the camera flies in to paint. The third column is Gzowo Street,
    with the exchange, the museum, the store and the coaster station. */
 
+export const TALL = 349, WALL_ROWS = 147 + TALL;
+const UP_ROWS = 877 / (323 / 129);
 export const SPR = {
   arcade: [315, 341], workshop: [262, 166], lab: [248, 277], launchpad: [174, 424], billboard: [206, 267], signpost: [129, 199], mailbox: [51, 88],
-  wall: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
+  wall: [404, WALL_ROWS], wallS: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
   dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
   exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300],
@@ -13,7 +15,8 @@ export const SPR = {
 export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
 const DOM = ["wall", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
 export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
-export const FACE = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
+export const FACE = { x: 2 / 404, y: (13 + TALL - UP_ROWS) / WALL_ROWS, w: 400 / 404, h: (129 + UP_ROWS) / WALL_ROWS };
+const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
 export const KAYAK = [120, 28];
 export const PLACE_SPRITE = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost" };
 
@@ -72,33 +75,34 @@ function land(V, H) {
   const W = 3 * V, s = Math.min(H / 870, V / 1500);
   const at = (name, fx, fy, k = 1) => sprite(name, fx * V, fy * H, s * k);
   const places = {
-    reviews: at("billboard", 0.105, 0.695, 0.9), printing: at("workshop", 0.28, 0.715, 0.92), games: at("arcade", 0.475, 0.715, 0.9),
-    software: at("lab", 0.665, 0.715, 0.92), rockets: at("launchpad", 0.868, 0.72, 0.85), about: at("signpost", 0.052, 0.93, 0.78), guestbook: at("mailbox", 0.392, 0.88),
+    reviews: at("billboard", 0.105, 0.928, 0.8), printing: at("workshop", 0.28, 0.928, 0.86), games: at("arcade", 0.475, 0.928, 0.82),
+    software: at("lab", 0.665, 0.928, 0.86), rockets: at("launchpad", 0.872, 0.928, 0.8), about: at("signpost", 0.07, 0.716, 0.7), guestbook: at("mailbox", 0.19, 0.72),
     hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
     exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
   };
-  const wallW = Math.min(0.25 * V, 404 * s * 0.95), wall = sprite("wall", 0.71 * V, 0.928 * H, wallW / 404);
+  const wallTop = 0.16 * H, wallBase = 0.716 * H, wk = (wallBase - wallTop) / WALL_ROWS;
+  const wall = { sprite: "wall", x: 0.012 * V, y: wallTop, w: 404 * wk, h: WALL_ROWS * wk, k: wk };
   const path = withLengths(spline([[-0.02, 0.742], [0.1, 0.74], [0.2, 0.737], [0.3, 0.741], [0.4, 0.743], [0.5, 0.739], [0.6, 0.742], [0.7, 0.74],
     [0.8, 0.743], [0.9, 0.744], [1, 0.742], [1.1, 0.745], [1.2, 0.741], [1.3, 0.744], [1.4, 0.74], [1.5, 0.743], [1.6, 0.741], [1.7, 0.744], [1.8, 0.74],
     [1.9, 0.743], [2, 0.742], [2.1, 0.744], [2.2, 0.741], [2.3, 0.743], [2.4, 0.74], [2.5, 0.743], [2.6, 0.741], [2.7, 0.744], [2.8, 0.741], [2.9, 0.743],
     [3.02, 0.742]].map(([x, y]) => [x * V, y * H]), 12));
   const props = [
-    at("tree2", 0.012, 0.715, 0.8), at("windsock", 0.948, 0.72, 0.9), at("tree1", 0.997, 0.715, 0.9),
-    at("bush", 0.118, 0.9, 0.8), at("bench", 0.19, 0.83, 0.85), at("tree1", 0.268, 0.905, 0.85),
+    at("windsock", 0.952, 0.93, 0.9), at("tree1", 0.99, 0.935, 0.9), at("tree2", 1.0, 0.716, 0.8), at("bush", 0.36, 0.938, 0.7), at("lamp", 0.188, 0.932),
+    at("lamp", 0.571, 0.932), at("bush", 0.808, 0.938, 0.6), at("bench", 0.43, 0.716, 0.7),
     at("pine", 1.075, 0.712, 0.8), at("dish", 1.455, 0.704, 0.75), at("lamp", 1.655, 0.716), at("lamp", 1.778, 0.716),
     at("bush", 1.93, 0.714, 0.75), at("tree1", 1.975, 0.715, 0.9),
     at("pine", 2.035, 0.712, 0.75), at("lamp", 2.075, 0.716), at("lamp", 2.335, 0.716), at("bush", 2.355, 0.714, 0.6), at("lamp", 2.645, 0.716),
     at("lamp", 2.81, 0.716), at("tree3", 2.97, 0.714, 0.85),
   ];
   return finish({
-    mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
-    sun: at("sun", 0.6, 0.2, 1.25), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
+    mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, runTo: 0.994 * V, path, pathWidth: 32 * s, props,
+    sun: at("sun", 0.6, 0.12, 1.1), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
       at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4),
       at("cloud4", 2.15, 0.45, 0.45), at("cloud1", 2.7, 0.44, 0.4)],
-    console: box(0.778 * V, 0.722 * H, 56 * s, 64 * s), garden: { x: 0.425 * V, y: 0.785 * H, w: 0.14 * V, h: 0.12 * H },
+    console: box(0.775 * V, 0.928 * H, 56 * s, 64 * s), garden: { x: 0.235 * V, y: 0.632 * H, w: 0.16 * V, h: 0.078 * H },
     river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8), at("sailboat", 2.62, 0.99, 0.65)], gull: at("gull", 0.955, 0.995, 0.64),
     kayaks: [kayak(0.48 * V, 0.975 * H, s * 1.15), kayak(0.585 * V, 0.98 * H, s * 1.15)],
-    spurDown: [[0.343, 0.8], [0.336, 0.86], [0.326, 0.905]].map(([x, y]) => [x * V, y * H]), lane: [0.16 * V, 0.88 * V], person: 92 * s, speed: 120 * s,
+    spurDown: [[0.372, 0.8], [0.371, 0.86], [0.37, 0.905]].map(([x, y]) => [x * V, y * H]), lane: [0.16 * V, 0.88 * V], person: 92 * s, speed: 120 * s,
     sky: { x: 2.02 * V, y: 0.045 * H, w: 0.96 * V, h: 0.37 * H },
   });
 }
@@ -112,7 +116,7 @@ function tall(V) {
     hangar: at("hangar", 585, 800, 0.95), board: at("board", 505, 1100, 0.85), claw: at("claw", 662, 1400, 0.95), booth: at("booth", 522, 1700, 0.95),
     coaster: at("station", 1062, 585, 0.95), exchange: at("exchange", 960, 995, 0.95), museum: at("museum", 985, 1335, 0.95), store: at("store", 975, 1655, 0.95),
   };
-  const wall = sprite("wall", X(230), Y(2330), X(320) / 404);
+  const wall = sprite("wallS", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
     [66, 1130], [90, 1166], [180, 1172], [280, 1172], [312, 1196], [318, 1300], [316, 1420], [290, 1466], [200, 1472], [100, 1472], [70, 1500], [64, 1600],
     [68, 1700], [92, 1746], [200, 1752], [282, 1752], [306, 1780], [310, 1880], [302, 1980], [270, 2018], [180, 2022], [100, 2024], [72, 2050], [76, 2110],
@@ -165,8 +169,10 @@ function trip(g) {
 }
 
 function finish(g) {
-  g.face = { x: g.mural.x + FACE.x * g.mural.w, y: g.mural.y + FACE.y * g.mural.h, w: FACE.w * g.mural.w, h: FACE.h * g.mural.h };
-  g.run = { x: g.mural.x, y: g.mural.y, w: Math.max(g.mural.w, g.W - g.mural.x), h: g.mural.h, k: g.mural.k };
+  const F = g.mural.sprite === "wallS" ? FACE_S : FACE;
+  g.short = g.mural.sprite === "wallS";
+  g.face = { x: g.mural.x + F.x * g.mural.w, y: g.mural.y + F.y * g.mural.h, w: F.w * g.mural.w, h: F.h * g.mural.h };
+  g.run = { x: g.mural.x, y: g.mural.y, w: Math.max(g.mural.w, (g.runTo || g.W) - g.mural.x), h: g.mural.h, k: g.mural.k };
   g.stations = stationsFor(g.path, g.places, g.mural);
   g.u = g.person / 15;
   trip(g);
@@ -359,7 +365,7 @@ const fbm = (x, y, s, k) => sn(x, y, s, k) * 0.6 + sn(x, y, s / 2, k + 7) * 0.3 
 function bricks(o) {
   const B = pal(o.bricks), Mo = pal(o.mortar), ch = o.chip ? pal(o.chip) : null;
   return (x, y) => {
-    const course = Math.floor((y - 11) / o.h), row = (y - 11) % o.h;
+    const course = Math.floor((y - 11) / o.h), row = md(y - 11, o.h);
     if (row === 0) return Mo[nz(x, y, 4) < 0.15 ? 1 : 0];
     const off = course % 2 ? o.w / 2 : 0, bx = md(x - 2 + off, o.w), bi = Math.floor((x - 2 + off) / o.w), by = row - 1;
     if (bx === o.w - 1) return Mo[nz(x, y, 4) < 0.15 ? 1 : 0];
@@ -393,7 +399,7 @@ const MAT = {
   concrete: () => {
     const base = hx("#a7a49e"), seam = hx("#7d7a75"), hole = hx("#4a4744"), stain = hx("#85827c");
     return (x, y) => {
-      const px = md(x - 2, 80), py = (y - 11) % 42, pi = Math.floor((x - 2) / 80), pj = Math.floor((y - 11) / 42);
+      const px = md(x - 2, 80), py = md(y - 11, 42), pi = Math.floor((x - 2) / 80), pj = Math.floor((y - 11) / 42);
       if (px === 0 || py === 0) return seam;
       const tx = md(px, 20), ty = md(py, 21);
       if ((tx === 10 || tx === 11) && (ty === 10 || ty === 11)) return hole;
@@ -422,7 +428,7 @@ const MAT = {
   sandstone: () => {
     const P = pal(["#d9c08c", "#d1b57d", "#e0c898", "#c9ad74", "#dcc28e"]), mort = hx("#bfa97f");
     return (x, y) => {
-      const w = 42, h = 21, j = Math.floor((y - 11) / h), ty = (y - 11) % h, off = j % 2 ? w / 2 : 0, tx = md(x - 2 + off, w), i = Math.floor((x - 2 + off) / w);
+      const w = 42, h = 21, j = Math.floor((y - 11) / h), ty = md(y - 11, h), off = j % 2 ? w / 2 : 0, tx = md(x - 2 + off, w), i = Math.floor((x - 2 + off) / w);
       if (ty === 0 || tx === 0) return mort;
       let f = Math.sin((y + sn(x, y, 30, 202) * 8) * 0.7) * 0.05 + (nz(x, y, 203) - 0.5) * 0.1;
       f += ty === 1 ? 0.1 : ty === h - 1 ? -0.15 : 0;
@@ -434,7 +440,7 @@ const MAT = {
   marble: () => {
     const base = hx("#ebe8e3"), vein = hx("#8e8c93"), vein2 = hx("#c6c3c3"), seam = hx("#a9a6a1");
     return (x, y) => {
-      const sx = md(x - 2, 100), sy = (y - 11) % 63;
+      const sx = md(x - 2, 100), sy = md(y - 11, 63);
       if (sx === 0 || sy === 0) return seam;
       const i = Math.floor((x - 2) / 100), j = Math.floor((y - 11) / 63), t = fbm(x, y, 60, 161 + i * 3 + j) * 1.8 + (x * 0.45 + y) * 0.011, v1 = Math.abs(md(t, 1) - 0.5);
       const t2 = fbm(x, y, 30, 163) * 2.4 - (x - y) * 0.006, v2 = Math.abs(md(t2, 1) - 0.5);
@@ -473,7 +479,7 @@ const MAT = {
   logs: () => {
     const A = hx("#8b5a32"), B = hx("#9e6a3d"), chink = hx("#d9c9a8"), dark = hx("#3b2515");
     return (x, y) => {
-      const h = 14, r = (y - 11) % h, j = Math.floor((y - 11) / h);
+      const h = 14, r = md(y - 11, h), j = Math.floor((y - 11) / h);
       if (r === 0) return chink;
       const sx = x + Math.floor(nz(j, 0, 112) * 90), kx = md(sx, 90), kd = Math.hypot((kx - 45) * 0.75, (r - h / 2) * 1.5);
       if (kd < 3.2 && nz(Math.floor(sx / 90), j, 113) < 0.6) return kd > 2 ? dark : tn(A, -0.3);
@@ -500,7 +506,7 @@ const MAT = {
     const base = hx("#8e979b"), bar = hx("#6d7478"), ROWS = [0.2, 0.1, 0.02, 0, -0.08, -0.45], BAR = [0.18, 0.08, 0, -0.04, -0.08, -0.16, -0.26, -0.4, -0.5];
     return (x, y) => {
       if (y >= 129) { const h = md(x - 2, 400); return (h >= 188 && h <= 212 && y >= 131 && y <= 133) ? hx("#2f3437") : tn(bar, BAR[y - 129] + (nz(x, y, 134) - 0.5) * 0.05); }
-      let col = tn(base, ROWS[(y - 11) % 6] + (sn(x, y, 30, 131) - 0.5) * 0.08 + (nz(x, y, 132) - 0.5) * 0.04);
+      let col = tn(base, ROWS[md(y - 11, 6)] + (sn(x, y, 30, 131) - 0.5) * 0.08 + (nz(x, y, 132) - 0.5) * 0.04);
       if (fbm(x, y, 12, 133) > 0.7) col = tn(col, -0.12);
       return col;
     };
@@ -511,7 +517,7 @@ const MAT = {
       const sx = md(x - 2, 130);
       if (sx === 0) return seam;
       if ((sx === 3 || sx === 127) && md(y - 14, 20) === 0) return bolt;
-      const g = 10, cx = md(x - 2, g), cy = (y - 11) % g, odd = (Math.floor((x - 2) / g) + Math.floor((y - 11) / g)) % 2;
+      const g = 10, cx = md(x - 2, g), cy = md(y - 11, g), odd = (Math.floor((x - 2) / g) + Math.floor((y - 11) / g)) % 2;
       const u = odd ? cx - cy : cx + cy - (g - 1), along = odd ? cx + cy - (g - 1) : cx - cy;
       let f = (sn(x, y, 20, 181) - 0.5) * 0.1 + (nz(x, y, 182) - 0.5) * 0.05;
       if (Math.abs(u) <= 1 && Math.abs(along) <= 4) f += u <= 0 ? 0.3 : -0.25;
@@ -521,7 +527,7 @@ const MAT = {
   corten: () => {
     const P = pal(["#5e3119", "#743d1d", "#8b4a22", "#a3592a", "#b8693a"]), seam = hx("#3f2414");
     return (x, y) => {
-      const sx = md(x - 2, 100), sy = (y - 11) % 63;
+      const sx = md(x - 2, 100), sy = md(y - 11, 63);
       if (sx === 0 || sy === 0) return seam;
       const k = cl(fbm(x, y, 16, 191) * 0.75 + fbm(x, y, 5, 192) * 0.45 - 0.1, 0, 0.999);
       let f = (nz(x, y, 193) - 0.5) * 0.12 + (sx === 1 || sy === 1 ? 0.12 : 0);
@@ -532,7 +538,7 @@ const MAT = {
   tiles: () => {
     const base = hx("#f1f2ef"), grout = hx("#b8bbb9"), crack = hx("#8f9290");
     return (x, y) => {
-      const s = 11, tx = md(x - 2, s), ty = (y - 11) % s, i = Math.floor((x - 2) / s), j = Math.floor((y - 11) / s);
+      const s = 11, tx = md(x - 2, s), ty = md(y - 11, s), i = Math.floor((x - 2) / s), j = Math.floor((y - 11) / s);
       if (tx === s - 1 || ty === s - 1) return grout;
       if (nz(i, j, 142) < 0.012 && Math.abs(tx - ty) < 1) return crack;
       let f = (nz(i, j, 141) - 0.5) * 0.05 + (tx === 0 || ty === 0 ? 0.04 : 0) + (tx === s - 2 || ty === s - 2 ? -0.06 : 0) + (tx === 2 && ty === 2 ? 0.06 : 0);
@@ -543,7 +549,7 @@ const MAT = {
   greentiles: () => {
     const P = pal(["#2f7d5b", "#2a7353", "#348663", "#2c7756"]), grout = hx("#d8d4c8");
     return (x, y) => {
-      const w = 18, h = 9, j = Math.floor((y - 11) / h), ty = (y - 11) % h, off = j % 2 ? w / 2 : 0, tx = md(x - 2 + off, w), i = Math.floor((x - 2 + off) / w);
+      const w = 18, h = 9, j = Math.floor((y - 11) / h), ty = md(y - 11, h), off = j % 2 ? w / 2 : 0, tx = md(x - 2 + off, w), i = Math.floor((x - 2 + off) / w);
       if (ty === h - 1 || tx === w - 1) return grout;
       let f = ty === 0 ? 0.25 : ty === 1 ? 0.1 : ty === h - 2 ? -0.25 : 0;
       f += tx === 0 ? 0.15 : tx === w - 2 ? -0.18 : 0;
@@ -554,7 +560,7 @@ const MAT = {
   glass: () => {
     const mort = hx("#d3d6d4"), base = hx("#a6c8d4");
     return (x, y) => {
-      const s = 16, tx = md(x - 2, s), ty = (y - 11) % s;
+      const s = 16, tx = md(x - 2, s), ty = md(y - 11, s);
       if (tx >= s - 2 || ty >= s - 2) return tn(mort, tx === s - 2 || ty === s - 2 ? -0.08 : 0);
       const cx = tx - 6.5, cy = ty - 6.5, r = Math.max(Math.abs(cx), Math.abs(cy));
       let f = (r > 6 ? 0.25 : r > 5 ? -0.1 : 0) + Math.sin((tx + ty) * 0.9) * 0.08 + Math.sin(tx * 1.7 - ty * 0.6) * 0.05;
@@ -595,8 +601,56 @@ export function setWallKinds(next) {
   kinds = { ...next };
   wallCache.clear();
   artCache.clear();
+  tallCache.clear();
+  tallJobs.clear();
   try { dispatchEvent(new CustomEvent("gl-wall-kinds")); } catch (e) {}
   return changed;
+}
+
+export function wallFace(x, y) { const m = matOf(kindAt(x)) || REDBRICK; return m(x, y); }
+const tallCache = new Map(), tallJobs = new Map();
+function extend(base, x0, ends) {
+  const W = base.width, cv = document.createElement("canvas");
+  cv.width = W; cv.height = base.height + TALL;
+  const c = cv.getContext("2d");
+  c.drawImage(base, 0, 0, W, 11, 0, 0, W, 11);
+  c.drawImage(base, 0, 11, W, base.height - 11, 0, 11 + TALL, W, base.height - 11);
+  return { cv, c, W, im: c.getImageData(0, 11, W, TALL + 3), row: 0, x0, l: !!ends.l, r: !!ends.r };
+}
+function grow(j, until) {
+  const d = j.im.data, OUT = [29, 20, 15];
+  for (; j.row < TALL + 3; j.row++) {
+    if (j.row % 16 === 0 && performance.now() > until) return false;
+    const r = j.row;
+    if (r >= TALL) {
+      const f = [-0.38, -0.24, -0.12][r - TALL];
+      for (let i = 0; i < j.W; i++) { const k = (r * j.W + i) * 4; if (d[k + 3]) for (let q = 0; q < 3; q++) d[k + q] = Math.min(255, Math.round(d[k + q] / (1 + f))); }
+      continue;
+    }
+    const ay = 11 - TALL + r, f = r < 3 ? [-0.38, -0.24, -0.12][r] : 0;
+    for (let i = 0; i < j.W; i++) {
+      const k = (r * j.W + i) * 4;
+      if ((j.l && i === 0) || (j.r && i === j.W - 1)) { d[k + 3] = 0; continue; }
+      const col = (j.l && i === 1) || (j.r && i === j.W - 2) ? OUT : wallFace(j.x0 + i, ay), c = f ? col.map((v) => Math.round(v * (1 + f))) : col;
+      d[k] = c[0]; d[k + 1] = c[1]; d[k + 2] = c[2]; d[k + 3] = 255;
+    }
+  }
+  j.c.putImageData(j.im, 0, 11);
+  return true;
+}
+export function wallTall(p, lamps = true, until = Infinity) {
+  const key = p + (lamps ? "L" : "");
+  if (tallCache.has(key)) return tallCache.get(key);
+  let j = tallJobs.get(key);
+  if (!j) {
+    j = p ? extend(wallLayer(2 + 400 * p, 400, { l: false, lamps }), 2 + 400 * p, { l: false }) : extend(wallLayer(0, 402, { l: true, lamps }), 0, { l: true });
+    tallJobs.set(key, j);
+  }
+  if (!grow(j, until)) return null;
+  tallJobs.delete(key);
+  tallCache.set(key, j.cv);
+  if (tallCache.size > 48) tallCache.delete(tallCache.keys().next().value);
+  return j.cv;
 }
 
 export function wallSwatch(cv, id, w = 40, h = 25) {
@@ -685,6 +739,7 @@ function wallLayer(x0, W, ends) {
 
   const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
   const LIGHT = [255, 196, 110];
+  if (ends.lamps !== false) {
   const lo = ends.l ? Math.max(2, x0) : x0, hi = ends.r ? x0 + W - 3 : x0 + W - 1;
   for (let cx = 58 + 288 * Math.floor((x0 - 110) / 288); cx <= x0 + W + 46; cx += 288) {
     const gy = 20, rx = 46, ry = 32;
@@ -704,6 +759,7 @@ function wallLayer(x0, W, ends) {
     ];
     rows.forEach(([y, a, b, col]) => { for (let dx = a; dx <= b; dx++) put(cx + dx, y, hex(col)); });
   }
+  }
 
   const MOSS = ["#4e8a36", "#3f7430", "#6aa548"].map(hex);
   for (let b = Math.floor((x0 - 2) / 400) - 1; b <= Math.floor((x0 + W - 2) / 400) + 1; b++) {
@@ -721,9 +777,13 @@ function wallLayer(x0, W, ends) {
   return cv;
 }
 
-export function drawWall(canvas, w = SPR.wall[0]) {
-  const key = "map" + w;
-  if (!wallCache.has(key)) wallCache.set(key, wallLayer(0, w, { l: true, r: w === SPR.wall[0] }));
+export function drawWall(canvas, w = SPR.wall[0], short = false, end = false) {
+  const key = "map" + w + (short ? "s" : "t") + (end ? "e" : "");
+  if (!wallCache.has(key)) {
+    const ends = { l: true, r: end || w === SPR.wall[0] }, base = wallLayer(0, w, ends);
+    if (short) wallCache.set(key, base);
+    else { const j = extend(base, 0, ends); grow(j, Infinity); wallCache.set(key, j.cv); }
+  }
   const art = wallCache.get(key), k = w > 1000 ? 2 : 4;
   canvas.width = art.width * k;
   canvas.height = art.height * k;
@@ -853,13 +913,10 @@ export const WALL_SM = 90, WALL_SKY = SKY[0], WALL_GRASS = GRASS.bottom;
 const artCache = new Map();
 export function wallArt(p) {
   if (artCache.has(p)) { const a = artCache.get(p); artCache.delete(p); artCache.set(p, a); return a; }
-  const cv = document.createElement("canvas"), rows = 147 + 2 * WALL_SM;
-  drawWallScene(cv, p, rows, WALL_SM);
-  const c = cv.getContext("2d"), w = document.createElement("canvas");
-  if (p >= -1) {
-    drawWallPanel(w, p >= 0 ? p : 0);
-    c.drawImage(w, p > 0 ? 0 : p === 0 ? -2 : 398, WALL_SM);
-  }
+  const cv = document.createElement("canvas"), rows = 147 + TALL + 2 * WALL_SM;
+  drawWallScene(cv, p, rows, WALL_SM + TALL);
+  const c = cv.getContext("2d");
+  if (p >= -1) c.drawImage(wallTall(p >= 0 ? p : 0), p > 0 ? 0 : p === 0 ? -2 : 398, WALL_SM);
   artCache.set(p, cv);
   if (artCache.size > 40) artCache.delete(artCache.keys().next().value);
   return cv;

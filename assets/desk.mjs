@@ -89,7 +89,7 @@ function layout() {
     const b = s.dataset.place === "mural" ? geo.run : geo.places[s.dataset.place];
     if (!b) return;
     placeBox(s, b);
-    s.style.zIndex = Math.round(b.y + b.h);
+    s.style.zIndex = s.dataset.place === "mural" ? 2 : Math.round(b.y + b.h);
     s.style.setProperty("--s", b.k.toFixed(3));
   });
   life.layout(geo);
@@ -107,11 +107,12 @@ function layout() {
   museum.layout(geo);
   coaster.layout(geo);
   const art = world.querySelector("[data-wall-art]");
-  art.parentNode.style.setProperty("--lx", (geo.mural.w / 2).toFixed(1) + "px");
-  drawWall(art, Math.ceil(geo.run.w / geo.run.k));
+  art.parentNode.style.setProperty("--lx", ((geo.short ? geo.mural.w : geo.run.w) / 2).toFixed(1) + "px");
+  drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short, !geo.short);
+  muralEl.classList.toggle("short", !!geo.short);
   placeBox(muralEl, { x: geo.face.x, y: geo.face.y, w: geo.run.x + geo.run.w - geo.face.x, h: geo.face.h });
   muralEl.style.setProperty("--fw", geo.face.w.toFixed(2) + "px");
-  muralEl.style.zIndex = Math.round(geo.mural.y + geo.mural.h) + 1;
+  muralEl.style.zIndex = 3;
   mural.span(Math.ceil((geo.run.x + geo.run.w - geo.face.x) / geo.face.w));
   mural.resize();
   const g = geo;
@@ -541,7 +542,7 @@ function init() {
   });
   addEventListener("gl-wall-kinds", () => {
     const art = world.querySelector("[data-wall-art]");
-    if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k));
+    if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short, !geo.short);
   });
   data().then((d) => {
     const news = (V.newsWin(d).match(/<ul class="news">[\s\S]*?<\/ul>/) || [""])[0], tag = V.esc(d.site.tagline).replace(/\. /g, ".<br>");

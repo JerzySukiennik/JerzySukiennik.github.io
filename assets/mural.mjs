@@ -13,7 +13,7 @@
    painters' cursors and their strokes as they spray them. Undo deletes only your own strokes and copies them to the trash first. */
 
 import { icon } from "/assets/views.mjs";
-import { wallArt, WALL_SM, WALL_SKY, WALL_GRASS, WALL_KINDS, setWallKinds, wallSwatch } from "/assets/map.mjs";
+import { wallArt, WALL_SM, WALL_SKY, WALL_GRASS, WALL_KINDS, setWallKinds, wallSwatch, TALL } from "/assets/map.mjs";
 import { picker, cutter, simplify } from "/assets/stencil.mjs";
 import { me as wallet, code as walletCode, api, ensure, toast, cone } from "/assets/bank.mjs";
 
@@ -24,9 +24,9 @@ const FAR = DEV ? "muralWallDev" : "muralWall", FAR_BIN = DEV ? "muralWallTrashD
 const pathOf = (p) => FAR + "/" + p, binOf = (p) => FAR_BIN + "/" + p;
 const MINE_KEY = "gl-mural-mine-" + (DEV ? "muralDev" : "mural");
 const TOUCH = matchMedia("(pointer: coarse)").matches;
-const WX = 1000, WY = 323, SX = 2;
+const WX = 1000, WY = 323, SX = 2, UPH = 877, HOST_K = 6;
 const MAX_POINTS = 150, MAX_POSTS = 400, MAX_MINE = 600, TICK = 33, DRIP = 14, SPEED = 1100, LEAD = 110, BACK = 150;
-const RB = 2, TS = 512, MAXZ = 2 ** 30, MINZ = 0.45, ART = 2.5, ARTY = 323 / 129;
+const RB = 2, TS = 512, MAXZ = 2 ** 30, MINZ = 0.2, ART = 2.5, ARTY = 323 / 129;
 const UNDO_KEY = /Mac|iPhone|iPad/.test(navigator.platform || "") ? "⌘Z" : "Ctrl+Z";
 const PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 const SIZES = [3, 6, 12, 22, 40];
@@ -67,7 +67,8 @@ const kindName = (id) => (WALL_KINDS.find((k) => k[0] === id) || WALL_KINDS[0])[
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const rgbOf = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 const mix = (a, b, t) => { const B = rgbOf(b); return "#" + rgbOf(a).map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join(""); };
-const DPR = () => Math.min(2, devicePixelRatio || 1);
+let DPR_OV = 0;
+const DPR = () => DPR_OV || Math.min(2, devicePixelRatio || 1);
 
 function hash(s) {
   let h = 2166136261;
@@ -640,6 +641,18 @@ function clips(mk, mode) {
   return out;
 }
 
+function wallClip(op, v) {
+  if (!op.wc) {
+    const b = op.p * WX, M = 2, x0 = op.bb[0] - b - M, y0 = op.bb[1] - M, x1 = op.bb[2] - b + M, y1 = op.bb[3] + M, box = [x0, y0, x1, y0, x1, y1, x0, y1], list = [];
+    const path = (polys) => { const p = new Path2D(); polys.forEach((q) => { p.moveTo(q[0], q[1]); for (let i = 2; i < q.length; i += 2) p.lineTo(q[i], q[i + 1]); p.closePath(); }); return p; };
+    op.mask.sheets.forEach((sh) => { const q = clipRect(sh.sheet, x0, y0, x1, y1); if (q) list.push(path([box, q, ...sh.holes.map((h) => clipRect(h, x0, y0, x1, y1)).filter(Boolean)])); });
+    op.mask.tapes.forEach((t) => { const q = clipRect(t, x0, y0, x1, y1); if (q) list.push(path([box, q])); });
+    op.wc = list;
+  }
+  const r = v.r, tx = (op.p * WX - v.x0) * r, ty = -v.y0 * r, list = op.wc;
+  return [(c) => { const m = c.getTransform(); c.transform(r, 0, 0, r, tx, ty); list.forEach((p) => c.clip(p, "evenodd")); c.setTransform(m); }];
+}
+
 const brushOf = (op) => (op.k === "e" ? rubber : op.k === "c" ? chalk : op.c === "bands" ? bands : op.c[0] === "n" ? neon : sprayer);
 const reachOf = (op, v) => op.w * v.r * (op.k === "e" ? 0.6 : op.c === "bands" || (op.c && op.c[0] === "n") ? 4.5 : 3.4) + 6;
 function painterFor(op, c, v, mode = "wall", alive) {
@@ -664,7 +677,7 @@ function painterFor(op, c, v, mode = "wall", alive) {
 const reset = (c) => { c.globalCompositeOperation = "source-over"; c.globalAlpha = 1; };
 const at = (op, i, v) => [(op.p * WX + op.d[i] - v.x0) * v.r, (op.d[i + 1] - v.y0) * v.r];
 
-function paintOp(op, c, v, mode = "wall", alive) {
+export function paintOp(op, c, v, mode = "wall", alive) {
   if (op.w * v.r < 0.25) return;
   if (!op.mask && mode !== "wall") return;
   const draw = () => {
@@ -675,7 +688,7 @@ function paintOp(op, c, v, mode = "wall", alive) {
   };
   if (!op.mask) { draw(); reset(c); return; }
   const bb = op.bb ? [(op.bb[0] - v.x0) * v.r - 2, (op.bb[1] - v.y0) * v.r - 2, (op.bb[2] - op.bb[0]) * v.r + 4, (op.bb[3] - op.bb[1]) * v.r + 4] : null;
-  for (const f of clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode)) {
+  for (const f of mode === "wall" && v.r <= 16 && op.bb ? wallClip(op, v) : clips(maskIn(op, v, c.canvas.width, c.canvas.height, mode === "wall" ? null : alive), mode)) {
     c.save();
     if (bb) { c.beginPath(); c.rect(bb[0], bb[1], bb[2], bb[3]); c.clip(); }
     f(c); draw();
@@ -693,10 +706,11 @@ const dateOf = (id) => {
 };
 
 function frame(w, h) {
-  const k = Math.min((h * 0.56) / WY, w / 460), a = (WX * k) / 400;
-  return { k, top: Math.round(((h - WY * k) * 0.45) / a) * a, left: LEAD * k };
+  const T = WY + UPH, k = Math.min((h * 0.8) / T, w / 460), a = (WX * k) / 400;
+  return { k, top: Math.round(((h - T * k) * 0.45) / a) * a, left: LEAD * k };
 }
 
+export const wallIcon = (k, n = 16) => `<svg viewBox="0 0 16 16" width="${n}" height="${n}" shape-rendering="crispEdges" aria-hidden="true">${ICONS[k] || ""}</svg>`;
 const T16 = (body) => `<svg viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges" aria-hidden="true">${body}</svg>`;
 const ICONS = {
   spray: '<rect x="5" y="5" width="6" height="10" fill="#000080"/><rect x="6" y="6" width="4" height="8" fill="#5f8fff"/><rect x="6" y="3" width="4" height="2" fill="#000"/><rect x="7" y="1" width="2" height="2" fill="#808080"/><rect x="11" y="1" width="1" height="1"/><rect x="13" y="2" width="1" height="1"/><rect x="12" y="4" width="1" height="1"/><rect x="14" y="0" width="1" height="1"/>',
@@ -716,18 +730,20 @@ const ICONS = {
   zout: '<circle cx="6.5" cy="6.5" r="4.8" fill="#fff" stroke="#000"/><path d="M10 10l4.5 4.5" stroke="#000" stroke-width="2.4"/><path d="M4 6.5h5" stroke="#000" stroke-width="1.4"/>',
   drop: '<path d="M10.5 1.5l4 4-2 2-.8-.8-5.7 5.7-2.5.6.6-2.5 5.7-5.7-.8-.8z" fill="#fff" stroke="#000"/><path d="M2.5 13.5L1 15" stroke="#000"/><path d="M11 2l3 3" stroke="#808080"/>',
   cancur: '<path d="M1 1v9l2.5-2.5L5 11l1.5-.7L5 7h3.5z" fill="#fff" stroke="#000"/><rect x="10" y="7" width="5" height="8" fill="#ff0000" stroke="#000"/><rect x="11" y="5" width="3" height="2" fill="#fff" stroke="#000"/><rect x="11" y="10" width="3" height="2" fill="#fff"/>',
+  play: '<rect x="0" y="9" width="16" height="7" fill="#b9472b"/><path d="M0 11.5h16M0 14h16M4 9v2.5M12 9v2.5M8 11.5V14M2 14v2M14 14v2" stroke="#e2b698"/><path d="M5 1v7l6-3.5z" fill="#00a000" stroke="#000"/>',
 };
 const TOOLS = [["spray", "Spray can"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow spray"], ["eraser", "Eraser, it rubs out any paint"], ["tape", "Masking tape"], ["stencil", "Stencils, ready made or cut your own"]];
 
 export function createMural(el, opts) {
-  const home = el.querySelector("canvas");
+  const home = el && el.querySelector("canvas"), headless = !!(opts && opts.headless);
   const panels = new Map(), tiles = new Map(), lod = new Map(), keys = { a: 0, d: 0, w: 0, s: 0, q: 0, e: 0 }, touches = new Map();
   const mine = {}, minePanel = {}, order = [], redo = [], layers = [];
   let color = "#ff0000", hex = "#ff0000", tool = "spray", brush = "spray", size = 2, rainbow = false, posted = 0, lastT = 0, lastR = [], offlineSaid = false;
   let live = null, client = null, lastSample = 0, tick = 0, gesture = null, active = false, chrome = null, view = null, layer = null;
   let pumpRaf = 0, lodRaf = 0, flashTimer = 0, made = 0, said = "", walkRaf = 0, walkT = 0, stream = null;
   let W = 1, H = 1, k0 = 1, faceTop = 0, cx = 0, cy = 0, Z = 1, ytop = 0, ybot = 1, level = 0, shown = new Set(), pinch = null;
-  const props = new Map(), alive = { t: new Set(), s: new Set() }, others = new Map(), ghosts = new Map();
+  const props = new Map(), alive = { t: new Set(), s: new Set() }, others = new Map(), ghosts = new Map(), ext = new Set();
+  let host = null, inkV = 0;
   const SID = "w" + Date.now().toString(36) + Math.random().toString(36).slice(2, 9), outbox = { patch: {}, timer: 0, busy: false };
   let tapes = [], sheets = [], tapeDrag = null, sheetDrag = null, rip = null, liftDrag = null, peels = [], lifts = [], peelRaf = 0, hoverK = "", tipped = false;
   let lapse = null, lapseEl = null, pick = null, cut = null, caps = null, tapeL = null, sheetL = null, flapL = null, layRaf = 0, ovRaf = 0, hint = "", cardPat = null;
@@ -737,16 +753,15 @@ export function createMural(el, opts) {
   let tagA = "", tagU = "", tagCode = null, wallKey = "", sellV = 0, sellMemo = null, sellEl = null, sellPop = null, sellBox = null, selling = null;
   const blankMemo = new Map(), blankJobs = new Set();
   function tile(p, cv) {
-    const r = p < 2 ? SX : SX / 2;
-    cv.width = Math.round(WX * r); cv.height = Math.round(WY * r);
+    const r = p < 2 ? 1 : 0.5;
+    cv.width = Math.round(WX * r); cv.height = Math.round((WY + UPH) * r);
     cv.style.setProperty("--p", p);
     if (!cv.parentNode) el.append(cv);
     const t = { p, r, cv, c: cv.getContext("2d"), job: null, last: "", dirty: false };
     tiles.set(p, t);
     return t;
   }
-  tile(0, home);
-  tile(1, document.createElement("canvas"));
+  if (!headless) { tile(0, home); tile(1, document.createElement("canvas")); }
 
   try {
     rainbow = localStorage.getItem("gl-rainbow") === "1";
@@ -825,14 +840,14 @@ export function createMural(el, opts) {
     return list.sort(older);
   }
 
-  const mapView = (t) => ({ x0: t.p * WX, y0: 0, r: t.r });
-  const nearMap = (op, f) => tiles.forEach((t) => { if (hits(op, t.p * WX, 0, (t.p + 1) * WX, WY)) f(t); });
+  const mapView = (t) => ({ x0: t.p * WX, y0: -UPH, r: t.r });
+  const nearMap = (op, f) => tiles.forEach((t) => { if (hits(op, t.p * WX, -UPH, (t.p + 1) * WX, WY)) f(t); });
 
   function redraw(t) {
     if (t.job) { t.dirty = true; return; }
     const back = document.createElement("canvas");
     back.width = t.cv.width; back.height = t.cv.height;
-    t.job = { list: opsIn(t.p * WX, 0, (t.p + 1) * WX, WY), i: 0, back, c: back.getContext("2d") };
+    t.job = { list: opsIn(t.p * WX, -UPH, (t.p + 1) * WX, WY), i: 0, back, c: back.getContext("2d") };
     t.dirty = false;
     if (!pumpRaf) pumpRaf = requestAnimationFrame(pump);
   }
@@ -879,7 +894,7 @@ export function createMural(el, opts) {
   }
 
   function backdrop(c, v, x1, y1) {
-    const top = -(WALL_SM + 13) * ARTY, bot = (134 + WALL_SM) * ARTY;
+    const top = -(WALL_SM + 13 + TALL) * ARTY, bot = (134 + WALL_SM) * ARTY;
     c.imageSmoothingEnabled = false;
     c.fillStyle = WALL_SKY;
     c.fillRect(0, 0, TS, TS);
@@ -895,35 +910,57 @@ export function createMural(el, opts) {
     }
   }
 
+  function covered(t) {
+    const mx = (t.v.x0 + t.x1) / 2, my = (t.v.y0 + t.y1) / 2;
+    for (let L = t.L - 1; L >= t.L - 4; L--) { const S = span(L), o = lod.get(L + ":" + Math.floor(mx / S) + ":" + Math.floor(my / S)); if (o && o.ready) return true; }
+    return false;
+  }
   function render(t) {
     if (t.job) { t.dirty = true; return; }
-    const back = document.createElement("canvas");
-    back.width = back.height = TS;
-    const c = back.getContext("2d");
-    t.job = { list: opsIn(t.v.x0, t.v.y0, t.x1, t.y1), i: 0, back, c };
+    const list = opsIn(t.v.x0, t.v.y0, t.x1, t.y1);
+    if (!t.ready && !covered(t)) {
+      t.c.setTransform(1, 0, 0, 1, 0, 0);
+      t.c.clearRect(0, 0, TS, TS);
+      t.job = { list, i: 0, back: null, c: t.c, front: true };
+    } else {
+      const back = document.createElement("canvas");
+      back.width = back.height = TS;
+      t.job = { list, i: 0, back, c: back.getContext("2d") };
+    }
     t.dirty = false;
     lodLoop();
   }
 
+  function finish(t) {
+    const j = t.job;
+    t.job = null;
+    if (j.back) { t.cv.replaceWith(j.back); t.cv = j.back; t.c = j.c; }
+    t.ready = true;
+    t.last = j.list.length ? j.list[j.list.length - 1].id : "";
+    if (t.dirty) render(t);
+    else replayLive(t);
+  }
   function lodLoop() { if (!lodRaf) lodRaf = requestAnimationFrame(lodPump); }
   function lodPump() {
     lodRaf = 0;
-    const t0 = performance.now(), queue = [...lod.values()].filter((t) => t.job && shown.has(t));
-    queue.sort((a, b) => b.L - a.L);
-    for (const t of queue) {
+    const t0 = performance.now(), queue = [...lod.values()].filter((t) => t.job && shown.has(t)), front = queue.filter((t) => t.job.front);
+    let done = false;
+    for (let i = front.length - 1; i >= 0; i--) if (!front[i].job.list.length) { finish(front[i]); front.splice(i, 1); done = true; }
+    while (front.length && performance.now() - t0 < 8) {
+      let best = null;
+      for (const t of front) if (!best || t.job.list[t.job.i].id < best.job.list[best.job.i].id) best = t;
+      const j = best.job;
+      paintOp(j.list[j.i++], j.c, best.v);
+      if (j.i >= j.list.length) { front.splice(front.indexOf(best), 1); finish(best); done = true; }
+    }
+    for (const t of queue.filter((q) => q.job && !q.job.front).sort((a, b) => b.L - a.L)) {
       const j = t.job;
       while (j.i < j.list.length && performance.now() - t0 < 8) paintOp(j.list[j.i++], j.c, t.v);
       if (j.i < j.list.length) break;
-      t.job = null;
-      t.cv.replaceWith(j.back);
-      t.cv = j.back;
-      t.c = j.c;
-      t.ready = true;
-      t.last = j.list.length ? j.list[j.list.length - 1].id : "";
-      if (t.dirty) render(t);
-      else replayLive(t);
-      present();
+      finish(t);
+      done = true;
     }
+    if (done) present();
     if ([...lod.values()].some((t) => t.job && shown.has(t))) lodLoop();
   }
 
@@ -932,7 +969,7 @@ export function createMural(el, opts) {
   function present() {
     if (!active) return;
     const ppu = k0 * Z, dpr = DPR();
-    level = clamp(Math.ceil(Math.log2((ppu * dpr) / RB)), -3, 40);
+    level = clamp(Math.ceil(Math.log2((ppu * dpr) / RB) - 0.25), -3, 40);
     const vx0 = cx - W / 2 / ppu, vx1 = cx + W / 2 / ppu, vy0 = cy - H / 2 / ppu, vy1 = cy + H / 2 / ppu, now = new Set();
     for (let L = level; L >= level - 4; L--) {
       const S = span(L);
@@ -945,12 +982,12 @@ export function createMural(el, opts) {
         }
       }
     }
+
     shown.forEach((t) => { if (!now.has(t)) t.el.remove(); });
     shown = now;
     now.forEach((t) => {
-      if (!t.ready) return;
       const s = (span(t.L) * ppu) / TS;
-      t.el.style.zIndex = 50 + t.L - level;
+      t.el.style.zIndex = t.ready || (t.job && t.job.front) ? 50 + t.L - level : 40;
       t.el.style.transform = `translate3d(${((t.v.x0 - cx) * ppu + W / 2).toFixed(2)}px,${((t.v.y0 - cy) * ppu + H / 2).toFixed(2)}px,0) scale(${s.toFixed(6)})`;
       if (t.el.parentNode !== layer) layer.append(t.el);
     });
@@ -994,6 +1031,7 @@ export function createMural(el, opts) {
   }
 
   function forgetLayer(L) {
+    if (!L) return;
     clearTimeout(L.timer);
     L.timer = 0; L.job = null;
     if (live && L.tile) live.ps.delete(L.tile);
@@ -1001,6 +1039,7 @@ export function createMural(el, opts) {
   }
 
   function rerender(L, now) {
+    if (!L) return;
     clearTimeout(L.timer);
     L.timer = setTimeout(() => {
       L.timer = 0;
@@ -1429,7 +1468,7 @@ export function createMural(el, opts) {
   const handleAt = (sh, v) => px(sheetAt(sh, 1 + SHEET_M, 1 + SHEET_M), v);
   const flipAt = (sh, v) => px(sheetAt(sh, 1 + SHEET_M, -SHEET_M), v);
   const canvasPt = (e) => { const r = view.getBoundingClientRect(), d = DPR(); return [(e.clientX - r.left) * d, (e.clientY - r.top) * d]; };
-  const reachPx = () => (TOUCH ? 24 : 12) * DPR();
+  const reachPx = () => (host ? 34 : TOUCH ? 24 : 12) * DPR();
   const onHandle = (sh, P, v) => { if (!stuckAt(sh, 1 + SHEET_M, 1 + SHEET_M)) return false; const [hx, hy] = handleAt(sh, v); return Math.hypot(P[0] - hx, P[1] - hy) <= reachPx(); };
   const onLayer = (sh, P, v) => { if (!sh.layers || sh.layers.length < 2 || sh.flip || !stuckAt(sh, 1 + SHEET_M, -SHEET_M)) return false; const [bx, by] = flipAt(sh, v); return Math.hypot(P[0] - bx, P[1] - by) <= reachPx() * 1.15; };
   function onFold(sh, P, v) {
@@ -1479,7 +1518,7 @@ export function createMural(el, opts) {
     }
     for (let i = sheets.length - 1; i >= 0; i--) if (sheets[i].stuck && inside(sheets[i].stuck.poly, w)) { startDrag(e, sheets[i], false, w); return; }
     closeSell();
-    pick.open();
+    if (pick) pick.open(); else if (host && host.pick) host.pick();
   }
   function startDrag(e, sh, turn, at) {
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
@@ -1570,7 +1609,7 @@ export function createMural(el, opts) {
   }
 
   function ripAt(e) {
-    const [x, y] = wallPoint(e.clientX, e.clientY), ppu = k0 * Z, reach = 10 / ppu;
+    const [x, y] = wallPoint(e.clientX, e.clientY), ppu = k0 * Z, reach = (host ? 26 : 10) / ppu;
     for (let i = tapes.length - 1; i >= 0; i--) {
       const t = tapes[i];
       if (t.g) {
@@ -1638,7 +1677,7 @@ export function createMural(el, opts) {
     if (tapes.filter(inView).length >= MAX_TAPES) { flash("THAT IS A LOT OF TAPE HERE, PEEL SOME OFF FIRST"); return; }
     try { view.setPointerCapture(e.pointerId); } catch (err) {}
     const a = wallPoint(e.clientX, e.clientY);
-    tapeDrag = { id: e.pointerId, a, b: a, w: sizeOf(TAPES) / (k0 * Z), teeth: Array.from({ length: 8 }, () => Math.round(Math.random() * 9) / 9) };
+    tapeDrag = { id: e.pointerId, a, b: a, w: (sizeOf(TAPES) / (k0 * Z)) * (host ? 2.2 : 1), teeth: Array.from({ length: 8 }, () => Math.round(Math.random() * 9) / 9) };
     drawOverlays();
   }
   function layTape() {
@@ -1777,7 +1816,7 @@ export function createMural(el, opts) {
     if (value === null || value === undefined) delete o[k]; else o[k] = value;
   }
   function openLive() {
-    if (liveSrc || !active || document.hidden || typeof EventSource === "undefined") return;
+    if (liveSrc || !(active || host) || document.hidden || typeof EventSource === "undefined") return;
     liveTree = {};
     const src = (liveSrc = new EventSource(DB + "/" + LIVE + ".json"));
     src.addEventListener("put", (e) => { const m = message(e); if (m && typeof m.path === "string") liveEvent(m.path, m.data, false); });
@@ -1832,7 +1871,7 @@ export function createMural(el, opts) {
     el.className = "wv-mate";
     el.hidden = true;
     el.innerHTML = "<b></b><span></span>";
-    who.append(el);
+    if (who) who.append(el);
     const q = { sid, el, name: "", c: "", shownC: null, shownN: null, x: 0, y: 0, p: 0, seen: 0, op: null };
     others.set(sid, q);
     return q;
@@ -1855,10 +1894,10 @@ export function createMural(el, opts) {
     if (typeof s.id !== "string" || s.id.length > 24 || !Number.isInteger(s.p) || s.p < 0 || !isNum(s.w) || s.w <= 0 || !Number.isInteger(s.z) || s.z < 0 || s.z > 30) return null;
     if ((s.k !== "d" && s.k !== "c") || !okColor(s.k, s.c)) return null;
     const d = s.d && typeof s.d === "object" ? s.d : {}, sc = 2 ** -s.z, pts = [];
-    Object.keys(d).filter((k) => /^c[0-9]{1,5}$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)).forEach((k) => { if (typeof d[k] === "string" && /^[0-9,]+$/.test(d[k])) d[k].split(",").forEach((n) => pts.push(+n * sc)); });
+    Object.keys(d).filter((k) => /^c[0-9]{1,5}$/.test(k)).sort((a, b) => a.slice(1) - b.slice(1)).forEach((k) => { if (typeof d[k] === "string" && /^[-0-9,]+$/.test(d[k])) d[k].split(",").forEach((n) => pts.push(+n * sc)); });
     if (pts.length % 2) pts.pop();
-    if (pts.length < 2) return null;
-    return { id: s.id, p: s.p, k: s.k, c: s.c, w: s.w, z: s.z, h: s.k === "d" && HEAD_IDS.has(s.h) ? s.h : undefined, d: pts, mask: null };
+    if (pts.length < 2 || pts.some((n) => !isFinite(n))) return null;
+    return bounds({ id: s.id, p: s.p, k: s.k, c: s.c, w: s.w, z: s.z, h: s.k === "d" && HEAD_IDS.has(s.h) ? s.h : undefined, d: pts, mask: null, up: pts.some((n, i) => i % 2 === 1 && n < 0) });
   }
   function drawInk() {
     inkRaf = 0;
@@ -1873,7 +1912,7 @@ export function createMural(el, opts) {
     ghosts.forEach((g) => list.push(g.op));
     list.sort(older).forEach((op) => paintOp(op, c, v));
   }
-  const inkSoon = () => { if (!inkRaf && ink) inkRaf = requestAnimationFrame(drawInk); };
+  const inkSoon = () => { inkV++; if (!inkRaf && ink) inkRaf = requestAnimationFrame(drawInk); };
   function tidy() {
     const now = performance.now(), t = Date.now();
     let dirty = false;
@@ -1883,13 +1922,13 @@ export function createMural(el, opts) {
   }
 
   function pushLive(fields) {
-    if (!active) return;
+    if (!(active || host)) return;
     Object.assign(outbox.patch, fields);
     if (!outbox.timer && !outbox.busy) outbox.timer = setTimeout(flushLive, 120);
   }
   function flushLive() {
     outbox.timer = 0;
-    if (outbox.busy || !active) return;
+    if (outbox.busy || !(active || host)) return;
     inkChunk();
     if (!Object.keys(outbox.patch).length) return;
     const data = { ...outbox.patch, t: SV };
@@ -1897,13 +1936,13 @@ export function createMural(el, opts) {
     outbox.busy = true;
     fetch(liveUrl("who/" + SID), { method: "PATCH", body: JSON.stringify(data) }).catch(() => {}).finally(() => {
       outbox.busy = false;
-      if (active && (Object.keys(outbox.patch).length || (live && live.ink && live.ink.n < live.d.length))) outbox.timer = setTimeout(flushLive, 120);
+      if ((active || host) && (Object.keys(outbox.patch).length || (live && live.ink && live.ink.n < live.d.length))) outbox.timer = setTimeout(flushLive, 120);
     });
   }
   function inkChunk() {
     const op = live;
     if (!op || !op.ink || op.ink.n >= op.d.length) return;
-    const s = 2 ** op.z, add = op.d.slice(op.ink.n).map((n) => Math.max(0, Math.round(n * s))).join(",");
+    const s = 2 ** op.z, add = op.d.slice(op.ink.n).map((n, i) => ((op.ink.n + i) % 2 ? Math.round(n * s) : Math.max(0, Math.round(n * s)))).join(",");
     op.ink.n = op.d.length;
     const key = "c" + op.ink.c++, S = outbox.patch.s;
     if (S && typeof S === "object" && S.id === op.id) S.d[key] = add;
@@ -1926,7 +1965,7 @@ export function createMural(el, opts) {
     pushLive({ s: null });
   }
   function here(e) {
-    if (!active || lapse) return;
+    if (!(active || host) || lapse) return;
     const [x, y] = wallPoint(e.clientX, e.clientY), p = Math.max(0, Math.floor(x / WX));
     pushLive({ p, x: x - p * WX, y, n: nick(), c: tintKey() });
   }
@@ -1953,6 +1992,12 @@ export function createMural(el, opts) {
   }
 
   function touchOp(op, painted) {
+    ext.forEach((t) => {
+      if (!hits(op, t.v.x0, t.v.y0, t.x1, t.y1)) return;
+      if (painted && op.drawn && op.drawn.has(t)) { if (op.id > t.last) t.last = op.id; return; }
+      if (op.id > t.last && !t.job) { paintOp(op, t.c, t.v); t.last = op.id; t.dirty = true; return; }
+      t.redraw();
+    });
     nearMap(op, (t) => {
       if (t.job) { t.dirty = true; return; }
       if (op.id > t.last) { if (!painted) paintOp(op, t.c, mapView(t)); t.last = op.id; }
@@ -1985,6 +2030,7 @@ export function createMural(el, opts) {
     if (i === -1) return null;
     const it = P.ops.splice(i, 1)[0];
     sellV++;
+    ext.forEach((t) => { if (hits(it, t.v.x0, t.v.y0, t.x1, t.y1)) t.redraw(); });
     nearMap(it, redraw);
     lod.forEach((t) => {
       if (!hits(it, t.v.x0, t.v.y0, t.x1, t.y1)) return;
@@ -2033,13 +2079,13 @@ export function createMural(el, opts) {
   function parse(id, v, p) {
     if (!v || typeof v !== "object" || (v.k !== "d" && v.k !== "e" && v.k !== "c")) return null;
     if (v.k !== "e" && !okColor(v.k, v.c)) return null;
-    if (typeof v.d !== "string" || !/^[0-9,]+$/.test(v.d)) return null;
+    if (typeof v.d !== "string" || !/^[-0-9,]+$/.test(v.d)) return null;
     const pts = v.d.split(",").map(Number);
-    if (pts.length < 2 || pts.length % 2) return null;
+    if (pts.length < 2 || pts.length % 2 || pts.some((n, i) => !Number.isInteger(n) || (i % 2 === 0 && n < 0))) return null;
     const z = Number.isInteger(v.z) && v.z > 0 && v.z <= 30 ? v.z : 0, sc = 2 ** -z;
     let ox = 0, oy = 0;
     if (z) {
-      const o = typeof v.o === "string" && v.o.match(/^([0-9]+),([0-9]+)$/);
+      const o = typeof v.o === "string" && v.o.match(/^([0-9]+),(-?[0-9]+)$/);
       if (!o) return null;
       ox = +o[1]; oy = +o[2];
     }
@@ -2049,7 +2095,7 @@ export function createMural(el, opts) {
     sh.forEach((x, i) => { x.key = ids.s[i] || null; });
     const mask = tp.length || sh.length ? { tapes: tp, tapeIds: tp.map((_, i) => ids.t[i] || null), sheets: sh } : null;
     const h = v.k === "d" && HEAD_IDS.has(v.h) ? v.h : undefined, a = TAG.test(v.a) ? v.a : undefined, u = TAG.test(v.u) ? v.u : undefined;
-    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u });
+    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u, up: d.some((n, i) => i % 2 === 1 && n < 0) });
   }
 
   function add(P, id, v) {
@@ -2071,6 +2117,7 @@ export function createMural(el, opts) {
     if (ghosts.size) { P.ops.forEach((o) => ghosts.delete(o.id)); inkSoon(); }
     layers.forEach((L) => { if (layerOn(L)) rerender(L); });
     tiles.forEach((t) => { if (Math.abs(t.p - P.p) <= 1) redraw(t); });
+    ext.forEach((t) => { if (t.x1 >= P.p * WX - 100 && t.v.x0 <= (P.p + 1) * WX + 100) t.redraw(); });
     lod.forEach((t) => { if (t.x1 >= P.p * WX - 100 && t.v.x0 <= (P.p + 1) * WX + 100) { if (shown.has(t)) render(t); else { t.el.remove(); lod.delete(t.key); } } });
     sync();
   }
@@ -2139,7 +2186,7 @@ export function createMural(el, opts) {
     op.er = { key, v: n <= most };
     return op.er.v;
   }
-  const measure = (p) => opsIn(p * WX, 0, (p + 1) * WX, WY).filter((o) => o.k !== "e").every(erased);
+  const measure = (p) => [...new Set([...(panels.get(p) || { ops: [] }).ops, ...opsIn(p * WX, -UPH, (p + 1) * WX, WY)])].filter((o) => o.k !== "e").every(erased);
   function blank(p) {
     if (live && live.p === p) return false;
     const P = panels.get(p);
@@ -2164,8 +2211,8 @@ export function createMural(el, opts) {
     const off = !active || !!lapse || !loaded;
     if (kindsEl.hidden !== off) kindsEl.hidden = off;
     if (off) return;
-    const ppu = k0 * Z, x0 = cx - W / 2 / ppu, x1 = cx + W / 2 / ppu, top = (-12 * ARTY - cy) * ppu + H / 2, want = new Map();
-    if (top > 30 && top < H - 20) for (let p = Math.max(0, Math.floor(x0 / WX)); p <= Math.floor(x1 / WX); p++) {
+    const ppu = k0 * Z, x0 = cx - W / 2 / ppu, x1 = cx + W / 2 / ppu, cap = (-UPH - 12 * ARTY - cy) * ppu + H / 2, top = Math.max(cap, 44), want = new Map();
+    if (top < H - 20 && (WY - cy) * ppu + H / 2 > top + 30) for (let p = Math.max(0, Math.floor(x0 / WX)); p <= Math.floor(x1 / WX); p++) {
       if (!blank(p)) continue;
       const a = Math.max(x0, p * WX), b = Math.min(x1, (p + 1) * WX);
       if ((b - a) * ppu >= 170) want.set(p, ((a + b) / 2 - cx) * ppu + W / 2);
@@ -2296,7 +2343,7 @@ export function createMural(el, opts) {
   }
 
   function snap(g) {
-    const x0 = g.bb[0] - 8, y0 = Math.max(-12 * ARTY, g.bb[1] - 8), x1 = g.bb[2] + 8, y1 = Math.max(y0 + 10, Math.min(WY + 30, g.bb[3] + 8));
+    const x0 = g.bb[0] - 8, y0 = Math.max(-UPH - 12 * ARTY, g.bb[1] - 8), x1 = g.bb[2] + 8, y1 = Math.max(y0 + 10, Math.min(WY + 30, g.bb[3] + 8));
     const s = Math.min(2, TS / Math.max(x1 - x0, y1 - y0)), v = { x0, y0, r: s };
     const cv = document.createElement("canvas"), pc = document.createElement("canvas");
     cv.width = pc.width = Math.max(16, Math.ceil((x1 - x0) * s));
@@ -2380,7 +2427,7 @@ export function createMural(el, opts) {
   };
 
   function pack(it) {
-    const s = 2 ** it.z, ints = it.d.map((n) => Math.max(0, Math.round(n * s)));
+    const s = 2 ** it.z, ints = it.d.map((n, i) => (i % 2 ? Math.round(n * s) : Math.max(0, Math.round(n * s))));
     let ox = 0, oy = 0;
     if (it.z) {
       ox = Infinity; oy = Infinity;
@@ -2390,6 +2437,7 @@ export function createMural(el, opts) {
     it.raw = ints.map((n, i) => n - (i % 2 ? oy : ox)).join(",");
     it.wr = clamp(Math.round(it.w * s), 3, 200);
     it.m = it.s = it.q = undefined;
+    it.wc = null;
     if (!it.mask) return;
     const b = it.p * WX, e = it.w * 2, [x0, y0, x1, y1] = it.bb;
     const cut = (poly) => {
@@ -2486,6 +2534,7 @@ export function createMural(el, opts) {
   }
 
   function wallPoint(x, y) {
+    if (host) aimNow();
     const r = view.getBoundingClientRect(), ppu = k0 * Z;
     return [cx + (x - r.left - W / 2) / ppu, cy + (y - r.top - H / 2) / ppu];
   }
@@ -2494,12 +2543,17 @@ export function createMural(el, opts) {
     live.d.push(x, y);
     const i = live.d.length - 2;
     shown.forEach((t) => { if (t.ready && t.L === level && !live.ps.has(t)) replayLive(t); });
+    if (ext.size) {
+      const gx = live.p * WX + x, R = live.w * 4.5 + 8;
+      ext.forEach((t) => { if (!live.ps.has(t) && gx + R > t.v.x0 && gx - R < t.x1 && y + R > t.v.y0 && y - R < t.y1) replayLive(t); });
+    }
     if (live.mask) layers.forEach((L) => { if (L.tile && wants(L, live) && !live.ps.has(L.tile)) { replayLive(L.tile); L.full = true; } });
     live.ps.forEach((pt, t) => {
       if (pt.n === live.d.length) return;
       pt.add(...at(live, i, t.v));
       pt.n = live.d.length;
       reset(t.c);
+      if (t.ext) t.dirty = true;
     });
     if (live.mask) {
       const v = viewNow(), ov = [];
@@ -2517,10 +2571,10 @@ export function createMural(el, opts) {
   }
 
   function open(p, x, y, g) {
-    const zl = Math.max(0, Math.ceil(Math.log2(Z) - 1e-9)), k = tool === "eraser" ? "e" : tool === "chalk" ? "c" : "d";
+    const zz = host ? Z / HOST_K : (k0 * Z) / 1.15, zl = Math.max(0, Math.ceil(Math.log2(zz) - 1e-9)), k = tool === "eraser" ? "e" : tool === "chalk" ? "c" : "d";
     const c = k === "e" ? undefined : k === "c" ? hex : tool === "neon" ? "n" + hex : tool === "bands" ? "bands" : color;
     const h = tool === "spray" && head !== "std" ? head : undefined;
-    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES)) / Z, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined };
+    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES)) / zz, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined, ppu0: Z };
     if (c && c !== "bands") keepColor(c[0] === "n" ? c.slice(1) : c);
     panel(p).seen[live.id] = true;
     layers.forEach((L) => { if (wants(L, live) && !L.tile && !L.job) rerender(L, true); });
@@ -2532,9 +2586,10 @@ export function createMural(el, opts) {
     const op = live;
     live = null;
     inkStop(op);
-    op.ps.forEach((pt, t) => { pt.end(); reset(t.c); });
+    op.ps.forEach((pt, t) => { pt.end(); reset(t.c); if (t.ext) t.dirty = true; });
     op.drawn = new Set(op.ps.keys());
     delete op.ps;
+    op.up = op.d.some((n, i) => i % 2 === 1 && n < 0);
     bounds(op);
     if (op.mask) { layers.forEach((L) => { if (wants(L, op) && (L.job || L.timer || !L.tile)) rerender(L, true); }); overlaysSoon(); }
     insert(op, true);
@@ -2546,11 +2601,11 @@ export function createMural(el, opts) {
     const op = live;
     live = null;
     inkStop(op);
-    op.ps.forEach((_, t) => (t.mode ? rerender(t.layer, true) : render(t)));
+    op.ps.forEach((_, t) => (t.ext ? t.redraw() : t.mode ? rerender(t.layer, true) : render(t)));
   }
 
   function sample(ux, uy) {
-    const x = live.p ? ux - live.p * WX : Math.max(0, ux), y = clamp(uy, 0, WY);
+    const x = live.p ? ux - live.p * WX : Math.max(0, ux), y = clamp(uy, -UPH, WY);
     if (x < 0 || x > WX) {
       const n = live.d.length, px = live.d[n - 2], py = live.d[n - 1], edge = x < 0 ? 0 : WX;
       const ey = py + ((y - py) * (edge - px)) / (x - px);
@@ -2568,7 +2623,7 @@ export function createMural(el, opts) {
   function step() {
     if (!live || !client) return;
     const [ux, uy] = wallPoint(...client), n = live.d.length;
-    if (Math.hypot(ux - live.p * WX - live.d[n - 2], clamp(uy, 0, WY) - live.d[n - 1]) >= 2 / Z) sample(ux, uy);
+    if (Math.hypot(ux - live.p * WX - live.d[n - 2], clamp(uy, -UPH, WY) - live.d[n - 1]) >= 2 / Z) sample(ux, uy);
   }
 
   function hold() {
@@ -2643,7 +2698,7 @@ export function createMural(el, opts) {
     if (rb) chrome.style.setProperty("--rbb", Math.round(rb.getBoundingClientRect().bottom - chrome.getBoundingClientRect().top) + "px");
     const r = view.parentNode.getBoundingClientRect(), f = frame(r.width, r.height);
     W = r.width; H = r.height; k0 = f.k; faceTop = f.top;
-    ytop = -faceTop / k0; ybot = ytop + H / k0;
+    ytop = -UPH - faceTop / k0; ybot = ytop + H / k0;
     if (lapse) stopLapse(true);
     sizeLayers();
     clampView();
@@ -2671,7 +2726,7 @@ export function createMural(el, opts) {
   }
 
   const sizeOf = (arr) => { const v = clamp(size, 0, arr.length - 1), i = Math.min(arr.length - 2, Math.floor(v)); return arr[i] * Math.pow(arr[i + 1] / arr[i], v - i); };
-  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : tool === "eraser" ? sizeOf(RUBS) * k0 : sizeOf(SIZES) * k0 * (tool === "spray" ? headSize(head) : 1));
+  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : tool === "eraser" ? sizeOf(RUBS) * 1.15 : sizeOf(SIZES) * 1.15 * (tool === "spray" ? headSize(head) : 1));
   const ringFor = () => (TOUCH || lapse || sampling || tool === "stencil" ? 0 : brushPx());
   function placeRing(e) {
     if (!ring || e.pointerType === "touch") return;
@@ -2740,7 +2795,7 @@ export function createMural(el, opts) {
       grp("Size", `<input type="range" min="0" max="4" step="0.05" data-size aria-label="Brush size"><span class="rb-dot"><i data-dot></i></span>`, " rb-size") +
       grp("Color", `<button type="button" class="rb-b rb-cur" data-colbtn title="Pick any color"><i data-cur></i><span>Color ▾</span></button><span class="rb-rec" data-recent></span>`) +
       grp("History", rbB("data-undo", ICONS.undo, "Undo", `Take back your last stroke (${UNDO_KEY})`) + rbB("data-redo", ICONS.redo, "Redo", `Put it back (Shift+${UNDO_KEY})`) + rbB("data-lapse", ICONS.lapse, "Replay", "Timelapse: watch this part of the wall get painted")) +
-      grp("View", rbB('data-zoom="in"', ICONS.zin, "Zoom in", "Zoom in (E or the wheel)") + rbB('data-zoom="out"', ICONS.zout, "Zoom out", "Zoom out (Q or the wheel)") + (TOUCH ? "" : rbB("data-cancur", ICONS.cancur, "Can cursor", "Show a spray can next to the brush"))) +
+      grp("View", rbB('data-zoom="in"', ICONS.zin, "Zoom in", "Zoom in (E or the wheel)") + rbB('data-zoom="out"', ICONS.zout, "Zoom out", "Zoom out (Q or the wheel)") + (TOUCH ? "" : rbB("data-big", ICONS.play, "Big wall", "Play: walk up to the wall in 3D, with a scissor lift up to 12 meters") + rbB("data-cancur", ICONS.cancur, "Can cursor", "Show a spray can next to the brush"))) +
       `</div><div class="pt-mid"><div class="pt-hole">` +
       `<div class="pt-lapse" role="status" hidden><span class="pt-lapse-d" data-lapse-date></span><span class="pt-bar"><i></i></span><button class="btn" type="button" data-lapse-stop>Stop</button></div></div></div>` +
       `<footer class="stb"><span data-where>The start of the wall</span><span data-hint>${HINTS.paint}</span><span class="stb-act"><button class="btn" type="button" data-pt-close>Back to the map</button></span></footer>`;
@@ -2875,6 +2930,7 @@ export function createMural(el, opts) {
       if (b.hasAttribute("data-undo")) { undo(); return; }
       if (b.hasAttribute("data-redo")) { redoLast(); return; }
       if (b.hasAttribute("data-caps")) { if (caps.hidden) openCaps(); else caps.hidden = true; pick.close(); colPop.hidden = true; sampling = false; sync(); return; }
+      if (b.hasAttribute("data-big")) { location.href = `/wall/?x=${Math.round(cx)}&y=${Math.round(clamp(cy, 0, WY))}`; return; }
       if (b.hasAttribute("data-cancur")) { canCursor = !canCursor; try { localStorage.setItem("gl-wall-can", canCursor ? "1" : "0"); } catch (err) {} sync(); return; }
       if (b.dataset.zoom) { const r = view.getBoundingClientRect(); zoomAt(b.dataset.zoom === "in" ? 2 : 0.5, r.left + W / 2, r.top + H / 2); return; }
       if (b.dataset.tool) {
@@ -2936,7 +2992,7 @@ export function createMural(el, opts) {
       if (tool === "stencil") { grabSheet(e); return; }
       if (posted >= MAX_POSTS) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
       const [ux, uy] = wallPoint(e.clientX, e.clientY);
-      if (ux < 0 || uy < 0 || uy > WY) return;
+      if (ux < 0 || uy < -UPH || uy > WY) return;
       try { view.setPointerCapture(e.pointerId); } catch (err) {}
       gesture = { id: e.pointerId, t0: performance.now() };
       redo.length = 0;
@@ -3009,7 +3065,8 @@ export function createMural(el, opts) {
     let n = 0;
     for (let p = Math.max(0, Math.floor(x0 / WX)); p <= Math.floor(x1 / WX); p++) { const P = panels.get(p); if (P) for (const o of P.ops) if (o.k !== "e" && hits(o, x0, y0, x1, y1)) n++; }
     const zoom = Z < 1.05 ? "" : Z < 1000 ? `, zoom ${Z.toFixed(Z < 10 ? 1 : 0)}x` : `, zoom ${Z.toExponential(1).replace("e+", "e")}x`;
-    const text = (m > 0 ? `${m} m from the start` : "The start of the wall") + zoom + `, ${n} ${n === 1 ? "stroke" : "strokes"} here`;
+    const up = (WY - clamp(cy, -UPH, WY)) / 100, high = y1 < WY - 40 ? `, ${up.toFixed(1)} m up` : "";
+    const text = (m > 0 ? `${m} m from the start` : "The start of the wall") + high + zoom + `, ${n} ${n === 1 ? "stroke" : "strokes"} here`;
     if (text !== said) { said = text; chrome.querySelector("[data-where]").textContent = text; }
     placeKinds();
     placeSells();
@@ -3083,7 +3140,7 @@ export function createMural(el, opts) {
   }
 
   function sync() {
-    if (!chrome) return;
+    if (!chrome) { if (host && host.sync) host.sync(); return; }
     const cur = curColor();
     chrome.querySelectorAll("[data-tool]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.tool === tool)));
     chrome.querySelector("[data-lapse]").setAttribute("aria-pressed", String(!!lapse));
@@ -3153,12 +3210,142 @@ export function createMural(el, opts) {
     flash("SECRET COLOR UNLOCKED: RAINBOW");
   });
 
+  function aimNow() {
+    const a = host && host.aim();
+    if (!a) return false;
+    cx = a.x; cy = a.y; Z = Math.max(1e-3, a.ppu); k0 = 1;
+    return true;
+  }
+  const hostEv = (type) => ({ type: type || "pointermove", clientX: W / 2, clientY: H / 2, pointerId: 7, pointerType: "mouse", button: 0, preventDefault() {} });
+  function hostDown() {
+    if (!aimNow() || live || tapeDrag || sheetDrag || rip || liftDrag) return;
+    const e = hostEv("pointerdown");
+    here(e);
+    const P = canvasPt(e), v = viewNow(), hit = sheets.slice().reverse().find((sh) => onLayer(sh, P, v));
+    if (hit) { nextLayer(hit); return; }
+    if (tool === "tape") { startTape(e); return; }
+    if (tool === "stencil") { grabSheet(e); return; }
+    if (posted >= MAX_POSTS * 5) { flash("THAT IS ENOUGH ART FOR ONE VISIT"); return; }
+    const [ux, uy] = wallPoint(e.clientX, e.clientY);
+    if (ux < 0 || uy < -UPH || uy > WY) return;
+    gesture = { id: e.pointerId, t0: performance.now() };
+    redo.length = 0;
+    client = [e.clientX, e.clientY];
+    const p = Math.floor(ux / WX);
+    open(p, ux - p * WX, uy, newGroup());
+    if (!tick) tick = requestAnimationFrame(hold);
+  }
+  function hostMove() {
+    if (!aimNow()) return;
+    const e = hostEv();
+    if (rip) { moveRip(e); here(e); return; }
+    if (liftDrag) { moveLift(e); here(e); return; }
+    if (tapeDrag) { tapeDrag.b = wallPoint(e.clientX, e.clientY); here(e); return; }
+    if (sheetDrag) { dragSheet(e); here(e); return; }
+    here(e);
+    if (!live || !gesture) return;
+    client = [e.clientX, e.clientY];
+    if (Math.abs(Z / live.ppu0 - 1) > 0.3) {
+      const [ux, uy] = wallPoint(e.clientX, e.clientY);
+      sample(ux, uy);
+      const q = live, n = q.d.length;
+      close();
+      open(q.p, q.d[n - 2], q.d[n - 1], q.g);
+      return;
+    }
+    step();
+  }
+  function hostUp(cancel) {
+    const e = hostEv(cancel ? "pointercancel" : "pointerup");
+    if (rip) { endRip(!!cancel); return; }
+    if (liftDrag) { endLift(!!cancel); return; }
+    if (tapeDrag) { if (cancel) tapeDrag = null; else layTape(); return; }
+    if (sheetDrag) { endDrag(); return; }
+    if (!gesture) return;
+    gesture = null;
+    if (tick) { cancelAnimationFrame(tick); tick = 0; }
+    if (live) { if (cancel) abort(); else close(); }
+    sync();
+    return e;
+  }
+  function propsInto(c, v, Wc, Hc, d) {
+    DPR_OV = d || 0;
+    [["tape", drawTapes], ["sheet", drawSheets], ["flap", drawFlaps]].forEach(([kind, draw]) => {
+      const L = { kind, cache: null, tile: null }, sink = [];
+      if (!layerOn(L)) return;
+      reset(c);
+      draw(L, c, v, Wc, Hc, sink);
+      if (sink.length) {
+        const list = opsIn(v.x0, v.y0, v.x0 + Wc / v.r, v.y0 + Hc / v.r).filter((op) => wants(L, op));
+        if (list.length) {
+          const pc = Object.assign(document.createElement("canvas"), { width: Wc, height: Hc }), q = pc.getContext("2d");
+          list.forEach((op) => paintOp(op, q, v, kind, alive));
+          sink.forEach((p) => { c.save(); c.clip(p.path, p.rule); c.drawImage(pc, 0, 0); c.restore(); });
+        }
+      }
+      if (kind === "sheet") sheets.forEach((sh) => { if (tool === "stencil") sheetTools(c, sh, v); layerBtn(c, sh, v); });
+    });
+    DPR_OV = 0;
+    reset(c);
+  }
+  const moving = () => !!(peels.length || lifts.length || tapeDrag || sheetDrag || rip || liftDrag || sheets.some((sh) => sh.flip));
+  function propBoxes() {
+    const out = [...tapes, ...sheets].map((q) => q.bb);
+    peels.forEach((P) => P.list.forEach((e) => { if (e.t.bb) out.push(e.t.bb); }));
+    lifts.forEach((F) => { if (F.g.bb) out.push(F.g.bb); });
+    if (tapeDrag) out.push([Math.min(tapeDrag.a[0], tapeDrag.b[0]) - tapeDrag.w * 2, Math.min(tapeDrag.a[1], tapeDrag.b[1]) - tapeDrag.w * 2, Math.max(tapeDrag.a[0], tapeDrag.b[0]) + tapeDrag.w * 2, Math.max(tapeDrag.a[1], tapeDrag.b[1]) + tapeDrag.w * 2]);
+    return out;
+  }
+  function attach(h) {
+    if (host) return hostApi;
+    host = h;
+    view = document.createElement("div");
+    W = H = 600; k0 = 1; Z = 4;
+    tapeL = overlay("tape"); sheetL = overlay("sheet"); flapL = overlay("flap");
+    openLive();
+    clearInterval(liveTimer);
+    liveTimer = setInterval(tidy, 1000);
+    return hostApi;
+  }
+  const hostApi = {
+    down: hostDown, move: hostMove, up: hostUp,
+    hover() { if (aimNow()) here(hostEv()); },
+    busy: () => !!(live || tapeDrag || sheetDrag || rip || liftDrag),
+    painting: () => !!live,
+    get: () => ({ tool, color, hex, head, size, rainbow, recent: recent.slice(), cur: curColor(), heads: HEADS.map(([id, name, about]) => ({ id, name, about })), sheets: sheets.length, tapes: tapes.length, redo: redo.length > 0 }),
+    mine: mineHere,
+    set(o) {
+      if (live) return;
+      if (o.tool) { tool = o.tool; if (BRUSH.includes(tool)) brush = tool; }
+      if (o.color) pickColor(o.color);
+      if (o.head && (o.head === "std" || HEAD_IDS.has(o.head))) { head = o.head; try { localStorage.setItem("gl-wall-cap", head); } catch (e) {} }
+      if (typeof o.size === "number") { size = clamp(o.size, 0, 4); try { localStorage.setItem("gl-wall-size", String(size)); } catch (e) {} }
+      if (o.keep) keepColor(o.keep);
+      sync();
+    },
+    width() { aimNow(); const zz = Z / HOST_K; return tool === "tape" ? (sizeOf(TAPES) / Z) * 2.2 : (tool === "eraser" ? sizeOf(RUBS) : sizeOf(SIZES) * (tool === "spray" ? headSize(head) : 1)) / zz; },
+    undo, redo: redoLast,
+    stencil(st) { if (aimNow()) placeStencil(st); },
+    tiles: ext,
+    ops: (x0, y0, x1, y1) => opsIn(x0, y0, x1, y1),
+    drawProps: propsInto,
+    propsKey: () => geoV + ":" + (moving() ? performance.now().toFixed(0) : "0") + ":" + tool,
+    propBoxes,
+    inkV: () => inkV,
+    inks() { const list = []; others.forEach((q) => { if (q.op) list.push(q.op); }); ghosts.forEach((g) => list.push(g.op)); return list.sort(older); },
+    others() { const now = performance.now(), out = []; others.forEach((q) => { if (now - q.seen < 8000) out.push({ sid: q.sid, x: q.p * WX + q.x, y: q.y, name: q.name || "anon", c: q.c, live: !!q.op }); }); return out; },
+    kinds: () => wallKinds,
+    made: () => made,
+    leave() { leaveLive(); },
+    flash,
+  };
+
   connect();
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { if (stream) { stream.close(); stream = null; } closeLive(); if (active) leaveLive(); }
-    else { if (!stream) connect(); if (active) openLive(); }
+    if (document.hidden) { if (stream) { stream.close(); stream = null; } closeLive(); if (active || host) leaveLive(); }
+    else { if (!stream) connect(); if (active || host) openLive(); }
   });
-  addEventListener("pagehide", () => { if (active) leaveLive(); });
+  addEventListener("pagehide", () => { if (active || host) leaveLive(); });
 
   return {
     enter(p = 0) {
@@ -3209,9 +3396,8 @@ export function createMural(el, opts) {
       if (chrome) chrome.hidden = true;
       if (view) { view.hidden = true; view.classList.remove("on"); view.style.cursor = ""; }
       shown.forEach((t) => t.el.remove());
+      lod.forEach((t, k) => { const keep = shown.has(t) && t.ready && !t.job && !t.dirty; t.job = null; if (!keep) { t.ready = false; lod.delete(k); } });
       shown = new Set();
-      lod.forEach((t) => { t.job = null; });
-      lod.clear();
       layers.forEach((L) => { clearTimeout(L.timer); L.timer = 0; L.job = null; });
     },
     hole() {
@@ -3226,5 +3412,8 @@ export function createMural(el, opts) {
     span(n) { for (let p = tiles.size; p < Math.min(n, 24); p++) redraw(tile(p, document.createElement("canvas"))); },
     frame: (hole) => frame(hole.width, hole.height),
     made: () => made,
+    view3d: () => ({ x: cx, y: cy }),
+    loading: () => [...lod.values()].some((t) => t.job && shown.has(t)),
+    attach,
   };
 }

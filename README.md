@@ -38,3 +38,26 @@ Home has four doors: `/rockets/`, `/printing/`, `/games/`, `/software/`. A proje
 ## Sound
 
 `assets/sfx/rain.mp3` (the rain you get by clicking a cloud) is "Rain on window" by ckjzam, CC0 1.0, https://freesound.org/people/ckjzam/sounds/457153/, trimmed to a 24 s loop and loudness-normalised with ffmpeg.
+
+The big wall at `/wall/` (`assets/wall3d/`) uses only CC0 1.0 recordings from freesound.org, cut into loops and loudness-normalised with ffmpeg:
+
+| File | Sound | Author | Source |
+| --- | --- | --- | --- |
+| spray.wav | Aerosol spray | C-V | https://freesound.org/people/C-V/sounds/516815/ |
+| pssht.mp3 | Spray Paint | sKydran | https://freesound.org/people/sKydran/sounds/240899/ |
+| shake.mp3 | Spray Paint Shake Seven | cbakos | https://freesound.org/people/cbakos/sounds/200377/ |
+| chalk.wav | Chalk on chalkboard | fattirewhitey | https://freesound.org/people/fattirewhitey/sounds/264944/ |
+| eraser.wav | Pencil Eraser | esperri | https://freesound.org/people/esperri/sounds/119143/ |
+| tape.mp3 | Masking-Tape | romulofs | https://freesound.org/people/romulofs/sounds/127559/ |
+| rip.mp3 | Masking Tape Short Piece | WaltzOfTheWifi | https://freesound.org/people/WaltzOfTheWifi/sounds/742620/ |
+| peel.mp3 | Soda bottle sticker | xenognosis | https://freesound.org/people/xenognosis/sounds/137246/ |
+| lift.wav | scissor lifts machines up down hydraulic movements | kyles | https://freesound.org/people/kyles/sounds/637811/ |
+| drone.wav | UAS Drone Hover 01 | DCPoke | https://freesound.org/people/DCPoke/sounds/387985/ |
+| shutter.mp3 | DSLR Camera Click | akonze | https://freesound.org/people/akonze/sounds/157812/ |
+| click.mp3 | Boombox cassette buttons | DSAron | https://freesound.org/people/DSAron/sounds/796610/ |
+| steps.wav | footsteps grass | Yuval | https://freesound.org/people/Yuval/sounds/206030/ |
+| meadow.wav | Meadow with many insects chirps | Garuda1982 | https://freesound.org/people/Garuda1982/sounds/529573/ |
+| creek.wav | Creek 06 (loop) | VKProduktion | https://freesound.org/people/VKProduktion/sounds/231536/ |
+| song1.mp3 | Peaceful Hip Hop | shortiefoeva2 | https://freesound.org/people/shortiefoeva2/sounds/411080/ |
+| song2.mp3 | Easy Going Music Loop | Seth_Makes_Sounds | https://freesound.org/people/Seth_Makes_Sounds/sounds/691837/ |
+| song3.mp3 | Dayum | loveless1017 | https://freesound.org/people/loveless1017/sounds/455443/ |
