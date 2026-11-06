@@ -107,8 +107,8 @@ function layout() {
   museum.layout(geo);
   coaster.layout(geo);
   const art = world.querySelector("[data-wall-art]");
-  art.parentNode.style.setProperty("--lx", ((geo.short ? geo.mural.w : geo.run.w) / 2).toFixed(1) + "px");
-  drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short, !geo.short);
+  art.parentNode.style.setProperty("--lx", ((geo.short ? geo.mural.w : Math.min(geo.run.w, geo.V - geo.run.x)) / 2).toFixed(1) + "px");
+  drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short);
   muralEl.classList.toggle("short", !!geo.short);
   placeBox(muralEl, { x: geo.face.x, y: geo.face.y, w: geo.run.x + geo.run.w - geo.face.x, h: geo.face.h });
   muralEl.style.setProperty("--fw", geo.face.w.toFixed(2) + "px");
@@ -542,7 +542,7 @@ function init() {
   });
   addEventListener("gl-wall-kinds", () => {
     const art = world.querySelector("[data-wall-art]");
-    if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short, !geo.short);
+    if (art && geo) drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short);
   });
   data().then((d) => {
     const news = (V.newsWin(d).match(/<ul class="news">[\s\S]*?<\/ul>/) || [""])[0], tag = V.esc(d.site.tagline).replace(/\. /g, ".<br>");

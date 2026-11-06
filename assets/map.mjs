@@ -76,11 +76,11 @@ function land(V, H) {
   const at = (name, fx, fy, k = 1) => sprite(name, fx * V, fy * H, s * k);
   const places = {
     reviews: at("billboard", 0.105, 0.928, 0.8), printing: at("workshop", 0.28, 0.928, 0.86), games: at("arcade", 0.475, 0.928, 0.82),
-    software: at("lab", 0.665, 0.928, 0.86), rockets: at("launchpad", 0.872, 0.928, 0.8), about: at("signpost", 0.07, 0.716, 0.7), guestbook: at("mailbox", 0.19, 0.72),
+    software: at("lab", 0.665, 0.928, 0.86), rockets: at("launchpad", 0.872, 0.928, 0.8), about: at("signpost", 0.07, 0.716, 0.62), guestbook: at("mailbox", 0.19, 0.72),
     hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
     exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
   };
-  const wallTop = 0.16 * H, wallBase = 0.716 * H, wk = (wallBase - wallTop) / WALL_ROWS;
+  const wallTop = 0.17 * H, wallBase = 0.585 * H, wk = (wallBase - wallTop) / WALL_ROWS;
   const wall = { sprite: "wall", x: 0.012 * V, y: wallTop, w: 404 * wk, h: WALL_ROWS * wk, k: wk };
   const path = withLengths(spline([[-0.02, 0.742], [0.1, 0.74], [0.2, 0.737], [0.3, 0.741], [0.4, 0.743], [0.5, 0.739], [0.6, 0.742], [0.7, 0.74],
     [0.8, 0.743], [0.9, 0.744], [1, 0.742], [1.1, 0.745], [1.2, 0.741], [1.3, 0.744], [1.4, 0.74], [1.5, 0.743], [1.6, 0.741], [1.7, 0.744], [1.8, 0.74],
@@ -95,7 +95,7 @@ function land(V, H) {
     at("lamp", 2.81, 0.716), at("tree3", 2.97, 0.714, 0.85),
   ];
   return finish({
-    mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, runTo: 0.994 * V, path, pathWidth: 32 * s, props,
+    mode: "land", V, W, H, s, k: Math.max(2, Math.round(3 * s)), horizon: 0.47 * H, river: [0.932 * H, H], places, mural: wall, path, pathWidth: 32 * s, props,
     sun: at("sun", 0.6, 0.12, 1.1), clouds: [at("cloud3", 0.43, 0.15), at("cloud2", 0.76, 0.27, 0.9), at("cloud4", 0.36, 0.33, 0.45), at("cloud1", 0.55, 0.36, 0.45),
       at("cloud1", 0.7, 0.4, 0.38), at("cloud2", 1.18, 0.17, 0.85), at("cloud4", 1.5, 0.3, 0.5), at("cloud3", 1.78, 0.13, 0.9), at("cloud1", 1.95, 0.38, 0.4),
       at("cloud4", 2.15, 0.45, 0.45), at("cloud1", 2.7, 0.44, 0.4)],
@@ -603,6 +603,7 @@ export function setWallKinds(next) {
   artCache.clear();
   tallCache.clear();
   tallJobs.clear();
+  upperCache.clear();
   try { dispatchEvent(new CustomEvent("gl-wall-kinds")); } catch (e) {}
   return changed;
 }
@@ -616,6 +617,34 @@ function extend(base, x0, ends) {
   c.drawImage(base, 0, 0, W, 11, 0, 0, W, 11);
   c.drawImage(base, 0, 11, W, base.height - 11, 0, 11 + TALL, W, base.height - 11);
   return { cv, c, W, im: c.getImageData(0, 11, W, TALL + 3), row: 0, x0, l: !!ends.l, r: !!ends.r };
+}
+const upperCache = new Map();
+function upperBlock(kind) {
+  if (upperCache.has(kind)) return upperCache.get(kind);
+  const f = matOf(kind) || REDBRICK, cv = document.createElement("canvas");
+  cv.width = 400; cv.height = TALL;
+  const c = cv.getContext("2d"), im = c.createImageData(400, TALL), d = im.data;
+  for (let r = 0; r < TALL; r++) {
+    const ay = 11 - TALL + r, sh = r < 3 ? [-0.38, -0.24, -0.12][r] : 0;
+    for (let i = 0; i < 400; i++) { const col = f(2 + i, ay), k = (r * 400 + i) * 4; for (let q = 0; q < 3; q++) d[k + q] = sh ? Math.round(col[q] * (1 + sh)) : col[q]; d[k + 3] = 255; }
+  }
+  c.putImageData(im, 0, 0);
+  upperCache.set(kind, cv);
+  return cv;
+}
+function extendFast(base, ends) {
+  const W = base.width, H = base.height + TALL, cv = document.createElement("canvas");
+  cv.width = W; cv.height = H;
+  const c = cv.getContext("2d");
+  c.drawImage(base, 0, 0, W, 11, 0, 0, W, 11);
+  c.drawImage(base, 0, 11, W, base.height - 11, 0, 11 + TALL, W, base.height - 11);
+  for (let p = 0; 2 + p * 400 < W; p++) c.drawImage(upperBlock(kinds[p] || "brick"), 2 + p * 400, 11);
+  if (ends.l) { c.clearRect(0, 11, 1, TALL); c.fillStyle = "#1d140f"; c.fillRect(1, 11, 1, TALL); }
+  if (ends.r) { c.clearRect(W - 1, 11, 1, TALL); c.fillStyle = "#1d140f"; c.fillRect(W - 2, 11, 1, TALL); }
+  const im = c.getImageData(0, 11 + TALL, W, 3), d = im.data;
+  for (let r = 0; r < 3; r++) { const f = [-0.38, -0.24, -0.12][r]; for (let i = 0; i < W; i++) { const k = (r * W + i) * 4; if (d[k + 3]) for (let q = 0; q < 3; q++) d[k + q] = Math.min(255, Math.round(d[k + q] / (1 + f))); } }
+  c.putImageData(im, 0, 11 + TALL);
+  return cv;
 }
 function grow(j, until) {
   const d = j.im.data, OUT = [29, 20, 15];
@@ -781,10 +810,9 @@ export function drawWall(canvas, w = SPR.wall[0], short = false, end = false) {
   const key = "map" + w + (short ? "s" : "t") + (end ? "e" : "");
   if (!wallCache.has(key)) {
     const ends = { l: true, r: end || w === SPR.wall[0] }, base = wallLayer(0, w, ends);
-    if (short) wallCache.set(key, base);
-    else { const j = extend(base, 0, ends); grow(j, Infinity); wallCache.set(key, j.cv); }
+    wallCache.set(key, short ? base : extendFast(base, ends));
   }
-  const art = wallCache.get(key), k = w > 1000 ? 2 : 4;
+  const art = wallCache.get(key), k = w > 3000 ? 1 : w > 1000 ? 2 : 4;
   canvas.width = art.width * k;
   canvas.height = art.height * k;
   const c = canvas.getContext("2d");
