@@ -197,7 +197,25 @@ function fit(items, n, budget) {
   while (total(res) > budget && eps < 4 * (n / N)) { eps *= 1.35; res = at(eps); }
   res = res.filter((l) => l.pts.length >= 6);
   while (res.length > 1 && total(res) > budget) res.pop();
-  return res.map((l) => ({ pts: Float64Array.from(l.pts, (v) => Math.min(1, Math.max(0, v / n))), tag: l.tag }));
+  const out = res.map((l) => ({ pts: Float64Array.from(l.pts, (v) => Math.min(1, Math.max(0, v / n))), tag: l.tag }));
+  out.eps = eps; out.lost = items.length - res.length;
+  return out;
+}
+function dilate(f, n, g) {
+  let a = f;
+  for (let pass = 0; pass < 2; pass++) {
+    const st = pass ? n : 1, b = new Float32Array(n * n);
+    for (let line = 0; line < n; line++) {
+      const base = pass ? line : line * n;
+      for (let x = 0; x < n; x++) {
+        let m = 0;
+        for (let k = Math.max(0, x - g), e = Math.min(n - 1, x + g); k <= e && m < 1; k++) { const v = a[base + k * st]; if (v > m) m = v; }
+        b[base + x * st] = m;
+      }
+    }
+    a = b;
+  }
+  return a;
 }
 
 export function trace(f, n = N, budget = BUDGET, speck = 2) {
@@ -500,6 +518,7 @@ function importer(host, { onSave, onEdit }) {
     `<div class="pt-cut-side"><p class="pt-cut-row"><button class="btn" type="button" data-imp-file>Pick a file...</button><button class="btn" type="button" data-imp-paste>Paste</button></p>` +
     `<input type="file" accept="image/*" hidden data-imp-input>` +
     `<div class="pt-imp-f"><span>Cut out</span><p class="pt-cut-row pt-imp-mode"><button class="btn" type="button" data-imp-mode="colors" title="Every color becomes its own layer of the stencil">Colors</button><button class="btn" type="button" data-imp-mode="dark">Dark</button><button class="btn" type="button" data-imp-mode="light">Light</button><button class="btn" type="button" data-imp-mode="shape">Shape</button></p></div>` +
+    `<p class="pt-cut-row pt-imp-bg" data-imp-bgrow hidden><span>Background</span><button class="btn" type="button" data-imp-bg="cut" title="Cut away the plain background around the picture">Cut</button><button class="btn" type="button" data-imp-bg="keep" title="Keep the whole picture, background too">Keep</button></p>` +
     `<label><span data-imp-thr-l>Threshold</span><input type="range" min="1" max="254" step="1" value="128" data-imp-thr></label>` +
     `<label><span>Detail <em class="pt-imp-det-n" data-imp-det-n></em></span><input type="range" min="0" max="4" step="1" value="1" data-imp-det aria-label="Detail"></label>` +
     `<label>Smoothing<input type="range" min="0" max="4" step="1" value="1" data-imp-soft></label>` +
@@ -514,7 +533,7 @@ function importer(host, { onSave, onEdit }) {
   const det = () => Math.round(clampN(+detEl.value, 0, 4));
   const detLabel = () => { box.querySelector("[data-imp-det-n]").textContent = DETAIL.name[det()]; };
   detLabel();
-  let final = true;
+  let final = true, lastPre = null, bgPick = "auto";
   try { final = localStorage.getItem("gl-imp-final") !== "0"; } catch (e) {}
   let src = null, mode = "dark", holes = [], colors = null, layers = [], look = -1, raf = 0, busy = 0, levels = { dark: 128, light: 128, colors: 185 };
   const hint = (s) => { box.querySelector("[data-imp-hint]").textContent = s; };
@@ -622,20 +641,34 @@ function importer(host, { onSave, onEdit }) {
         if (tn >= 5) out[i] = top;
       }
     }
-    const soft = Math.max(1, Math.round(+softEl.value * QI * DETAIL.blur[dt])), speck = (4 + +softEl.value * 6) * QI * QI * DETAIL.speck[dt], items = [];
-    absorb(out, cl.length, Math.max(6, speck * 1.5));
-    for (let i = 0; i < T; i++) if (out[i] >= 0) sizes[out[i]]++;
-    const order = cl.map((_, k) => k).filter((k) => sizes[k] > 0).sort((p, q) => sizes[q] - sizes[p]);
-    const box = cl.map(() => [NI, NI, -1, -1]);
-    for (let i = 0; i < T; i++) { const k = out[i]; if (k < 0) continue; const x = i % NI, y = (i / NI) | 0, q = box[k]; if (x < q[0]) q[0] = x; if (y < q[1]) q[1] = y; if (x > q[2]) q[2] = x; if (y > q[3]) q[3] = y; }
-    order.forEach((k) => {
-      const pad = soft * 3 + 3, [bx0, by0, bx1, by1] = box[k], S = Math.min(NI, Math.max(bx1 - bx0, by1 - by0) + 1 + pad * 2);
-      const ox = clampN(Math.round((bx0 + bx1) / 2 - S / 2), 0, NI - S), oy = clampN(Math.round((by0 + by1) / 2 - S / 2), 0, NI - S), m = new Float32Array(S * S);
-      for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (out[(y + oy) * NI + x + ox] === k) m[y * S + x] = 1;
-      loopsOf(blur(grow(m, S), soft, S), S, speck * 0.5).forEach((pts) => { for (let j = 0; j < pts.length; j += 2) { pts[j] += ox; pts[j + 1] += oy; } items.push({ pts, tag: k }); });
-    });
-    const res = fit(items, NI, PIC_BUDGET * DETAIL.budget[dt]), used = new Set(res.map((l) => l.tag));
-    return { holes: res.map((l) => l.pts), colors: res.map((l) => hexOf(cl[l.tag].rgb)), layers: order.filter((k) => used.has(k)).map((k) => hexOf(cl[k].rgb)) };
+    const soft = Math.max(1, Math.round(+softEl.value * QI * DETAIL.blur[dt])), speck = (4 + +softEl.value * 6) * QI * QI * DETAIL.speck[dt], budget = PIC_BUDGET * DETAIL.budget[dt];
+    const rank = new Int16Array(cl.length);
+    const pass = (minA, g) => {
+      absorb(out, cl.length, minA);
+      sizes.fill(0);
+      for (let i = 0; i < T; i++) if (out[i] >= 0) sizes[out[i]]++;
+      const order = cl.map((_, k) => k).filter((k) => sizes[k] > 0).sort((p, q) => sizes[q] - sizes[p]), box = cl.map(() => [NI, NI, -1, -1]), items = [];
+      rank.fill(-1);
+      order.forEach((k, j) => { rank[k] = j; });
+      for (let i = 0; i < T; i++) { const k = out[i]; if (k < 0) continue; const x = i % NI, y = (i / NI) | 0, q = box[k]; if (x < q[0]) q[0] = x; if (y < q[1]) q[1] = y; if (x > q[2]) q[2] = x; if (y > q[3]) q[3] = y; }
+      order.forEach((k) => {
+        const pad = soft * 3 + 3 + g, [bx0, by0, bx1, by1] = box[k], S = Math.min(NI, Math.max(bx1 - bx0, by1 - by0) + 1 + pad * 2);
+        const ox = clampN(Math.round((bx0 + bx1) / 2 - S / 2), 0, NI - S), oy = clampN(Math.round((by0 + by1) / 2 - S / 2), 0, NI - S), m = new Float32Array(S * S);
+        for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) if (out[(y + oy) * NI + x + ox] === k) m[y * S + x] = 1;
+        const f = grow(m, S);
+        if (g > 1) {
+          const d = dilate(m, S, g), rk = rank[k];
+          for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) { const i = y * S + x; if (d[i] && !f[i]) { const l = out[(y + oy) * NI + x + ox]; if (l >= 0 && rank[l] > rk) f[i] = 1; } }
+        }
+        loopsOf(blur(f, soft, S), S, speck * 0.5).forEach((pts) => { for (let j = 0; j < pts.length; j += 2) { pts[j] += ox; pts[j + 1] += oy; } items.push({ pts, tag: k }); });
+      });
+      return { order, res: fit(items, NI, budget) };
+    };
+    const minA = Math.max(6, speck * 1.5);
+    let run = pass(minA, 1);
+    if (run.res.lost > 0 || run.res.eps > 2) run = pass(Math.max(minA, (run.res.eps * 2.2) ** 2), Math.ceil(run.res.eps));
+    const res = run.res, used = new Set(res.map((l) => l.tag));
+    return { holes: res.map((l) => l.pts), colors: res.map((l) => hexOf(cl[l.tag].rgb)), layers: run.order.filter((k) => used.has(k)).map((k) => hexOf(cl[k].rgb)) };
   }
 
   function chips() {
@@ -717,6 +750,56 @@ function importer(host, { onSave, onEdit }) {
     box.querySelector("[data-imp-edit]").disabled = box.querySelector("[data-imp-save]").disabled = !src;
   }
 
+  function prepare(keep) {
+    const pre = lastPre, PW = pre.width, PH = pre.height, pd = ctx2d(pre).getImageData(0, 0, PW, PH).data, edge = edgeColor(pd, PW, PH), ring = keep ? null : edge;
+    let cx0 = PW, cy0 = PH, cx1 = -1, cy1 = -1;
+    for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
+      const i = (y * PW + x) * 4;
+      if (pd[i + 3] < 128 || (ring && Math.hypot(pd[i] - ring[0], pd[i + 1] - ring[1], pd[i + 2] - ring[2]) <= ring[3])) continue;
+      if (x < cx0) cx0 = x; if (x > cx1) cx1 = x; if (y < cy0) cy0 = y; if (y > cy1) cy1 = y;
+    }
+    if (cx1 < 0) { cx0 = 0; cy0 = 0; cx1 = PW - 1; cy1 = PH - 1; }
+    const pad = ring ? Math.round(Math.max(cx1 - cx0, cy1 - cy0) * 0.02) + 1 : 0;
+    cx0 = Math.max(0, cx0 - pad); cy0 = Math.max(0, cy0 - pad); cx1 = Math.min(PW - 1, cx1 + pad); cy1 = Math.min(PH - 1, cy1 + pad);
+    const cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1, m = NI * 0.04, k = Math.min((NI - 2 * m) / cw, (NI - 2 * m) / ch);
+    const w = cw * k, h = ch * k, x0 = (NI - w) / 2, y0 = (NI - h) / 2, T = NI * NI, c = document.createElement("canvas");
+    c.width = c.height = NI;
+    const g = ctx2d(c);
+    g.imageSmoothingQuality = "high";
+    g.drawImage(pre, cx0, cy0, cw, ch, x0, y0, w, h);
+    const d = g.getImageData(0, 0, NI, NI).data, lum = new Float32Array(T), al = new Float32Array(T);
+    const r = new Float32Array(T), gr = new Float32Array(T), b = new Float32Array(T);
+    let inside = 0, thin = 0;
+    for (let i = 0; i < T; i++) {
+      const a = d[i * 4 + 3] / 255, px = i % NI, py = (i / NI) | 0;
+      al[i] = a;
+      r[i] = d[i * 4]; gr[i] = d[i * 4 + 1]; b[i] = d[i * 4 + 2];
+      lum[i] = a > 0 ? 0.299 * r[i] + 0.587 * gr[i] + 0.114 * b[i] : 255;
+      if (px > x0 + 1 && px < x0 + w - 2 && py > y0 + 1 && py < y0 + h - 2) { inside++; if (a < 0.5) thin++; }
+    }
+    const bg = flood(al, r, gr, b, ring);
+    let edgeN = 0, edgeD = 0;
+    if (ring) for (let y = 4; y < NI - 4; y += 2) for (let x = 4; x < NI - 4; x += 2) {
+      const i = y * NI + x;
+      if (!bg[i]) continue;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const j = i + dy * NI + dx;
+        if (bg[j] || al[j] < 0.5) continue;
+        const q = i + dy * 4 * NI + dx * 4;
+        edgeN++; edgeD += Math.hypot(r[i] - r[q], gr[i] - gr[q], b[i] - b[q]);
+        break;
+      }
+    }
+    const dark = !!edge && 0.299 * edge[0] + 0.587 * edge[1] + 0.114 * edge[2] < 170;
+    return { lum, al, r, g: gr, b, bg, clear: inside > 0 && thin / inside > 0.02, cutout: !!ring, edge: !!edge, soft: dark || (edgeN > 20 && edgeD / edgeN < 42) };
+  }
+  function pickSrc() {
+    src = prepare(bgPick === "keep");
+    if (bgPick === "auto" && src.cutout && src.soft) src = { ...prepare(true), edge: true };
+    src.cutout = src.cutout || src.clear;
+    box.querySelectorAll("[data-imp-bg]").forEach((bt) => bt.setAttribute("aria-pressed", String((bt.dataset.impBg === "cut") === src.cutout)));
+    box.querySelector("[data-imp-bgrow]").hidden = !src.edge;
+  }
   async function load(blob, name) {
     if (!blob || !/^image\//.test(blob.type || "")) { hint("That is not a picture. Try a PNG, JPG or GIF."); return; }
     const ticket = ++busy, url = URL.createObjectURL(blob);
@@ -728,45 +811,21 @@ function importer(host, { onSave, onEdit }) {
       if (ticket !== busy) return;
       const kp = Math.min(1, 1024 / Math.max(img.naturalWidth, img.naturalHeight)), pre = document.createElement("canvas");
       pre.width = Math.max(1, Math.round(img.naturalWidth * kp)); pre.height = Math.max(1, Math.round(img.naturalHeight * kp));
-      const pg = ctx2d(pre), PW = pre.width, PH = pre.height;
-      pg.drawImage(img, 0, 0, PW, PH);
-      const pd = pg.getImageData(0, 0, PW, PH).data, ring = edgeColor(pd, PW, PH);
-      let cx0 = PW, cy0 = PH, cx1 = -1, cy1 = -1;
-      for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
-        const i = (y * PW + x) * 4;
-        if (pd[i + 3] < 128 || (ring && Math.hypot(pd[i] - ring[0], pd[i + 1] - ring[1], pd[i + 2] - ring[2]) <= ring[3])) continue;
-        if (x < cx0) cx0 = x; if (x > cx1) cx1 = x; if (y < cy0) cy0 = y; if (y > cy1) cy1 = y;
-      }
-      if (cx1 < 0) { cx0 = 0; cy0 = 0; cx1 = PW - 1; cy1 = PH - 1; }
-      const pad = Math.round(Math.max(cx1 - cx0, cy1 - cy0) * 0.02) + 1;
-      cx0 = Math.max(0, cx0 - pad); cy0 = Math.max(0, cy0 - pad); cx1 = Math.min(PW - 1, cx1 + pad); cy1 = Math.min(PH - 1, cy1 + pad);
-      const cw = cx1 - cx0 + 1, ch = cy1 - cy0 + 1, m = NI * 0.04, k = Math.min((NI - 2 * m) / cw, (NI - 2 * m) / ch);
-      const w = cw * k, h = ch * k, x0 = (NI - w) / 2, y0 = (NI - h) / 2, T = NI * NI, c = document.createElement("canvas");
-      c.width = c.height = NI;
-      const g = ctx2d(c);
-      g.imageSmoothingQuality = "high";
-      g.drawImage(pre, cx0, cy0, cw, ch, x0, y0, w, h);
-      const d = g.getImageData(0, 0, NI, NI).data, lum = new Float32Array(T), al = new Float32Array(T);
-      const r = new Float32Array(T), gr = new Float32Array(T), b = new Float32Array(T), bins = new Map();
-      let inside = 0, thin = 0, solid = 0;
+      ctx2d(pre).drawImage(img, 0, 0, pre.width, pre.height);
+      lastPre = pre;
+      bgPick = "auto";
+      pickSrc();
+      const bins = new Map(), T = NI * NI;
+      let solid = 0;
       for (let i = 0; i < T; i++) {
-        const a = d[i * 4 + 3] / 255, px = i % NI, py = (i / NI) | 0;
-        al[i] = a;
-        r[i] = d[i * 4]; gr[i] = d[i * 4 + 1]; b[i] = d[i * 4 + 2];
-        lum[i] = a > 0 ? 0.299 * r[i] + 0.587 * gr[i] + 0.114 * b[i] : 255;
-        if (px > x0 + 1 && px < x0 + w - 2 && py > y0 + 1 && py < y0 + h - 2) { inside++; if (a < 0.5) thin++; }
-      }
-      const bg = flood(al, r, gr, b, ring);
-      for (let i = 0; i < T; i++) {
-        if (al[i] < 0.5 || bg[i]) continue;
+        if (src.al[i] < 0.5 || src.bg[i]) continue;
         solid++;
-        const q = (r[i] >> 6) * 16 + (gr[i] >> 6) * 4 + (b[i] >> 6);
+        const q = (src.r[i] >> 6) * 16 + (src.g[i] >> 6) * 4 + (src.b[i] >> 6);
         bins.set(q, (bins.get(q) || 0) + 1);
       }
-      const clear = inside > 0 && thin / inside > 0.02, colorful = [...bins.values()].filter((n) => n > solid * 0.015).length >= 3;
-      src = { lum, al, r, g: gr, b, bg, clear, cutout: clear || !!ring };
-      mode = colorful ? "colors" : clear ? "shape" : "dark";
-      const t = Math.round(otsu(lum, al, bg));
+      const colorful = [...bins.values()].filter((n) => n > solid * 0.015).length >= 3;
+      mode = colorful ? "colors" : src.clear ? "shape" : "dark";
+      const t = Math.round(otsu(src.lum, src.al, src.bg));
       levels = { dark: t, light: t, colors: 185 };
       const base = String(name || blob.name || "").replace(/\.[a-z0-9]+$/i, "").replace(/[_-]+/g, " ").trim();
       nameEl.value = (base && base.toLowerCase() !== "image" ? base : "My picture").slice(0, 20);
@@ -778,6 +837,7 @@ function importer(host, { onSave, onEdit }) {
       URL.revokeObjectURL(url);
     }
   }
+
 
   async function paste() {
     try {
@@ -798,6 +858,7 @@ function importer(host, { onSave, onEdit }) {
     if (b.hasAttribute("data-imp-paste")) { paste(); return; }
     if (b.dataset.impMode) { mode = b.dataset.impMode; look = -1; sync(); soon(); return; }
     if (b.dataset.impL !== undefined) { look = +b.dataset.impL; chips(); draw(); return; }
+    if (b.dataset.impBg && lastPre) { bgPick = b.dataset.impBg; pickSrc(); if (mode === "shape" && !src.cutout) mode = "dark"; const t = Math.round(otsu(src.lum, src.al, src.bg)); levels.dark = levels.light = t; look = -1; sync(); soon(); return; }
     if (b.dataset.impView) { final = b.dataset.impView === "final"; try { localStorage.setItem("gl-imp-final", final ? "1" : "0"); } catch (e) {} draw(); return; }
     const name = (nameEl.value || "").trim().slice(0, 20) || "My stencil";
     if (b.hasAttribute("data-imp-edit") && src) { const f = shrink(field()); hide(); onEdit(f, name); return; }

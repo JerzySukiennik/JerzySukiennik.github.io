@@ -463,6 +463,10 @@ html.tall .wv-mat>[data-mh="sw"],html.tall .wv-mat>[data-mh="se"]{bottom:-12px}
 .pt-imp-mode .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
 .pt-imp-board{position:relative}
 .pt-imp-view{position:absolute;right:14px;top:14px;display:flex;margin:0}
+.pt-imp-bg{align-items:center}
+.pt-imp-bg[hidden]{display:none}
+.pt-imp-bg span{flex:1}
+.pt-imp-bg .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
 .pt-imp-view[hidden]{display:none}
 .pt-imp-view .btn{min-width:0;height:24px;padding:0 9px;font-size:12px}
 .pt-imp-view .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
