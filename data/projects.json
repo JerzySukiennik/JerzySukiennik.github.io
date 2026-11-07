@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "starnet",
+      "name": "Gzowo StarNet",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "starnet.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/starnet",
+      "blurb": "Every project on this site hangs in one net. Pick what you like and everything that does not fit drops out.",
+      "body": [
+        "Gzowo StarNet is the way to find your next thing on Gzowo Labs. Every project hangs in one net of polaroids on strings. Tap the ones you already know and like, turn down the ones that are not for you, and if you want, say how old you are, who you play with, what you are in the mood for, how much time you have and which gear is around. With every answer about a third of the net snaps off and falls, and what stays moves to the middle, best match first.",
+        "Behind it every project carries hand-made tags: how hard it is to get, how polished it is, which ages it suits, how scary it is, how many players, online or on one couch, phone or computer, webcam or projector, how long a session takes, eight moods and a set of features. The ranking weighs rare moods and features more than common ones, so a horror fan gets the other horror game and not just anything to explore, and a seven-year-old never sees Noclip. Every card says why it stayed, or why it dropped out.",
+        "It keeps itself up to date. The net reads this site's project list on every visit, a project without tags gets them from Claude Haiku within the hour, and likes and Play clicks are saved anonymously, so over time it learns which projects the fans of a game really open. Try this first: tap Ghostbusters, set your age, pick Friends online and watch the net shrink to your top three. On the map it lives in the planetarium by the river."
+      ],
+      "stack": [
+        "JavaScript",
+        "Canvas 2D",
+        "Cloudflare Workers",
+        "Cloudflare D1",
+        "Claude Haiku",
+        "GitHub Pages"
+      ],
+      "image": "project-images/starnet.webp"
+    },
+    {
+      "hidden": false,
       "slug": "beam",
       "name": "Beam",
       "category": "Game",

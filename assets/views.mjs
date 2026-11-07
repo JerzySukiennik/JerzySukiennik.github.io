@@ -275,6 +275,7 @@ export const PLACES = [
   { key: "reviews", href: "#", name: "Reviews", sub: "rate this site", open: "reviews" },
   { key: "guestbook", href: "#guestbook", name: "Mailbox", sub: "guestbook", open: "guestbook" },
   { key: "about", href: "/", name: "Gzowo 34", sub: "about us" },
+  { key: "starnet", href: "https://starnet.gzowo.fun/", name: "StarNet", sub: "find your next game", open: "starnet" },
 ];
 
 export function spots(ctx) {
@@ -282,7 +283,7 @@ export function spots(ctx) {
     : p.key === "games" ? `${inSec(ctx, "games").length} games`
     : p.key === "software" ? `${inSec(ctx, "software").length} apps and AI models`
     : `${inSec(ctx, p.key).length} printed things`);
-  const art = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost" };
+  const art = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost", starnet: "starnet" };
   return PLACES.map((p) => `<a class="spot" href="${p.href}" data-place="${p.key}"${p.open ? ` data-open="${p.open}"` : " data-nav"} aria-label="${esc(p.name + ", " + sub(p))}">` +
     `<img class="spr" src="/assets/map/${art[p.key]}.webp" alt="" draggable="false">` +
     (p.key === "reviews" ? '<span class="bb"><b>Reviews</b><q data-bb></q></span>' : "") +

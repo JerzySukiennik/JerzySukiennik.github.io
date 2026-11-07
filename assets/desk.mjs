@@ -269,6 +269,10 @@ async function openExtra(id) {
     const d = await data();
     el = create({ id, title: "What is new", icon: "folder", cls: "w-newest", body: V.newestBody(d), status: `<span>${d.projects.length} projects in total</span>` });
   }
+  if (!el && id === "starnet") {
+    el = create({ id, title: "Gzowo StarNet", icon: "globe", cls: "w-starnet", body: '<iframe src="https://starnet.gzowo.fun/" title="Gzowo StarNet" allow="fullscreen"></iframe>',
+      status: '<span>Every project in one net</span><span><a href="https://starnet.gzowo.fun/" target="_blank" rel="noopener">Open in a new tab</a></span>' });
+  }
   if (!el && id === "shutdown") {
     el = create({ id, title: "Shut Down Gzowo Labs", icon: "computer", cls: "w-dialog", body:
       `<form class="dlg" data-shutdown><p>What do you want the computer to do?</p><label><input type="radio" name="d" value="off" checked> Shut down</label><label><input type="radio" name="d" value="restart"> Restart</label><label><input type="radio" name="d" value="map"> Close every window and show the map</label><p class="dlg-b"><button class="btn" type="submit">OK</button><button class="btn" type="button" data-close>Cancel</button></p></form>` });

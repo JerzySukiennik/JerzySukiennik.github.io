@@ -1,0 +1,7 @@
+{
+  "wait": 4500,
+  "steps": [
+    { "eval": "Object.assign(SN.S, { likes: ['ghostbusters', 'roadster-jump'], age: 11, with: 'online' }); SN.update(false)" },
+    { "wait": 4500 }
+  ]
+}

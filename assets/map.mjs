@@ -12,7 +12,7 @@ export const SPR = {
   wall: [404, WALL_ROWS], wallS: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
   dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
-  exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300],
+  exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300], starnet: [250, 232],
 };
 export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
 const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
@@ -20,7 +20,7 @@ export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 
 export const FACE = { x: 2 / 404, y: (13 + TALL - UP_ROWS) / WALL_ROWS, w: 400 / 404, h: (129 + UP_ROWS) / WALL_ROWS };
 const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
 export const KAYAK = [120, 28];
-export const PLACE_SPRITE = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost" };
+export const PLACE_SPRITE = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost", starnet: "starnet" };
 
 const SKY = PAL.sky || ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
 const GRASS = PAL.grass;
@@ -82,6 +82,7 @@ function land(V, H) {
     software: at("lab", 0.665, 0.928, 0.86), rockets: at("launchpad", 0.872, 0.928, 0.8), about: at("signpost", 0.07, 0.716, 0.62), guestbook: at("mailbox", 0.19, 0.72),
     hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
     exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
+    starnet: at("starnet", 1.457, 0.928, 0.95),
   };
   const wallTop = 0.17 * H, wallBase = 0.585 * H, wk = (wallBase - wallTop) / WALL_ROWS;
   const wall = { sprite: "wall", x: 0.012 * V, y: wallTop, w: 404 * wk, h: WALL_ROWS * wk, k: wk };
@@ -92,7 +93,7 @@ function land(V, H) {
   const props = [
     at("windsock", 0.952, 0.93, 0.9), at("tree1", 0.99, 0.935, 0.9), at("tree2", 1.0, 0.716, 0.8), at("bush", 0.36, 0.938, 0.7),
     at("bush", 0.808, 0.938, 0.6), at("bench", 0.43, 0.716, 0.7),
-    at("pine", 1.075, 0.712, 0.8), at("dish", 1.455, 0.704, 0.75), at("lamp", 1.655, 0.716), at("lamp", 1.778, 0.716),
+    at("pine", 1.075, 0.712, 0.8), at("dish", 1.615, 0.925, 0.75), at("lamp", 1.655, 0.716), at("lamp", 1.778, 0.716),
     at("bush", 1.93, 0.714, 0.75), at("tree1", 1.975, 0.715, 0.9),
     at("pine", 2.035, 0.712, 0.75), at("lamp", 2.075, 0.716), at("lamp", 2.335, 0.716), at("bush", 2.355, 0.714, 0.6), at("lamp", 2.645, 0.716),
     at("lamp", 2.81, 0.716), at("tree3", 2.97, 0.714, 0.85),
@@ -118,6 +119,7 @@ function tall(V) {
     software: at("lab", 285, 1720), reviews: at("billboard", 100, 1990), guestbook: at("mailbox", 300, 2110),
     hangar: at("hangar", 585, 800, 0.95), board: at("board", 505, 1100, 0.85), claw: at("claw", 662, 1400, 0.95), booth: at("booth", 522, 1700, 0.95),
     coaster: at("station", 1062, 585, 0.95), exchange: at("exchange", 960, 995, 0.95), museum: at("museum", 985, 1335, 0.95), store: at("store", 975, 1655, 0.95),
+    starnet: at("starnet", 565, 1992, 0.9),
   };
   const wall = sprite("wallS", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
@@ -134,7 +136,7 @@ function tall(V) {
     at("bush", 360, 900, 0.8), at("lamp", 150, 1015), at("windsock", 368, 1002, 0.9), at("lamp", 262, 1430), at("bush", 365, 1300, 0.7), at("tree3", 145, 1650, 0.8),
     at("lamp", 115, 1712), at("pine", 235, 1860, 0.8), at("bench", 230, 1940, 0.75), at("lamp", 360, 1930), at("bush", 180, 2110, 0.85), at("tree1", 240, 2100, 0.7),
     at("lamp", 452, 815), at("pine", 640, 1085, 0.8), at("lamp", 735, 1115), at("bench", 520, 1395, 0.7), at("lamp", 452, 1418), at("tree1", 655, 1700, 0.75),
-    at("bush", 740, 1720, 0.6), at("dish", 640, 1995, 0.62), at("lamp", 452, 2008), at("bush", 520, 2120, 0.75), at("tree3", 650, 2115, 0.7),
+    at("bush", 740, 1720, 0.6), at("dish", 712, 1995, 0.5), at("lamp", 452, 2008), at("bush", 520, 2120, 0.75), at("tree3", 650, 2115, 0.7),
     at("tree2", 760, 1300, 0.7),
     at("lamp", 820, 980), at("lamp", 1100, 1320), at("bush", 830, 1320, 0.7), at("pine", 1110, 1180, 0.75), at("lamp", 860, 1640), at("tree1", 1110, 1640, 0.75),
     at("bench", 960, 1960, 0.75), at("lamp", 1080, 1965), at("tree3", 880, 2120, 0.75), at("bush", 1050, 2140, 0.8), at("pine", 1120, 2232, 0.7),
