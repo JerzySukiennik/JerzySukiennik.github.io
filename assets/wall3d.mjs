@@ -13,8 +13,8 @@ const U = 0.01, WX = 1000, WY = 323, UPH = 877, ARTY = 323 / 129, TW = 250, TH =
 const WALL_H = (WY + UPH) * U, THICK = 0.4, EYE = 1.65, RAD = 0.28;
 const X = (ux) => ux * U, Y = (uy) => (WY - uy) * U;
 const SND = "/assets/wall3d/", SPR = "/assets/map/";
-const TOOLS = [["spray", "Spray"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow"], ["roller", "Roller"], ["eraser", "Eraser"], ["tape", "Tape"], ["stencil", "Stencil"]];
-const REACH = { spray: 3.2, bands: 3.2, neon: 3.2, roller: 1.15, chalk: 1.05, eraser: 1.05, tape: 2.4, stencil: 2.8 };
+const TOOLS = [["spray", "Spray"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow"], ["roller", "Roller"], ["eraser", "Eraser"], ["wipe", "Wipe"], ["tape", "Tape"], ["stencil", "Stencil"]];
+const REACH = { spray: 3.2, bands: 3.2, neon: 3.2, roller: 1.15, wipe: 1.15, chalk: 1.05, eraser: 1.05, tape: 2.4, stencil: 2.8 };
 const SKY = PAL.sky || ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
 const GRASS = [PAL.grass.top, PAL.grass.bottom, PAL.grass.dark, PAL.grass.darker, PAL.grass.light, PAL.grass.bottom];
 const FLOWERS = PAL.flowerCols.length ? (PAL.leaves ? [...PAL.flowerCols, ...PAL.leaves, ...PAL.leaves] : PAL.flowerCols) : ["#ffffff", "#e8f0f8"];
@@ -556,11 +556,16 @@ function start() {
     tape: new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 14), new THREE.MeshLambertMaterial({ color: 0xe6d49c })),
     stencil: box(0.17, 0.13, 0.006, new THREE.MeshLambertMaterial({ color: 0xc49a5e }), 0, 0.08, 0),
     roller: new THREE.Group(),
+    wipe: new THREE.Group(),
   };
   const napMat = new THREE.MeshLambertMaterial({ color: 0x2fb36b }), wire = new THREE.MeshLambertMaterial({ color: 0x9aa3ab });
   const nap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 14), napMat);
   nap.rotation.z = Math.PI / 2; nap.position.set(0, 0.2, 0);
   tools3.roller.add(nap, box(0.008, 0.008, 0.008, wire, 0.104, 0.2, 0), box(0.006, 0.09, 0.006, wire, 0.106, 0.155, 0), box(0.1, 0.006, 0.006, wire, 0.056, 0.11, 0), box(0.026, 0.13, 0.026, new THREE.MeshLambertMaterial({ color: 0x8a5a36 }), 0.006, 0.04, 0));
+  tools3.roller.children.slice(1).forEach((o) => tools3.wipe.add(o.clone()));
+  const rub = nap.clone();
+  rub.material = new THREE.MeshLambertMaterial({ color: 0xff9ec7 });
+  tools3.wipe.add(rub);
   tools3.tape.position.y = 0.05;
   const held = new THREE.Group();
   held.add(fist);
@@ -770,7 +775,7 @@ function start() {
     if (!locked) return;
     if (e.code === "Space") e.preventDefault();
     keys.add(e.code);
-    if (/^Digit[1-8]$/.test(e.code)) { pickTool(TOOLS[+e.code.slice(5) - 1][0]); return; }
+    if (/^Digit[1-9]$/.test(e.code)) { pickTool(TOOLS[+e.code.slice(5) - 1][0]); return; }
     if ((e.ctrlKey || e.metaKey) && k === "z") { e.preventDefault(); if (e.shiftKey) api.redo(); else api.undo(); return; }
     if ((e.ctrlKey || e.metaKey) && k === "y") { e.preventDefault(); api.redo(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1078,7 +1083,7 @@ function start() {
 <div class="w3-flashlight" aria-hidden="true"></div>
 <div class="w3-start w3-card" role="dialog" aria-label="The Big Wall"><header class="tb"><span class="tb-t">The Big Wall</span></header><div class="w3-pad">
 <p><b>The same wall as on the map, only twelve meters tall.</b> The bottom 3.2 m is everything painted so far; above it the wall is fresh. Everyone painting right now is here with you.</p>
-<table class="w3-keys"><tr><td>Mouse</td><td>look, hold the left button to spray</td></tr><tr><td>W A S D</td><td>walk (Shift runs)</td></tr><tr><td>1 to 8</td><td>spray, chalk, neon, rainbow, roller, eraser, tape, stencil</td></tr><tr><td>Wheel</td><td>size; closer to the wall sprays thinner</td></tr><tr><td>C, X</td><td>next spray cap, next color</td></tr><tr><td>Right button</td><td>take a color from the wall</td></tr><tr><td>E</td><td>get on or off the scissor lift; on it, Space goes up and Shift down</td></tr><tr><td>F</td><td>photo drone</td></tr><tr><td>B</td><td>boombox, again for the next song</td></tr><tr><td>Z</td><td>undo (Shift+Z redo)</td></tr><tr><td>Tab or Esc</td><td>menu and colors</td></tr></table>
+<table class="w3-keys"><tr><td>Mouse</td><td>look, hold the left button to spray</td></tr><tr><td>W A S D</td><td>walk (Shift runs)</td></tr><tr><td>1 to 9</td><td>spray, chalk, neon, rainbow, roller, eraser, roller eraser, tape, stencil</td></tr><tr><td>Wheel</td><td>size; closer to the wall sprays thinner</td></tr><tr><td>C, X</td><td>next spray cap, next color</td></tr><tr><td>Right button</td><td>take a color from the wall</td></tr><tr><td>E</td><td>get on or off the scissor lift; on it, Space goes up and Shift down</td></tr><tr><td>F</td><td>photo drone</td></tr><tr><td>B</td><td>boombox, again for the next song</td></tr><tr><td>Z</td><td>undo (Shift+Z redo)</td></tr><tr><td>Tab or Esc</td><td>menu and colors</td></tr></table>
 <p class="w3-row"><button class="btn go" type="button" data-play>Play</button><a class="btn" href="/">Back to the map</a></p></div></div>
 <div class="w3-menu w3-card" role="dialog" aria-label="Paused" hidden><header class="tb"><span class="tb-t">The Big Wall - Paused</span><span class="tb-btns"><button class="tb-x" type="button" data-play aria-label="Back to the wall"></button></span></header><div class="w3-pad w3-cols">
 <section><h3>Color</h3><canvas class="w3-sv" width="200" height="120" data-sv></canvas><canvas class="w3-hu" width="200" height="14" data-hu></canvas>
@@ -1151,7 +1156,7 @@ function start() {
     else if (me.lift) t = lift.h < 0.15 ? "Space up, Shift down, W A S D drive, E get off" : `Lift at ${lift.h.toFixed(1)} m: Space up, Shift down, W A S D drive`;
     else if (nearLift()) t = "E: get on the scissor lift";
     else if (res && res.far && res.hy > WALL_H) t = "That is above the wall";
-    else if (res && res.far && res.hx >= 0 && res.hy >= 0) t = st.tool === "chalk" || st.tool === "eraser" || st.tool === "roller" ? "Walk up to the wall to touch it" : "Too far from the wall, walk closer";
+    else if (res && res.far && res.hx >= 0 && res.hy >= 0) t = st.tool === "chalk" || st.tool === "eraser" || st.tool === "roller" || st.tool === "wipe" ? "Walk up to the wall to touch it" : "Too far from the wall, walk closer";
     else if (res && res.hy > EYE + 1.6 && !me.lift) t = "Take the scissor lift to reach up there (E next to it)";
     hint(t);
   }
@@ -1219,7 +1224,7 @@ function start() {
     loop("spray", spraying ? (st.head === "brush" ? 0.22 : 0.5) : 0, rate);
     loop("chalk", api.painting() && st.tool === "chalk" ? 0.55 : 0, 1);
     loop("eraser", api.painting() && st.tool === "eraser" ? 0.5 : 0, 1);
-    loop("roll", api.painting() && st.tool === "roller" ? 0.75 : 0, 1);
+    loop("roll", api.painting() && (st.tool === "roller" || st.tool === "wipe") ? 0.75 : 0, 1);
     loop("meadow", 0.32);
     loop("creek", clamp(1 - Math.abs(camera.position.z - 14) / 22, 0.05, 0.5) * 0.6);
     if (!me.lift) loop("lift", 0);

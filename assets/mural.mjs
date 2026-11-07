@@ -59,6 +59,7 @@ const HEAD_IDS = new Set(HEADS.slice(1).map((h) => h[0])), H_OK = new Set([...HE
 const headSize = (h) => (HEADS.find((x) => x[0] === h) || HEADS[0])[3];
 const HINTS = {
   paint: TOUCH ? "Two fingers walk and pinch to zoom in forever. Hold still and the paint drips." : `Wheel zooms in forever, A and D walk, W and S climb. Hold still and the paint drips, ${UNDO_KEY} takes back your strokes.`,
+  wipe: "Roller eraser: wipes off any paint in a wide flat band, it never runs dry.",
   roller: "Roll wide flat paint. After a few roller lengths it runs dry and leaves streaks: let go and it dips itself in the bucket.",
   tape: "Drag to lay a strip of masking tape, everyone's paint stops at its edge. Grab the end and peel it like a sticker, let go halfway and it stays.",
   stencil: "Drag a stencil to move it, the arrow corner turns and sizes it. A picture stencil has a color square: click it to open one color layer at a time. Peel the folded corner like a sticker.",
@@ -286,10 +287,10 @@ const h01 = (a, b, c) => { let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.
 
 function roller(op, c, v) {
   const lw = op.w * v.r, half = lw / 2, seed = hash(op.id), metal = SHINE[op.c], rainbow = op.c === "rainbow", N = ROLL_LANES;
-  const base = rainbow || metal ? null : op.c, rim = base ? mix(base, "#000000", 0.12) : null;
+  const erase = op.k === "e", base = erase ? "#000" : rainbow || metal ? null : op.c;
   const bias = Array.from({ length: N }, (_, i) => (h01(seed, i, 7) - 0.5) * 0.4);
   const laneCol = (i) => (rainbow ? RAINBOW[Math.min(RAINBOW.length - 1, Math.floor((i * RAINBOW.length) / N))]
-    : metal ? metal[Math.round((i / (N - 1)) * 31)] : i === 0 || i === N - 1 ? rim : base);
+    : metal ? metal[Math.round((i / (N - 1)) * 31)] : base);
   const noise = (i, t) => { const f = Math.floor(t), u = t - f, s = u * u * (3 - 2 * u); return h01(seed, i, f) * (1 - s) + h01(seed, i, f + 1) * s; };
   const r0 = op.r || 0, carried = r0 > 0;
   let px = null, py = null, dx = 0, dy = 1, run = (Math.floor(r0 / 1000) / 100) * lw, a0 = null, b0 = null, n = 0;
@@ -303,13 +304,8 @@ function roller(op, c, v) {
     c.beginPath(); c.moveTo(p0[0], p0[1]); c.lineTo(p1[0], p1[1]); c.lineTo(p2[0], p2[1]); c.lineTo(p3[0], p3[1]); c.closePath(); c.fill();
   };
   const band = (a, b, A, B, u) => {
-    const cov = rollCover(u);
-    if (cov >= 1 && base) {
-      quad(a, b, A, B, 0, 1, base);
-      quad(a, b, A, B, 0, 1.5 / N, rim);
-      quad(a, b, A, B, 1 - 1.5 / N, 1, rim);
-      return;
-    }
+    const cov = erase ? 1 : rollCover(u);
+    if (cov >= 1 && base) { quad(a, b, A, B, 0, 1, base); return; }
     let from = -1, col = null;
     for (let i = 0; i <= N; i++) {
       const on = i < N && (cov >= 1 || noise(i, u / 1.6) * 0.92 + h01(seed, i, Math.floor(u / 0.25)) * 0.08 < cov + bias[i] * Math.min(1, (1 - cov) * 3));
@@ -321,7 +317,7 @@ function roller(op, c, v) {
   const ends = (x, y) => [[x - dy * half, y + dx * half], [x + dy * half, y - dx * half]];
   return {
     add(x, y) {
-      c.globalCompositeOperation = "source-over";
+      c.globalCompositeOperation = erase ? "destination-out" : "source-over";
       c.globalAlpha = 1;
       n++;
       if (px === null) { px = x; py = y; return; }
@@ -332,7 +328,7 @@ function roller(op, c, v) {
       if (ux * dx + uy * dy < 0) { ux = -ux; uy = -uy; }
       const k = 1 - Math.exp(-len / (lw * 0.6)), nx = dx + (ux - dx) * k, ny = dy + (uy - dy) * k, nl = Math.hypot(nx, ny) || 1;
       dx = nx / nl; dy = ny / nl;
-      const [a1, b1] = ends(x, y), cell = Math.max(0.75, lw * 0.05), steps = rollCover((run + len) / lw) >= 1 && base ? 1 : Math.min(400, Math.ceil(len / cell));
+      const [a1, b1] = ends(x, y), cell = Math.max(0.75, lw * 0.05), steps = (erase || rollCover((run + len) / lw) >= 1) && base ? 1 : Math.min(400, Math.ceil(len / cell));
       for (let j = 0; j < steps; j++) {
         const t0 = j / steps, t1 = (j + 1) / steps, L = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
         band(L(a0, a1, t0), L(b0, b1, t0), L(a0, a1, t1), L(b0, b1, t1), (run + len * (t0 + t1) * 0.5) / lw);
@@ -341,6 +337,7 @@ function roller(op, c, v) {
     },
     end() {
       if (n !== 1 || px === null || carried) return;
+      c.globalCompositeOperation = erase ? "destination-out" : "source-over";
       const h = lw * 0.11;
       band([px - half, py - h], [px + half, py - h], [px - half, py + h], [px + half, py + h], 0);
     },
@@ -746,7 +743,7 @@ function wallClip(op, v) {
   return [(c) => { const m = c.getTransform(); c.transform(r, 0, 0, r, tx, ty); list.forEach((p) => c.clip(p, "evenodd")); c.setTransform(m); }];
 }
 
-const brushOf = (op) => (op.k === "e" ? rubber : op.k === "c" ? chalk : op.c === "bands" ? bands : op.c[0] === "n" ? neon : sprayer);
+const brushOf = (op) => (op.k === "e" ? (op.h === "roller" ? roller : rubber) : op.k === "c" ? chalk : op.c === "bands" ? bands : op.c[0] === "n" ? neon : sprayer);
 const reachOf = (op, v) => op.w * v.r * (op.k === "e" ? 0.6 : op.c === "bands" || (op.c && op.c[0] === "n") ? 4.5 : 3.4) + 6;
 function painterFor(op, c, v, mode = "wall", alive) {
   if (!op.mask) return brushOf(op)(op, c, v);
@@ -812,6 +809,7 @@ const ICONS = {
   bands: '<rect x="5" y="5" width="6" height="10" fill="#000"/>' + RAINBOW.map((c, i) => `<rect x="6" y="${6 + i}" width="4" height="${i === 6 ? 2 : 1}" fill="${c}"/>`).join("") +
     '<rect x="6" y="3" width="4" height="2" fill="#000"/><rect x="7" y="1" width="2" height="2" fill="#808080"/><rect x="11" y="1" width="1" height="1" fill="#ff2d2d"/><rect x="13" y="2" width="1" height="1" fill="#38e03b"/><rect x="12" y="4" width="1" height="1" fill="#2f6bff"/><rect x="14" y="0" width="1" height="1" fill="#ffe600"/>',
   roller: '<rect x="1" y="1" width="11" height="5" fill="#2fb36b" stroke="#000"/><rect x="2" y="2" width="9" height="1" fill="#9be8bd"/><path d="M12.5 3.5h2v4h-6v2.5" fill="none" stroke="#000"/><rect x="7" y="10" width="3" height="5" fill="#8a5a36" stroke="#000"/>',
+  wipe: '<rect x="1" y="1" width="11" height="5" fill="#ff9ec7" stroke="#000"/><rect x="2" y="2" width="9" height="1" fill="#ffd6e7"/><path d="M12.5 3.5h2v4h-6v2.5" fill="none" stroke="#000"/><rect x="7" y="10" width="3" height="5" fill="#8a5a36" stroke="#000"/>',
   eraser: '<path d="M2 10l6-6 6 6-3 3H5z" fill="#ff9ec7" stroke="#000"/><path d="M2 10l3 3h3l-3-3z" fill="#fff"/>',
   tape: '<circle cx="7" cy="7" r="5.5" fill="#e6d49c" stroke="#000"/><circle cx="7" cy="7" r="2" fill="#c0c0c0" stroke="#000"/><path d="M10 11h5v3h-6z" fill="#e6d49c" stroke="#000"/>',
   stencil: '<rect x="1" y="1" width="14" height="14" fill="#c49a5e" stroke="#000"/><path d="M8 3l1.4 3 3.3.3-2.5 2.2.8 3.3L8 10.1l-3 1.7.8-3.3-2.5-2.2 3.3-.3z" fill="#b5523b" stroke="#000"/>',
@@ -828,7 +826,7 @@ const ICONS = {
   sell: '<ellipse cx="7" cy="6" rx="6" ry="4.5" fill="#fff" stroke="#000" stroke-dasharray="2 1.5"/><path d="M4 10l-2 5" stroke="#000"/><circle cx="11.5" cy="11.5" r="3.5" fill="#ffd43b" stroke="#000"/><path d="M11.5 9.5v4" stroke="#8a5a00"/>',
   play: '<rect x="0" y="9" width="16" height="7" fill="#b9472b"/><path d="M0 11.5h16M0 14h16M4 9v2.5M12 9v2.5M8 11.5V14M2 14v2M14 14v2" stroke="#e2b698"/><path d="M5 1v7l6-3.5z" fill="#00a000" stroke="#000"/>',
 };
-const TOOLS = [["spray", "Spray can"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow spray"], ["roller", "Paint roller, wide flat paint from a bucket"], ["eraser", "Eraser, it rubs out any paint"], ["tape", "Masking tape"], ["stencil", "Stencils, ready made or cut your own"]];
+const TOOLS = [["spray", "Spray can"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow spray"], ["roller", "Paint roller, wide flat paint from a bucket"], ["eraser", "Eraser, it rubs out any paint"], ["wipe", "Roller eraser, wipes paint off in a wide flat band"], ["tape", "Masking tape"], ["stencil", "Stencils, ready made or cut your own"]];
 
 export function createMural(el, opts) {
   loadGallery();
@@ -2067,7 +2065,7 @@ export function createMural(el, opts) {
     pushLive({ p, x: x - p * WX, y, n: nick(), c: tintKey() });
   }
   const nick = () => { try { const m = wallet(); return m && typeof m.nick === "string" ? m.nick.slice(0, 16) : ""; } catch (e) { return ""; } };
-  const tintKey = () => (tool === "tape" ? "tape" : tool === "stencil" ? "card" : tool === "eraser" ? "eraser" : tool === "bands" ? "rainbow" : tool === "spray" || tool === "roller" ? color : hex);
+  const tintKey = () => (tool === "tape" ? "tape" : tool === "stencil" ? "card" : tool === "eraser" || tool === "wipe" ? "eraser" : tool === "bands" ? "rainbow" : tool === "spray" || tool === "roller" ? color : hex);
   function leaveLive() {
     clearTimeout(outbox.timer);
     outbox.timer = 0;
@@ -2189,7 +2187,7 @@ export function createMural(el, opts) {
     const d = pts.map((n, i) => (n + (i % 2 ? oy : ox)) * sc), ids = idsOf(v.q);
     sh.forEach((x, i) => { x.key = ids.s[i] || null; });
     const mask = tp.length || sh.length ? { tapes: tp, tapeIds: tp.map((_, i) => ids.t[i] || null), sheets: sh } : null;
-    const h = v.k === "d" && H_OK.has(v.h) ? v.h : undefined, a = TAG.test(v.a) ? v.a : undefined, u = TAG.test(v.u) ? v.u : undefined;
+    const h = (v.k === "d" && H_OK.has(v.h)) || (v.k === "e" && v.h === "roller") ? v.h : undefined, a = TAG.test(v.a) ? v.a : undefined, u = TAG.test(v.u) ? v.u : undefined;
     const r = h === "roller" && Number.isInteger(v.r) && v.r > 0 && v.r <= 1e8 ? v.r : undefined;
     return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, r, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u, up: d.some((n, i) => i % 2 === 1 && n < 0) });
   }
@@ -2443,6 +2441,7 @@ export function createMural(el, opts) {
     g.ops.forEach((op) => paintOp(op, q, v));
     reset(q);
     c.drawImage(pc, 0, 0);
+    g.fly = pc; g.flyRect = [x0, y0, x0 + pc.width / s, y0 + pc.height / s];
     return cv.toDataURL("image/jpeg", 0.86);
   }
 
@@ -2464,6 +2463,8 @@ export function createMural(el, opts) {
     if (colPop) colPop.hidden = true;
     closeBox();
     lassoFor = "theme";
+    galleryJob = null;
+    loadGallery();
     popTitle("Theme of the week");
     sellPop.hidden = false;
     const run = ++themeRun;
@@ -2473,11 +2474,32 @@ export function createMural(el, opts) {
       if (run !== themeRun || sellPop.hidden) return;
       const top = j.top.length ? `<ol class="pt-theme-top">${j.top.map((r) => `<li${r.me ? ' class="me"' : ""}><b>${r.score}/10</b> ${escT(r.nick)}</li>`).join("")}</ol>` : `<p class="pt-sell-n">Nobody entered yet. Be the first!</p>`;
       const mine = j.mine && j.mine.entered ? `<p class="pt-sell-n">You entered ${j.mine.entered} of ${j.tries}, your best is ${j.mine.best}/10${j.mine.rank ? `, place ${j.mine.rank}` : ""}.</p>` : `<p class="pt-sell-n">You can enter up to ${j.tries} drawings this week.</p>`;
-      sellText(`<p class="pt-theme-t">${escT(j.title)}</p><p data-sell-msg></p><p class="pt-sell-n">Ends in ${when(j.ends)}. Haiku's best three go into gold frames in the Wall Gallery at the top of the wall's start and win ${j.prizes.join(", ")} szyszki.</p>${top}${mine}
+      sellText(`<p class="pt-theme-t">${escT(j.title)}</p><p data-sell-msg></p><p class="pt-sell-n">Ends in ${when(j.ends)}. The top three move into the gold frames of the Wall Gallery at the top of the wall's start right away, and whoever is still there on Monday wins ${j.prizes.join(", ")} szyszki.</p>${top}${mine}
 <p class="bk-row"><button class="btn go" type="button" data-theme-enter${j.mine && j.mine.entered >= j.tries ? " disabled" : ""}>Enter a drawing</button><button class="btn" type="button" data-theme-gal>See the gallery</button><button class="btn" type="button" data-sell-x>Close</button></p>`, j.about);
     } catch (e) {
       if (run === themeRun) sellText(`<p data-sell-msg></p><p class="bk-row"><button class="btn" type="button" data-sell-x>OK</button></p>`, e.message);
     }
+  }
+  function fly(g, to) {
+    if (!view || !g || !g.fly || !g.flyRect || !to) return;
+    const from = g.flyRect, ux0 = Math.min(from[0], to[0]), ux1 = Math.max(from[2], to[2]), uy0 = Math.min(from[1], to[1]), uy1 = Math.max(from[3], to[3]);
+    sellPop.classList.add("right");
+    const vr = view.getBoundingClientRect(), pr = sellPop.hidden ? null : sellPop.getBoundingClientRect(), R = pr ? Math.max(0, vr.right - pr.left + 12) : 0, UW = Math.max(120, W - R);
+    Z = clamp(Math.min(UW / ((ux1 - ux0) * 1.3), H / ((uy1 - uy0) * 1.3)) / k0, MINZ, MAXZ);
+    cx = (ux0 + ux1) / 2 + R / 2 / (k0 * Z); cy = (uy0 + uy1) / 2;
+    clampView(); present(); cursor();
+    const ppu = k0 * Z, sx = (x) => W / 2 + (x - cx) * ppu, sy = (y) => H / 2 + (y - cy) * ppu;
+    const a = [sx(from[0]), sy(from[1]), Math.max(1, (from[2] - from[0]) * ppu), Math.max(1, (from[3] - from[1]) * ppu)];
+    const b = [sx(to[0]), sy(to[1]), Math.max(1, (to[2] - to[0]) * ppu), Math.max(1, (to[3] - to[1]) * ppu)];
+    const el = g.fly;
+    el.className = "wv-fly";
+    el.style.cssText = `left:${a[0].toFixed(1)}px;top:${a[1].toFixed(1)}px;width:${a[2].toFixed(1)}px;height:${a[3].toFixed(1)}px`;
+    view.append(el);
+    const end = `translate(${(b[0] - a[0]).toFixed(1)}px,${(b[1] - a[1]).toFixed(1)}px) scale(${(b[2] / a[2]).toFixed(4)},${(b[3] / a[3]).toFixed(4)})`;
+    const lift = `translate(${((b[0] - a[0]) * 0.18).toFixed(1)}px,${((b[1] - a[1]) * 0.18 - 24).toFixed(1)}px) scale(${(1 + (b[2] / a[2] - 1) * 0.1).toFixed(4)})`;
+    const anim = el.animate ? el.animate([{ transform: "none", offset: 0 }, { transform: lift, offset: 0.22 }, { transform: end, offset: 1 }], { duration: 1400, easing: "cubic-bezier(.45,0,.2,1)", fill: "forwards" }) : null;
+    const done = () => { if (el.animate) el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 500, fill: "forwards" }); setTimeout(() => el.remove(), 520); };
+    if (anim) anim.onfinish = () => setTimeout(done, 900); else setTimeout(() => el.remove(), 1500);
   }
   function toGallery() {
     closeSell();
@@ -2520,6 +2542,7 @@ export function createMural(el, opts) {
   }
   function closeSell() {
     themeRun++;
+    if (sellPop) sellPop.classList.remove("right");
     sellMode = false; lasso = null; lassoDrag = false;
     selling = null;
     if (sellPop) sellPop.hidden = true;
@@ -2539,10 +2562,19 @@ export function createMural(el, opts) {
         if (selling !== run) return;
         run.busy = false;
         const place = j.rank ? ["1st", "2nd", "3rd"][j.rank - 1] || j.rank + "th" : "";
+        if (j.moved) {
+          g.ops.forEach((o) => { const P = panels.get(o.p); if (P) P.seen[o.id] = true; drop(o.p, o.id); forget(o.id); });
+          sellMode = false; lasso = null; lassoDrag = false;
+          drawSel();
+          sync();
+          fly(g, j.to);
+          galleryJob = null;
+          setTimeout(loadGallery, 1500);
+        }
         sellText(`<p class="pt-sell-i"><img alt="Your drawing" src="${img}"></p><p class="pt-sell-c" data-sell-msg></p>
 <p>Haiku gives it <b>${j.score}/10</b> for "${escT(j.title)}".${place ? ` You are <b>${place}</b> this week so far.` : ""}</p>
-<p class="pt-sell-n">${j.left ? `You can enter ${j.left} more this week. Your best one counts.` : "That was your last entry this week. Your best one counts."} The drawing stays where it is; the winners get copied into the gallery on Monday.</p>
-<p class="bk-row">${j.left ? '<button class="btn" type="button" data-sell-again>Enter another</button>' : ""}<button class="btn go" type="button" data-sell-x>Done</button></p>`, `"${j.comment}"`);
+<p class="pt-sell-n">${j.moved ? `It moved into frame <b>#${j.rank}</b> of the Wall Gallery. If someone beats it out of the top three, it goes back where you painted it.` : "It is not in the top three, so it stays where you painted it."} ${j.left ? `You can enter ${j.left} more this week, your best one counts.` : "That was your last entry this week."}</p>
+<p class="bk-row">${j.moved ? '<button class="btn" type="button" data-theme-gal>See it</button>' : ""}${j.left ? '<button class="btn" type="button" data-sell-again>Enter another</button>' : ""}<button class="btn go" type="button" data-sell-x>Done</button></p>`, `"${j.comment}"`);
       } catch (e) {
         if (selling !== run) return;
         run.busy = false;
@@ -2754,14 +2786,14 @@ export function createMural(el, opts) {
     }
     if (live.ink) pushLive({});
     lastSample = performance.now();
-    if (live.h === "roller") rollGauge();
+    if (live.h === "roller" && live.k !== "e") rollGauge();
   }
 
   function open(p, x, y, g, carry) {
-    const zz = host ? Z / HOST_K : (k0 * Z) / 1.15, zl = Math.max(0, Math.ceil(Math.log2(zz) - 1e-9)), k = tool === "eraser" ? "e" : tool === "chalk" ? "c" : "d";
+    const zz = host ? Z / HOST_K : (k0 * Z) / 1.15, zl = Math.max(0, Math.ceil(Math.log2(zz) - 1e-9)), k = tool === "eraser" || tool === "wipe" ? "e" : tool === "chalk" ? "c" : "d";
     const c = k === "e" ? undefined : k === "c" ? hex : tool === "neon" ? "n" + hex : tool === "bands" ? "bands" : color;
-    const h = tool === "roller" ? "roller" : tool === "spray" && head !== "std" ? head : undefined;
-    live = { id: pushId(), p, k, c, h, w: (k === "e" ? sizeOf(RUBS) : sizeOf(SIZES) * (h === "roller" ? ROLL_K : 1)) / zz, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined, ppu0: Z, r: h === "roller" && carry ? carry : undefined };
+    const h = tool === "roller" || tool === "wipe" ? "roller" : tool === "spray" && head !== "std" ? head : undefined;
+    live = { id: pushId(), p, k, c, h, w: (k === "e" && h !== "roller" ? sizeOf(RUBS) : sizeOf(SIZES) * (h === "roller" ? ROLL_K : 1)) / zz, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined, ppu0: Z, r: h === "roller" && carry ? carry : undefined };
     if (c && c !== "bands") keepColor(c[0] === "n" ? c.slice(1) : c);
     panel(p).seen[live.id] = true;
     layers.forEach((L) => { if (wants(L, live) && !L.tile && !L.job) rerender(L, true); });
@@ -2789,7 +2821,7 @@ export function createMural(el, opts) {
   const rollCarry = (op) => { if (op.h !== "roller") return undefined; const st = rollerState(op); return rollPack(st.run, st.ang) || undefined; };
   let rollShown = -1;
   function rollGauge() {
-    const lv = live && live.h === "roller" ? rollLevel(rollRun(live)) : 1, q = Math.round(lv * 40) / 40;
+    const lv = live && live.h === "roller" && live.k !== "e" ? rollLevel(rollRun(live)) : 1, q = Math.round(lv * 40) / 40;
     if (q === rollShown) return;
     rollShown = q;
     const el = chrome && chrome.querySelector("[data-roll-lv]");
@@ -2926,7 +2958,7 @@ export function createMural(el, opts) {
   }
 
   const sizeOf = (arr) => { const v = clamp(size, 0, arr.length - 1), i = Math.min(arr.length - 2, Math.floor(v)); return arr[i] * Math.pow(arr[i + 1] / arr[i], v - i); };
-  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : tool === "eraser" ? sizeOf(RUBS) * 1.15 : sizeOf(SIZES) * 1.15 * (tool === "spray" ? headSize(head) : tool === "roller" ? ROLL_K / 1.15 : 1));
+  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : tool === "eraser" ? sizeOf(RUBS) * 1.15 : sizeOf(SIZES) * 1.15 * (tool === "spray" ? headSize(head) : tool === "roller" || tool === "wipe" ? ROLL_K / 1.15 : 1));
   const ringFor = () => (TOUCH || lapse || sampling || tool === "stencil" ? 0 : brushPx());
   function placeRing(e) {
     if (!ring || e.pointerType === "touch") return;
@@ -2942,8 +2974,8 @@ export function createMural(el, opts) {
     ringD = Math.max(4, Math.round(d));
     if (ring) {
       ring.style.width = ring.style.height = ringD + "px";
-      ring.classList.toggle("roll", tool === "roller");
-      ring.firstChild.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" ? "#ffffff" : tool === "bands" ? "rainbow" : tool === "spray" || tool === "roller" ? color : hex);
+      ring.classList.toggle("roll", tool === "roller" || tool === "wipe");
+      ring.firstChild.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" || tool === "wipe" ? "#ffffff" : tool === "bands" ? "rainbow" : tool === "spray" || tool === "roller" ? color : hex);
       if (!d) ring.hidden = true;
     }
     if (lapse) { view.style.cursor = "progress"; return; }
@@ -2988,7 +3020,7 @@ export function createMural(el, opts) {
     chrome.hidden = true;
     const rbB = (attrs, ico, label, title) => `<button type="button" class="rb-b" ${attrs} title="${title || label}">${T16(ico)}<span>${label}</span></button>`;
     const grp = (name, body, cls = "") => `<div class="rb-g${cls}"><div class="rb-t">${body}</div><div class="rb-n">${name}</div></div>`;
-    const tl = (list) => list.map(([t, title]) => rbB(`data-tool="${t}"`, ICONS[t], { bands: "Rainbow", roller: "Roller" }[t] || title.split(",")[0].replace("Spray can", "Spray").replace("Masking tape", "Tape").replace("Stencils", "Stencil"), title)).join("").replace('data-tool="roller" title', 'data-tool="roller" style="position:relative" title').replace(/(data-tool="roller"[^>]*>)/, '$1<i class="rb-lv" aria-hidden="true"><b data-roll-lv></b></i>');
+    const tl = (list) => list.map(([t, title]) => rbB(`data-tool="${t}"`, ICONS[t], { bands: "Rainbow", roller: "Roller", wipe: "Wipe" }[t] || title.split(",")[0].replace("Spray can", "Spray").replace("Masking tape", "Tape").replace("Stencils", "Stencil"), title)).join("").replace('data-tool="roller" title', 'data-tool="roller" style="position:relative" title').replace(/(data-tool="roller"[^>]*>)/, '$1<i class="rb-lv" aria-hidden="true"><b data-roll-lv></b></i>');
     chrome.innerHTML =
       `<header class="tb"><span class="tb-i">${icon("bricks")}</span><h2 class="tb-t">The Wall - Paint</h2><span class="tb-btns"><button class="tb-x" type="button" data-pt-close aria-label="Back to the map"></button></span></header>` +
       `<div class="rb" data-rb>` +
@@ -3378,8 +3410,8 @@ export function createMural(el, opts) {
     const si = chrome.querySelector("[data-size]"), dot = chrome.querySelector("[data-dot]"), dd = Math.max(2, Math.min(40, brushPx()));
     if (document.activeElement !== si) si.value = String(size);
     dot.style.width = dot.style.height = dd.toFixed(1) + "px";
-    dot.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" ? "#ffffff" : cur);
-    dot.style.boxShadow = tool === "eraser" ? "0 0 0 1px #000" : "";
+    dot.style.background = swatchBg(tool === "tape" ? TAPE : tool === "eraser" || tool === "wipe" ? "#ffffff" : cur);
+    dot.style.boxShadow = tool === "eraser" || tool === "wipe" ? "0 0 0 1px #000" : "";
     const key = recent.join() + "|" + cur;
     if (key !== recentKey) { recentKey = key; chrome.querySelector("[data-recent]").innerHTML = recent.map((h) => `<button type="button" data-color="${h}" title="${h}" aria-pressed="${h === cur}" style="background:${swatchBg(h)}"></button>`).join(""); }
     const h = HINTS[tool] || HINTS.paint;
@@ -3576,7 +3608,7 @@ export function createMural(el, opts) {
       if (o.keep) keepColor(o.keep);
       sync();
     },
-    width() { aimNow(); const zz = Z / HOST_K; return tool === "tape" ? (sizeOf(TAPES) / Z) * 2.2 : (tool === "eraser" ? sizeOf(RUBS) : sizeOf(SIZES) * (tool === "spray" ? headSize(head) : tool === "roller" ? ROLL_K : 1)) / zz; },
+    width() { aimNow(); const zz = Z / HOST_K; return tool === "tape" ? (sizeOf(TAPES) / Z) * 2.2 : (tool === "eraser" ? sizeOf(RUBS) : sizeOf(SIZES) * (tool === "spray" ? headSize(head) : tool === "roller" || tool === "wipe" ? ROLL_K : 1)) / zz; },
     undo, redo: redoLast,
     stencil(st) { if (aimNow()) placeStencil(st); },
     tiles: ext,

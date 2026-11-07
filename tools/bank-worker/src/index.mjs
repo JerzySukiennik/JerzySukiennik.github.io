@@ -697,12 +697,13 @@ async function themeView(env, req, id) {
 async function galleryView(env, req) {
   const wall = wallOf(req)[0], wk = weekOf(), th = await themeOf(env, wk);
   const rows = (await env.DB.prepare("SELECT week, slot, title, winners FROM gallery WHERE wall = ? AND slot >= 0 ORDER BY slot").bind(wall).all()).results;
-  const next = galCol(rows.length);
+  const next = galCol(rows.length), now = [null, null, null];
+  (await pickTop(env, wk, wall)).rows.filter((r) => r.framed > 0 && r.framed <= 3).forEach((r) => { now[r.framed - 1] = { rank: r.framed, nick: r.nick || "someone", score: r.score }; });
   return {
     zone: GAL.zone, week: wk, title: th.title, ends: weekEnd(wk),
     header: { rect: [GAL.zone.x0 + 15, GAL.zone.y0 + 10, GAL.zone.x1 - GAL.zone.x0 - 30, 150], lines: ["THE WALL GALLERY", "THIS WEEK: " + th.title, "Enter your drawing with the Theme button in the wall painter"] },
     cols: rows.map((r) => ({ ...galCol(r.slot), week: r.week, theme: r.title, winners: JSON.parse(r.winners) })).filter((c) => c.frames),
-    next: next ? { ...next, week: wk, theme: th.title, winners: [] } : null,
+    next: next ? { ...next, week: wk, theme: th.title, winners: now } : null,
     future: Array.from({ length: GAL.panels * GAL.perPanel }, (_, i) => galCol(i)).filter((c) => c && c.slot > rows.length),
   };
 }
@@ -726,8 +727,10 @@ async function themeEnter(env, req, w, body) {
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
   await env.DB.prepare("INSERT INTO theme_entries (id, week, wall, w, sig, score, comment, ops, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
     .bind(id, wk, wall, w.id, sig, r.score, r.comment, ops, Date.now()).run();
-  const rows = await bestOf(env, wk, wall);
-  return { score: r.score, comment: r.comment, rank: rows.findIndex((x) => x.w === w.id) + 1, left: THEME_TRIES - tries - 1, title: th.title };
+  let live = {};
+  try { live = await liveFrames(env, wall, wk); } catch (e) { live = {}; }
+  const rows = await bestOf(env, wk, wall), mine = live[id];
+  return { score: r.score, comment: r.comment, rank: rows.findIndex((x) => x.w === w.id) + 1, left: THEME_TRIES - tries - 1, title: th.title, moved: !!mine, frame: mine ? mine.frame : null, to: mine ? mine.to : null };
 }
 
 function pushIds(n) {
@@ -745,11 +748,11 @@ function strokeWorld(x) {
 
 function copyInto(wall, ops, f) {
   const ws = ops.filter((o) => o.v && typeof o.v.d === "string").map(strokeWorld).filter((W) => W.d.length);
-  if (!ws.length) return {};
+  if (!ws.length) return { patch: {}, ids: [], to: null };
   let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
   ws.forEach((W) => { const r = W.v.w * W.sc * (W.v.k === "e" ? 0.5 : 0.9); W.d.forEach(([x, y]) => { bx0 = Math.min(bx0, x - r); by0 = Math.min(by0, y - r); bx1 = Math.max(bx1, x + r); by1 = Math.max(by1, y + r); }); });
   const fx = f[0] + 12, fy = f[1] + 12, fw = f[2] - 24, fh = f[3] - 24, bw = Math.max(1, bx1 - bx0), bh = Math.max(1, by1 - by0);
-  const S = Math.min(fw / bw, fh / bh, 3), ox = fx + (fw - bw * S) / 2, oy = fy + (fh - bh * S) / 2, P = Math.floor(f[0] / WX), base = P * WX, ids = pushIds(ws.length), patch = {};
+  const S = Math.min(fw / bw, fh / bh, 3), ox = fx + (fw - bw * S) / 2, oy = fy + (fh - bh * S) / 2, P = Math.floor(f[0] / WX), base = P * WX, ids = pushIds(ws.length), patch = {}, made = [];
   ws.forEach((W, i) => {
     const v = W.v, z2 = clamp(Math.round(W.z - Math.log2(S)), 0, 30), s2 = 2 ** z2;
     const ints = (pts) => pts.map(([X, Y]) => [Math.max(0, Math.round((ox + (X - bx0) * S - base) * s2)), Math.round((oy + (Y - by0) * S) * s2)]);
@@ -766,23 +769,85 @@ function copyInto(wall, ops, f) {
     if (W.m) { const mm = W.m.map((p) => enc(ints(p))).join(";"); if (mm.length <= 4000) out.m = mm; }
     if (W.s) { const ss = W.s.map((g) => g.map((p) => enc(ints(p))).join(";")).join("|"); if (ss.length <= 9000) out.s = ss; }
     patch[`${wall}/${P}/${ids[i]}`] = out;
+    const { t, ...b } = out;
+    made.push({ p: P, id: ids[i], b });
   });
-  return patch;
+  return { patch, ids: made, to: [ox, oy, ox + bw * S, oy + bh * S] };
+}
+
+const binOf = (wall) => (wall === "muralWallDev" ? "muralWallTrashDev" : "muralWallTrash");
+async function keysIn(wall, ps) {
+  const out = new Set();
+  const got = await Promise.all([...new Set(ps)].map((p) => rtdb(`${wall}/${p}.json?shallow=true`).then((v) => [p, v])));
+  got.forEach(([p, v]) => { if (v && typeof v === "object") Object.keys(v).forEach((k) => out.add(p + "/" + k)); });
+  return out;
+}
+
+async function pickTop(env, wk, wall) {
+  const rows = (await env.DB.prepare(`SELECT e.id, e.w, e.score, e.t, e.framed, e.moved, e.copies, e.back, wl.nick FROM theme_entries e LEFT JOIN wallets wl ON wl.id = e.w
+    WHERE e.week = ? AND e.wall = ? ORDER BY e.score DESC, e.t ASC`).bind(wk, wall).all()).results;
+  const top = [], seen = new Set();
+  for (const r of rows) { if (seen.has(r.w)) continue; seen.add(r.w); top.push(r); if (top.length === 3) break; }
+  return { rows, top };
+}
+
+async function liveFrames(env, wall, wk) {
+  let got = false;
+  for (let i = 0; i < 20 && !got; i++) {
+    const now = Date.now(), lock = await env.DB.prepare("INSERT INTO kv (k, v) VALUES ('themelive', ?1) ON CONFLICT(k) DO UPDATE SET v = ?1 WHERE v < ?2").bind(now, now - 30000).run();
+    got = lock.meta.changes > 0;
+    if (!got) await new Promise((r) => setTimeout(r, 400));
+  }
+  if (!got) throw new Fail("The gallery is busy, try again in a moment", 503);
+  try {
+    const used = (await env.DB.prepare("SELECT COUNT(*) n FROM gallery WHERE wall = ? AND slot >= 0").bind(wall).first()).n, col = galCol(used);
+    if (!col) return {};
+    const { rows, top } = await pickTop(env, wk, wall), want = new Map(top.map((r, i) => [r.id, i + 1]));
+    const clear = rows.filter((r) => r.framed > 0 && want.get(r.id) !== r.framed), place = top.filter((r) => r.framed !== want.get(r.id));
+    if (!clear.length && !place.length) return {};
+    const opsOf = async (id) => JSON.parse((await env.DB.prepare("SELECT ops FROM theme_entries WHERE id = ?").bind(id).first()).ops);
+    const homes = new Map();
+    for (const r of place) if (!r.moved) homes.set(r.id, r.back ? JSON.parse(r.back) : (await opsOf(r.id)).map((o) => ({ p: o.p, id: o.id, b: (({ t, ...b }) => b)(o.v) })));
+    const ps = [...clear.flatMap((r) => JSON.parse(r.copies || "[]").map((c) => c.p)), ...[...homes.values()].flat().map((c) => c.p)];
+    const have = await keysIn(wall, ps), bin = binOf(wall), patch = {}, sv = { ".sv": "timestamp" }, upd = [], out = {};
+    const drop = (list) => list.forEach((c) => { if (!have.has(c.p + "/" + c.id)) return; patch[`${wall}/${c.p}/${c.id}`] = null; patch[`${bin}/${c.p}/${c.id}`] = { ...c.b, e: sv }; });
+    for (const r of clear) {
+      drop(JSON.parse(r.copies || "[]"));
+      if (want.has(r.id)) continue;
+      const ops = await opsOf(r.id), ids = pushIds(ops.length), back = [];
+      ops.forEach((o, i) => { if (!o.v) return; const { t, ...b } = o.v; patch[`${wall}/${o.p}/${ids[i]}`] = { ...b, t: sv }; back.push({ p: o.p, id: ids[i], b }); });
+      upd.push(env.DB.prepare("UPDATE theme_entries SET framed = 0, moved = 0, copies = NULL, back = ? WHERE id = ?").bind(JSON.stringify(back), r.id));
+    }
+    for (const r of place) {
+      const rank = want.get(r.id), f = col.frames[rank - 1].f;
+      if (homes.has(r.id)) drop(homes.get(r.id));
+      const c = copyInto(wall, await opsOf(r.id), f);
+      Object.assign(patch, c.patch);
+      upd.push(env.DB.prepare("UPDATE theme_entries SET framed = ?, moved = 1, copies = ? WHERE id = ?").bind(rank, JSON.stringify(c.ids), r.id));
+      out[r.id] = { rank, frame: f, to: c.to };
+    }
+    const res = await fetch(`${RTDB}/.json`, { method: "PATCH", body: JSON.stringify(patch) }).catch(() => null);
+    if (!res || !res.ok) throw new Fail("The gallery didn't take it, try again", 503);
+    if (upd.length) await env.DB.batch(upd);
+    return out;
+  } finally {
+    await env.DB.prepare("UPDATE kv SET v = 0 WHERE k = 'themelive'").run();
+  }
 }
 
 async function closeWeek(env, wall, wk) {
   const th = await env.DB.prepare("SELECT title FROM themes WHERE week = ?").bind(wk).first(), title = th ? th.title : "";
-  const top = (await bestOf(env, wk, wall)).slice(0, 3);
+  const { rows, top } = await pickTop(env, wk, wall), live = rows.some((r) => r.framed > 0);
   const used = (await env.DB.prepare("SELECT COUNT(*) n FROM gallery WHERE wall = ? AND slot >= 0").bind(wall).first()).n;
   const col = top.length ? galCol(used) : null;
   const winners = top.map((r, i) => ({ rank: i + 1, nick: r.nick || "someone", score: r.score }));
   const lock = await env.DB.prepare("INSERT OR IGNORE INTO gallery (wall, week, slot, title, winners, t) VALUES (?, ?, ?, ?, ?, ?)").bind(wall, wk, col ? used : -1, title, JSON.stringify(winners), Date.now()).run();
   if (!lock.meta.changes) return;
-  if (col) {
+  if (col && !live) {
     const patch = {};
     for (const [i, r] of top.entries()) {
-      const e = await env.DB.prepare("SELECT ops FROM theme_entries WHERE week = ? AND wall = ? AND w = ? ORDER BY score DESC, t ASC LIMIT 1").bind(wk, wall, r.w).first();
-      if (e) Object.assign(patch, copyInto(wall, JSON.parse(e.ops), col.frames[i].f));
+      const e = await env.DB.prepare("SELECT ops FROM theme_entries WHERE id = ?").bind(r.id).first();
+      if (e) Object.assign(patch, copyInto(wall, JSON.parse(e.ops), col.frames[i].f).patch);
     }
     if (Object.keys(patch).length) await fetch(`${RTDB}/.json`, { method: "PATCH", body: JSON.stringify(patch) }).catch(() => null);
   }

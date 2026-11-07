@@ -388,6 +388,7 @@ html.tall .wv-mat>[data-mh="ne"],html.tall .wv-mat>[data-mh="se"]{right:-12px}
 html.tall .wv-mat>[data-mh="nw"],html.tall .wv-mat>[data-mh="ne"]{top:-12px}
 html.tall .wv-mat>[data-mh="sw"],html.tall .wv-mat>[data-mh="se"]{bottom:-12px}
 .paint .pt-sell{width:min(300px,calc(100% - 16px))}
+.paint .pt-sell.right{left:auto;right:8px}
 .pt-sell-b{padding:6px 8px 8px}
 .pt-sell-b p{margin:0 0 8px}
 .pt-sell-i{text-align:center}
@@ -396,6 +397,7 @@ html.tall .wv-mat>[data-mh="sw"],html.tall .wv-mat>[data-mh="se"]{bottom:-12px}
 .pt-sell-pay{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .pt-sell-pay .btn{display:flex;align-items:center;justify-content:center;gap:3px;min-width:0;padding-left:2px;padding-right:2px;white-space:nowrap}
 .pt-sell-n{font-size:11px;color:#444}
+.wv-fly{position:absolute;z-index:70;pointer-events:none;transform-origin:0 0;filter:drop-shadow(0 8px 10px rgba(0,0,0,.45))}
 .pt-theme-t{margin:0 0 4px!important;font:bold 15px var(--font);color:#000080}
 .pt-theme-top{margin:0 0 8px;padding:4px 6px 4px 26px;background:#fff;box-shadow:var(--sunken)}
 .pt-theme-top li{padding:1px 0}

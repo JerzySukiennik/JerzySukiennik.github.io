@@ -654,7 +654,7 @@ export function setWallGallery(data) {
   gal = null;
   if (data && data.zone) {
     const z = data.zone, r = (q) => ({ x: AX(q[0]), y: AY(q[1]), w: q[2] / 2.5, h: q[3] / (323 / 129) });
-    const col = (c, next) => ({ next, week: c.week, theme: c.theme || "", title: r(c.title), frames: c.frames.map((f, i) => ({ f: r(f.f), plq: r(f.plq), who: next ? null : (c.winners || [])[i] || null })) });
+    const col = (c, next) => ({ next, week: c.week, theme: c.theme || "", title: r(c.title), frames: c.frames.map((f, i) => ({ f: r(f.f), plq: r(f.plq), who: (c.winners || [])[i] || null })) });
     gal = { mat: { x0: AX(z.x0), x1: AX(z.x1), y0: AY(z.y0), y1: AY(z.y1), k: "gallery" }, header: data.header ? { ...r(data.header.rect), lines: data.header.lines } : null,
       cols: [...(data.cols || []).map((c) => col(c, false)), ...(data.next ? [col(data.next, true)] : [])], future: (data.future || []).map((c) => col(c, true)) };
   }
@@ -709,8 +709,8 @@ function galleryInk(cv, x0) {
     const lines = [when, ...wrap3(plain(col.theme), Math.floor(col.title.w) - 2)].slice(0, 4);
     lines.forEach((t, i) => text3(c, t, X(col.title.x + (col.title.w - tw3(t)) / 2), Y(col.title.y + 1 + i * 7), 1, i ? "#efe6cc" : "#e2b54c"));
     col.frames.forEach((fr, i) => {
-      const f = fr.f, fx = Math.round(f.x), fy = Math.round(f.y), fw = Math.round(f.w), fh = Math.round(f.h);
-      if (col.next) {
+      const f = fr.f, fx = Math.round(f.x), fy = Math.round(f.y), fw = Math.round(f.w), fh = Math.round(f.h), empty = col.next && !fr.who;
+      if (empty) {
         c.fillStyle = "#d7b55a";
         for (let x = 0; x < fw; x += 2) { c.fillRect(X(fx + x), Y(fy), 1, 1); c.fillRect(X(fx + x), Y(fy + fh - 1), 1, 1); }
         for (let y = 0; y < fh; y += 2) { c.fillRect(X(fx), Y(fy + y), 1, 1); c.fillRect(X(fx + fw - 1), Y(fy + y), 1, 1); }
@@ -723,14 +723,14 @@ function galleryInk(cv, x0) {
         box(fx + 3, fy + 3, fw - 6, 1, "#7a5410"); box(fx + 3, fy + fh - 4, fw - 6, 1, "#7a5410"); box(fx + 3, fy + 3, 1, fh - 6, "#7a5410"); box(fx + fw - 4, fy + 3, 1, fh - 6, "#7a5410");
       }
       const q = fr.plq, px = Math.round(q.x), py = Math.round(q.y), pw = Math.round(q.w), ph = Math.max(7, Math.round(q.h));
-      box(px, py, pw, ph, col.next ? "#3b5a4e" : "#d4b25a"); box(px, py, pw, 1, col.next ? "#4a6b5e" : "#ecd38a");
-      box(px, py + ph - 1, pw, 1, col.next ? "#26392f" : "#8a6620");
+      box(px, py, pw, ph, empty ? "#3b5a4e" : "#d4b25a"); box(px, py, pw, 1, empty ? "#4a6b5e" : "#ecd38a");
+      box(px, py + ph - 1, pw, 1, empty ? "#26392f" : "#8a6620");
       const rank = "#" + (i + 1), who = fr.who;
       let t = who ? `${rank} ${plain(who.nick)}` : `${rank} ?`;
       const sc = who ? ` ${who.score}/10` : "";
       while (t.length > 4 && tw3(t + sc) > pw - 3) t = t.slice(0, -1);
       t += sc;
-      text3(c, t, X(px + (pw - tw3(t)) / 2), Y(py + (ph - 5) / 2), 1, col.next ? "#c9b77e" : "#2a1d08");
+      text3(c, t, X(px + (pw - tw3(t)) / 2), Y(py + (ph - 5) / 2), 1, empty ? "#c9b77e" : "#2a1d08");
     });
   });
 }
