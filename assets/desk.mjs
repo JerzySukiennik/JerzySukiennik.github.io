@@ -152,8 +152,8 @@ function keepInside(el) {
 
 function focus(el) {
   wins.querySelectorAll(".win.on").forEach((w) => { if (w !== el) w.classList.remove("on"); });
-  el.classList.add("on");
-  if (!el.classList.contains("in-world")) el.style.zIndex = ++z;
+  if (!el.classList.contains("on")) el.classList.add("on");
+  if (!el.classList.contains("in-world") && +el.style.zIndex !== z) el.style.zIndex = ++z;
   renderTasks();
 }
 
@@ -241,10 +241,14 @@ addEventListener("popstate", () => {
   if (path === "/") setTitle(null); else go(path, false);
 });
 
+let tasksHtml = null;
 function renderTasks() {
   const list = [...wins.querySelectorAll(".win:not([hidden])")].filter((w) => w.classList.contains("is-min") || drawn(w));
-  tasks.innerHTML = list.map((w) =>
+  const html = list.map((w) =>
     `<button class="task${w.classList.contains("on") && !w.classList.contains("is-min") ? " on" : ""}" type="button" data-task="${V.esc(w.dataset.win)}">${w.querySelector(".tb-i").innerHTML}<span>${V.esc(w.getAttribute("aria-label"))}</span></button>`).join("");
+  if (html === tasksHtml) return;
+  tasksHtml = html;
+  tasks.innerHTML = html;
 }
 
 function toggleStart(force) {

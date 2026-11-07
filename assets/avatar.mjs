@@ -679,7 +679,7 @@ void main(){
   });
   const touch = () => {
     lastInput = performance.now();
-    if (dozing) { dozing = false; if (running && S.state !== "trip") { say(fresh(LINES.wake), "say", 2000); pop("alert", 900); S.state = "talk"; S.until = performance.now() + 2000; } }
+    if (dozing) { dozing = false; setTimeout(() => { if (running && S.state !== "trip") { say(fresh(LINES.wake), "say", 2000); pop("alert", 900); S.state = "talk"; S.until = performance.now() + 2000; } }, 450); }
   };
   ["pointermove", "keydown", "scroll", "touchstart"].forEach((ev) => addEventListener(ev, touch, { passive: true }));
 

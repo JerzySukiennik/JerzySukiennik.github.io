@@ -252,31 +252,71 @@ const CAP = {
   dust: { f: 1, a: 0.85, ah: 0.85, step: 0.22, jit: 0 },
 };
 
+function capsules(c, pts, lw) {
+  const h = lw / 2;
+  c.beginPath();
+  if (pts.length < 4) { c.arc(pts[0], pts[1], h, Math.PI * 2, 0, true); return; }
+  for (let i = 2; i < pts.length; i += 2) {
+    const ax = pts[i - 2], ay = pts[i - 1], bx = pts[i], by = pts[i + 1];
+    if (ax === bx && ay === by) { c.moveTo(ax + h, ay); c.arc(ax, ay, h, Math.PI * 2, 0, true); continue; }
+    const a = Math.atan2(by - ay, bx - ax), nx = -Math.sin(a) * h, ny = Math.cos(a) * h;
+    c.moveTo(ax + nx, ay + ny);
+    c.lineTo(bx + nx, by + ny);
+    c.arc(bx, by, h, a + Math.PI / 2, a - Math.PI / 2, true);
+    c.lineTo(ax - nx, ay - ny);
+    c.arc(ax, ay, h, a - Math.PI / 2, a + Math.PI / 2, true);
+    c.closePath();
+  }
+}
+
 function brushLine(op, c, v, tint) {
   const lw = op.w * v.r * 0.8, W = c.canvas.width, H = c.canvas.height, half = Math.hypot(W, H) / 2;
   let px = null, py = null, run = 0;
-  const seg = (ax, ay, bx, by, col) => {
+  const gapOf = (ax, ay, bx, by) => {
     const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy, t = l2 ? clamp(((W / 2 - ax) * dx + (H / 2 - ay) * dy) / l2, 0, 1) : 0;
-    const gap = Math.hypot(ax + dx * t - W / 2, ay + dy * t - H / 2);
-    if (gap > lw / 2 + half) return;
-    c.fillStyle = c.strokeStyle = col;
-    if (lw > 20000) { if (gap < lw / 2 - half) c.fillRect(0, 0, W, H); return; }
-    if (!l2) { c.beginPath(); c.arc(ax, ay, lw / 2, 0, Math.PI * 2); c.fill(); return; }
-    c.beginPath(); c.moveTo(ax, ay); c.lineTo(bx, by); c.stroke();
+    return Math.hypot(ax + dx * t - W / 2, ay + dy * t - H / 2);
   };
-  return {
+  const seg = (ax, ay, bx, by, col) => {
+    const gap = gapOf(ax, ay, bx, by);
+    if (gap > lw / 2 + half) return;
+    c.fillStyle = col;
+    if (lw > 20000) { if (gap < lw / 2 - half) c.fillRect(0, 0, W, H); return; }
+    capsules(c, ax === bx && ay === by ? [ax, ay] : [ax, ay, bx, by], lw);
+    c.fill();
+  };
+  const me = {
     add(x, y) {
       c.globalCompositeOperation = "source-over";
       c.globalAlpha = 1;
-      c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = lw;
       if (px === null) { seg(x, y, x, y, tint(0, y)); px = x; py = y; return; }
       const len = Math.hypot(x - px, y - py);
       if (len < 0.25) return;
       seg(px, py, x, y, tint(run, y));
       run += len; px = x; py = y;
     },
+    line(list) {
+      if (lw > 20000) { for (let i = 0; i < list.length; i += 2) me.add(list[i], list[i + 1]); return; }
+      c.globalCompositeOperation = "source-over";
+      c.globalAlpha = 1;
+      let ax = list[0], ay = list[1], col = tint(0, ay), pts = [ax, ay];
+      const flush = () => { if (pts.length) { c.fillStyle = col; capsules(c, pts, lw); c.fill(); } pts = []; };
+      for (let i = 2; i < list.length; i += 2) {
+        const x = list[i], y = list[i + 1], len = Math.hypot(x - ax, y - ay);
+        if (len < 0.25) continue;
+        if (gapOf(ax, ay, x, y) <= lw / 2 + half) {
+          const k = tint(run, y);
+          if (k !== col) { flush(); col = k; }
+          if (!pts.length) pts.push(ax, ay);
+          pts.push(x, y);
+        } else flush();
+        run += len; ax = x; ay = y;
+      }
+      flush();
+      px = ax; py = ay;
+    },
     end() {},
   };
+  return me;
 }
 
 const ROLL_K = 2.4, ROLL_LANES = 28, ROLL_WET = 8, ROLL_DRY = 18, ROLL_END = 30;
@@ -521,15 +561,10 @@ function neon(op, c, v) {
   const tube = (list) => {
     c.globalCompositeOperation = "source-over";
     c.globalAlpha = 1;
-    c.lineCap = "round"; c.lineJoin = "round";
     for (const [f, col] of tubes) {
-      c.fillStyle = c.strokeStyle = col;
-      c.beginPath();
-      if (list.length === 2) { c.arc(list[0], list[1], (lw * f) / 2, 0, Math.PI * 2); c.fill(); continue; }
-      c.lineWidth = lw * f;
-      c.moveTo(list[0], list[1]);
-      for (let i = 2; i < list.length; i += 2) c.lineTo(list[i], list[i + 1]);
-      c.stroke();
+      c.fillStyle = col;
+      capsules(c, list, lw * f);
+      c.fill();
     }
   };
   const walk = (x, y) => {
@@ -567,16 +602,11 @@ function chalk(op, c, v) {
     const was = c.imageSmoothingEnabled;
     c.globalCompositeOperation = "source-over";
     c.globalAlpha = 1;
-    c.lineCap = "round"; c.lineJoin = "round";
     c.imageSmoothingEnabled = smooth;
     for (const [w, pt] of pats) {
-      c.fillStyle = c.strokeStyle = pt;
-      c.beginPath();
-      if (list.length === 2) { c.arc(list[0], list[1], w / 2, 0, Math.PI * 2); c.fill(); continue; }
-      c.lineWidth = w;
-      c.moveTo(list[0], list[1]);
-      for (let i = 2; i < list.length; i += 2) c.lineTo(list[i], list[i + 1]);
-      c.stroke();
+      c.fillStyle = pt;
+      capsules(c, list, w);
+      c.fill();
     }
     c.imageSmoothingEnabled = was;
   };
@@ -591,7 +621,15 @@ function rubber(op, c, v) {
   const lw = Math.max(0.5, op.w * v.r), W = c.canvas.width, H = c.canvas.height;
   let px = null, py = null;
   const seg = (ax, ay, bx, by, qx, qy) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy, t = l ? clamp(((qx - ax) * dx + (qy - ay) * dy) / l, 0, 1) : 0; return Math.hypot(ax + dx * t - qx, ay + dy * t - qy); };
-  return {
+  const me = {
+    line(list) {
+      if (lw > 1500) { for (let i = 0; i < list.length; i += 2) me.add(list[i], list[i + 1]); return; }
+      c.globalCompositeOperation = "destination-out";
+      c.globalAlpha = 1;
+      c.fillStyle = "#000";
+      capsules(c, list, lw);
+      c.fill();
+    },
     add(x, y) {
       if (lw > 1500) {
         const ax = px === null ? x : px, ay = px === null ? y : py, corners = [[0, 0], [W, 0], [0, H], [W, H]].map(([qx, qy]) => seg(ax, ay, x, y, qx, qy));
@@ -601,14 +639,14 @@ function rubber(op, c, v) {
       }
       c.globalCompositeOperation = "destination-out";
       c.globalAlpha = 1;
-      c.fillStyle = c.strokeStyle = "#000";
-      c.lineCap = "round"; c.lineJoin = "round"; c.lineWidth = lw;
-      if (px === null) { c.beginPath(); c.arc(x, y, lw / 2, 0, Math.PI * 2); c.fill(); }
-      else if (x !== px || y !== py) { c.beginPath(); c.moveTo(px, py); c.lineTo(x, y); c.stroke(); }
+      c.fillStyle = "#000";
+      if (px === null) { capsules(c, [x, y], lw); c.fill(); }
+      else if (x !== px || y !== py) { capsules(c, [px, py, x, y], lw); c.fill(); }
       px = x; py = y;
     },
     end() {},
   };
+  return me;
 }
 
 function clipRect(p, x0, y0, x1, y1) {
