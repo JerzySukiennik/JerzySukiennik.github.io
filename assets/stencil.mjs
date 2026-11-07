@@ -7,8 +7,49 @@
 
 const N = 256, NI = 512, QI = NI / N, BG_TOL = 40, PIC_BUDGET = 2000, H_MAX = 29000, KEY = "gl-stencils", MAX = 24, VIEW_PX = 640, BUDGET = 1400, FONT = '"Arial Black", Impact, "Helvetica Neue", sans-serif';
 const PUNCH = [6, 12, 22], TEXT = [0.13, 0.2, 0.3], CARD = "#c49a5e";
-const DETAIL = { budget: [0.6, 1, 1.6, 2.3, 3], colors: [6, 10, 13, 16, 20], merge: [1.35, 1, 0.78, 0.62, 0.5], speck: [1.7, 1, 0.55, 0.32, 0.2], name: ["rough", "normal", "fine", "finer", "finest"], DET_KEY: "gl-imp-detail" };
+const DETAIL = { budget: [0.8, 1.6, 2.2, 2.6, 3], colors: [6, 10, 13, 16, 20], merge: [1.35, 1, 0.78, 0.62, 0.5], blur: [1.2, 1, 0.75, 0.55, 0.4], speck: [1.7, 1, 0.55, 0.32, 0.2], name: ["rough", "normal", "fine", "finer", "finest"], DET_KEY: "gl-imp-detail" };
 const clampN = (v, a, b) => Math.min(b, Math.max(a, v));
+const LIN = Float32Array.from({ length: 256 }, (_, i) => { const v = i / 255; return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+const fL = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
+function labOf(r, g, b, T) {
+  const o = new Float32Array(T * 3);
+  for (let i = 0; i < T; i++) {
+    const R = LIN[r[i] | 0], G = LIN[g[i] | 0], B = LIN[b[i] | 0], y = fL(R * 0.2126 + G * 0.7152 + B * 0.0722);
+    o[i * 3] = 116 * y - 16; o[i * 3 + 1] = 500 * (fL((R * 0.4124 + G * 0.3576 + B * 0.1805) / 0.95047) - y); o[i * 3 + 2] = 200 * (y - fL((R * 0.0193 + G * 0.1192 + B * 0.9505) / 1.08883));
+  }
+  return o;
+}
+function absorb(lab, n, min) {
+  const T = NI * NI, seen = new Int32Array(T), q = new Int32Array(T), votes = new Int32Array(n);
+  for (let pass = 0; pass < 2; pass++) {
+    seen.fill(-1);
+    for (let s0 = 0; s0 < T; s0++) {
+      const k = lab[s0];
+      if (k < 0 || seen[s0] >= 0) continue;
+      let h = 0, t = 0;
+      q[t++] = s0; seen[s0] = s0;
+      votes.fill(0);
+      while (h < t) {
+        const i = q[h++], x = i % NI;
+        for (const j of [x > 0 ? i - 1 : -1, x < NI - 1 ? i + 1 : -1, i >= NI ? i - NI : -1, i < T - NI ? i + NI : -1]) {
+          if (j < 0) continue;
+          const l = lab[j];
+          if (l === k) { if (seen[j] < 0) { seen[j] = s0; q[t++] = j; } }
+          else if (l >= 0) votes[l]++;
+        }
+      }
+      if (t >= min) continue;
+      let best = -1, bv = 0;
+      for (let l = 0; l < n; l++) if (votes[l] > bv) { bv = votes[l]; best = l; }
+      if (best >= 0) for (let m = 0; m < t; m++) lab[q[m]] = best;
+    }
+  }
+}
+function rgbOf([L, A, B]) {
+  const fy = (L + 16) / 116, inv = (t) => (t ** 3 > 0.008856 ? t ** 3 : (t - 16 / 116) / 7.787), x = 0.95047 * inv(fy + A / 500), y = inv(fy), z = 1.08883 * inv(fy - B / 200);
+  const gam = (v) => 255 * clampN(v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055, 0, 1);
+  return [gam(3.2406 * x - 1.5372 * y - 0.4986 * z), gam(-0.9689 * x + 1.8758 * y + 0.0415 * z), gam(0.0557 * x - 0.204 * y + 1.057 * z)];
+}
 const PASTE = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || "") ? "⌘V" : "Ctrl+V";
 
 function star(cx, cy, R, r, n) {
@@ -153,7 +194,7 @@ function fit(items, n, budget) {
   items.sort((p, q) => Math.abs(area(q.pts)) - Math.abs(area(p.pts)));
   const total = (r) => r.reduce((s, l) => s + l.pts.length, 0), at = (eps) => items.map((l) => ({ pts: simplify(l.pts, eps), tag: l.tag }));
   let eps = 0.3, res = at(eps);
-  while (total(res) > budget && eps < 2.5 * (n / N)) { eps *= 1.35; res = at(eps); }
+  while (total(res) > budget && eps < 4 * (n / N)) { eps *= 1.35; res = at(eps); }
   res = res.filter((l) => l.pts.length >= 6);
   while (res.length > 1 && total(res) > budget) res.pop();
   return res.map((l) => ({ pts: Float64Array.from(l.pts, (v) => Math.min(1, Math.max(0, v / n))), tag: l.tag }));
@@ -249,6 +290,14 @@ function cutHoles(x, holes, s, colors) {
   holes.forEach((h, i) => { if (!colors[i]) return; x.strokeStyle = "#" + colors[i]; x.beginPath(); loop(h); x.stroke(); });
 }
 
+function paintLayers(x, holes, colors, layers, s) {
+  layers.forEach((col) => {
+    x.fillStyle = "#" + col;
+    x.beginPath();
+    holes.forEach((h, i) => { if (colors[i] !== col) return; for (let j = 0; j < h.length; j += 2) (j ? x.lineTo(h[j] * s, h[j + 1] * s) : x.moveTo(h[j] * s, h[j + 1] * s)); x.closePath(); });
+    x.fill("evenodd");
+  });
+}
 export function sheetThumb(cv, st, px = 48) {
   const dpr = Math.min(2, devicePixelRatio || 1);
   cv.width = cv.height = Math.round(px * dpr);
@@ -488,7 +537,8 @@ function importer(host, { onSave, onEdit }) {
   }
 
   function layered() {
-    const D = (255 - +thrEl.value) * DETAIL.merge[det()], { r, g, b, al, bg } = src, T = NI * NI, flat = new Map();
+    const dt = det(), D = ((255 - +thrEl.value) / 6) * DETAIL.merge[dt], { r, g, b, al, bg } = src, T = NI * NI, flat = new Map();
+    const lab = src.lab || (src.lab = labOf(r, g, b, T)), dE = (i, c) => (lab[i * 3] - c[0]) ** 2 + (lab[i * 3 + 1] - c[1]) ** 2 + (lab[i * 3 + 2] - c[2]) ** 2;
     let fg = 0;
     for (let y = 1; y < NI - 1; y++) for (let x = 1; x < NI - 1; x++) {
       const i = y * NI + x;
@@ -498,45 +548,53 @@ function importer(host, { onSave, onEdit }) {
       for (let k = 0; k < 8; k++) { const j = i + NEAR[k][1] * NI + NEAR[k][0]; e = Math.max(e, Math.abs(r[i] - r[j]) + Math.abs(g[i] - g[j]) + Math.abs(b[i] - b[j])); }
       if (e > 40) continue;
       const key = (r[i] >> 3) * 1024 + (g[i] >> 3) * 32 + (b[i] >> 3), q = flat.get(key) || [0, 0, 0, 0];
-      q[0] += r[i]; q[1] += g[i]; q[2] += b[i]; q[3]++;
+      q[0] += lab[i * 3]; q[1] += lab[i * 3 + 1]; q[2] += lab[i * 3 + 2]; q[3]++;
       flat.set(key, q);
     }
+    const cap = DETAIL.colors[dt];
     let cl = [];
     [...flat.values()].sort((p, q) => q[3] - p[3]).forEach((q) => {
       const c = [q[0] / q[3], q[1] / q[3], q[2] / q[3]];
       let best = -1, bd = Infinity;
       cl.forEach((k, i) => { const d = Math.hypot(c[0] - k.c[0], c[1] - k.c[1], c[2] - k.c[2]); if (d < bd) { bd = d; best = i; } });
-      if (best >= 0 && (bd < D || cl.length >= DETAIL.colors[det()])) { const k = cl[best], w = k.n + q[3]; k.c = k.c.map((v, j) => (v * k.n + c[j] * q[3]) / w); k.n = w; }
+      if (best >= 0 && (bd < D || cl.length >= cap)) { const k = cl[best], w = k.n + q[3]; k.c = k.c.map((v, j) => (v * k.n + c[j] * q[3]) / w); k.n = w; }
       else cl.push({ c, n: q[3] });
     });
-    cl = cl.filter((k) => k.n >= Math.max(24, fg * 0.004) * DETAIL.speck[det()]);
+    cl = cl.filter((k) => k.n >= Math.max(24, fg * 0.004) * DETAIL.speck[dt]);
     if (!cl.length) return { holes: [], colors: null, layers: [] };
-    const lab = new Int8Array(T).fill(-1);
-    for (let i = 0; i < T; i++) {
-      if (al[i] < 0.5 || bg[i]) continue;
-      let best = 0, bd = Infinity;
-      for (let k = 0; k < cl.length; k++) { const c = cl[k].c, d = (r[i] - c[0]) ** 2 + (g[i] - c[1]) ** 2 + (b[i] - c[2]) ** 2; if (d < bd) { bd = d; best = k; } }
-      lab[i] = best;
+    const near = (i) => { let best = 0, bd = Infinity; for (let k = 0; k < cl.length; k++) { const d = dE(i, cl[k].c); if (d < bd) { bd = d; best = k; } } return best; };
+    for (let it = 0; it < 4; it++) {
+      const sum = cl.map(() => [0, 0, 0, 0, 0, 0, 0]);
+      for (let i = 0; i < T; i += 2) {
+        if (al[i] < 0.5 || bg[i]) continue;
+        const s = sum[near(i)];
+        s[0] += lab[i * 3]; s[1] += lab[i * 3 + 1]; s[2] += lab[i * 3 + 2]; s[3] += r[i]; s[4] += g[i]; s[5] += b[i]; s[6]++;
+      }
+      cl.forEach((k, j) => { const s = sum[j]; if (s[6]) { k.c = [s[0] / s[6], s[1] / s[6], s[2] / s[6]]; k.rgb = [s[3] / s[6], s[4] / s[6], s[5] / s[6]]; } });
     }
-    const out = Int8Array.from(lab), cnt = new Int16Array(cl.length), sizes = new Float64Array(cl.length);
+    cl.forEach((k) => { if (!k.rgb) k.rgb = rgbOf(k.c); });
+    const lbl = new Int8Array(T).fill(-1);
+    for (let i = 0; i < T; i++) if (al[i] >= 0.5 && !bg[i]) lbl[i] = near(i);
+    const out = Int8Array.from(lbl), cnt = new Int16Array(cl.length), sizes = new Float64Array(cl.length);
     for (let y = 1; y < NI - 1; y++) for (let x = 1; x < NI - 1; x++) {
       const i = y * NI + x;
-      if (lab[i] < 0) continue;
+      if (lbl[i] < 0) continue;
       cnt.fill(0);
-      let top = lab[i], tn = 0;
-      for (let k = 0; k < 8; k++) { const l = lab[i + NEAR[k][1] * NI + NEAR[k][0]]; if (l >= 0 && ++cnt[l] > tn) { tn = cnt[l]; top = l; } }
+      let top = lbl[i], tn = 0;
+      for (let k = 0; k < 8; k++) { const l = lbl[i + NEAR[k][1] * NI + NEAR[k][0]]; if (l >= 0 && ++cnt[l] > tn) { tn = cnt[l]; top = l; } }
       if (tn >= 5) out[i] = top;
     }
+    const soft = Math.max(1, Math.round(+softEl.value * QI * DETAIL.blur[dt])), speck = (4 + +softEl.value * 6) * QI * QI * DETAIL.speck[dt], items = [];
+    absorb(out, cl.length, Math.max(6, speck * 1.5));
     for (let i = 0; i < T; i++) if (out[i] >= 0) sizes[out[i]]++;
     const order = cl.map((_, k) => k).filter((k) => sizes[k] > 0).sort((p, q) => sizes[q] - sizes[p]);
-    const soft = Math.max(1, +softEl.value * QI), speck = (4 + +softEl.value * 6) * QI * QI * DETAIL.speck[det()], items = [];
     order.forEach((k) => {
       const m = new Float32Array(T);
       for (let i = 0; i < T; i++) if (out[i] === k) m[i] = 1;
-      loopsOf(blur(grow(m), soft), NI, speck).forEach((pts) => items.push({ pts, tag: k }));
+      loopsOf(blur(grow(m), soft), NI, speck * 0.5).forEach((pts) => items.push({ pts, tag: k }));
     });
-    const res = fit(items, NI, PIC_BUDGET * DETAIL.budget[det()]), used = new Set(res.map((l) => l.tag));
-    return { holes: res.map((l) => l.pts), colors: res.map((l) => hexOf(cl[l.tag].c)), layers: order.filter((k) => used.has(k)).map((k) => hexOf(cl[k].c)) };
+    const res = fit(items, NI, PIC_BUDGET * DETAIL.budget[dt]), used = new Set(res.map((l) => l.tag));
+    return { holes: res.map((l) => l.pts), colors: res.map((l) => hexOf(cl[l.tag].rgb)), layers: order.filter((k) => used.has(k)).map((k) => hexOf(cl[k].rgb)) };
   }
 
   function chips() {
@@ -577,6 +635,7 @@ function importer(host, { onSave, onEdit }) {
     cardboard(x, s);
     if (!holes.length) return;
     if (look >= 0 && layers[look]) { const keepI = holes.map((_, i) => colors[i] === layers[look]); cutHoles(x, holes.filter((_, i) => keepI[i]), s, colors.filter((_, i) => keepI[i])); }
+    else if (mode === "colors" && layers.length > 1) paintLayers(x, holes, colors, layers, s);
     else cutHoles(x, holes, s, colors);
   }
   function rebuild() {
@@ -593,7 +652,7 @@ function importer(host, { onSave, onEdit }) {
     if (look >= layers.length) look = -1;
     chips();
     draw();
-    hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? (layers.length > 1 ? `Every color is its own layer. On the wall the color square in the corner of the stencil opens one layer at a time and picks its color: spray them one by one and the whole picture comes out. Click a color here to see its layer. More Detail means more colors and finer shapes, so more layers to spray.` : "Only one color here. Slide Color detail or Detail up to split the picture into more colors.") : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
+    hint(!holes.length ? "Nothing gets cut yet. Move the slider or switch what gets cut out." : mode === "colors" ? (layers.length > 1 ? `Every color is its own layer. On the wall the color square in the corner of the stencil opens one layer at a time and picks its color: spray them one by one and the whole picture comes out. This preview shows the picture once every layer is sprayed; click a color to see the cut of just that layer. More Detail means more colors and finer shapes, so more layers to spray.` : "Only one color here. Slide Color detail or Detail up to split the picture into more colors.") : "This is how the cut sheet looks. Slide the threshold to cut more or less, then save it or fine-tune it in the cutter.");
   }
   const soon = () => { if (!raf) raf = requestAnimationFrame(rebuild); };
   function sync() {
