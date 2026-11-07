@@ -462,6 +462,10 @@ html.tall .wv-mat>[data-mh="sw"],html.tall .wv-mat>[data-mh="se"]{bottom:-12px}
 .pt-imp-det-n{font-style:normal;color:#555}
 .pt-imp-mode .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
 .pt-imp-board{position:relative}
+.pt-imp-view{position:absolute;right:14px;top:14px;display:flex;margin:0}
+.pt-imp-view[hidden]{display:none}
+.pt-imp-view .btn{min-width:0;height:24px;padding:0 9px;font-size:12px}
+.pt-imp-view .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
 .pt-imp-board.over canvas{outline:3px dashed #fff;outline-offset:-10px}
 .pt-imp-drop{position:absolute;inset:8px;display:flex;align-items:center;justify-content:center;padding:36px;text-align:center;font-weight:bold;color:#4a2c0e;pointer-events:none}
 html.tall .pt-pick{left:8px;right:8px;top:auto;bottom:8px;width:auto}

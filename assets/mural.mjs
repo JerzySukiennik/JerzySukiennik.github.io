@@ -3025,13 +3025,15 @@ export function createMural(el, opts) {
   const baseW = (k, h) => (k === "e" && h !== "roller" ? sizeOf(RUBS) : sizeOf(SIZES) * (h === "roller" ? ROLL_K : 1));
   const strokeW = ({ k, c, h }, { zz, zl }) => Math.min(W_MAX / 2 ** zl, spanOf(c, h), baseW(k, h) / zz);
   const fitRatio = () => { if (tool === "tape" || tool === "stencil") return 1; const sk = strokeKind(), zm = zoomNow(); return strokeW(sk, zm) / (baseW(sk.k, sk.h) / zm.zz); };
-  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : (tool === "eraser" ? sizeOf(RUBS) * 1.15 : sizeOf(SIZES) * 1.15 * (tool === "spray" ? headSize(head) : tool === "roller" || tool === "wipe" ? ROLL_K / 1.15 : 1)) * fitRatio());
+  const brushPx = () => (tool === "tape" ? sizeOf(TAPES) : (tool === "eraser" ? sizeOf(RUBS) * 1.15 : sizeOf(SIZES) * 1.15 * (tool === "spray" ? headSize(head) : tool === "roller" || tool === "wipe" ? ROLL_K : 1)) * fitRatio());
   const ringFor = () => (TOUCH || lapse || sampling || tool === "stencil" ? 0 : brushPx());
   function placeRing(e) {
     if (!ring || e.pointerType === "touch") return;
     const r = viewBox || (viewBox = view.getBoundingClientRect());
+    const d = ringFor(), nd = Math.max(4, Math.round(d));
+    if (d > 0 && nd !== ringD) { ringD = nd; ring.style.width = ring.style.height = ringD + "px"; }
     ring.style.transform = `translate(${(e.clientX - r.left - ringD / 2).toFixed(1)}px,${(e.clientY - r.top - ringD / 2).toFixed(1)}px)`;
-    const on = !hoverK && !sellMode && ringFor() > 0;
+    const on = !hoverK && !sellMode && d > 0;
     if (ring.hidden === on) ring.hidden = !on;
   }
   function cursor() {
@@ -3253,6 +3255,7 @@ export function createMural(el, opts) {
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && !e.ctrlKey) { cx += (e.deltaX * unit) / (k0 * Z); clampView(); present(); step(); return; }
       zoomAt(Math.exp(-e.deltaY * unit * (e.ctrlKey ? 0.012 : 0.0022)), e.clientX, e.clientY);
       step();
+      placeRing(e);
     }, { passive: false });
 
     view.addEventListener("pointerdown", (e) => {
