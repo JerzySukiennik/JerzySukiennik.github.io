@@ -18,3 +18,7 @@ CREATE INDEX IF NOT EXISTS live_until ON live(until);
 CREATE TABLE IF NOT EXISTS wall_quotes (id TEXT PRIMARY KEY, w TEXT, wall TEXT, ids TEXT, sig TEXT, szy INTEGER, t INTEGER);
 CREATE INDEX IF NOT EXISTS wall_quotes_t ON wall_quotes(t);
 CREATE TABLE IF NOT EXISTS wall_sold (sig TEXT PRIMARY KEY, w TEXT, t INTEGER);
+CREATE TABLE IF NOT EXISTS themes (week TEXT PRIMARY KEY, title TEXT, about TEXT, t INTEGER);
+CREATE TABLE IF NOT EXISTS theme_entries (id TEXT PRIMARY KEY, week TEXT, wall TEXT, w TEXT, sig TEXT, score INTEGER, comment TEXT, ops TEXT, t INTEGER);
+CREATE INDEX IF NOT EXISTS theme_entries_wk ON theme_entries(week, wall, w);
+CREATE TABLE IF NOT EXISTS gallery (wall TEXT, week TEXT, slot INTEGER, title TEXT, winners TEXT, t INTEGER, PRIMARY KEY (wall, week));

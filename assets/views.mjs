@@ -264,7 +264,7 @@ export function taskbar(ctx) {
   return `<footer class="taskbar"><button class="start" type="button" data-start aria-expanded="false" aria-controls="start-menu">${icon("rocket")}<b>Start</b></button>
 <span class="ql"><a href="/" data-nav title="Show the map">${icon("computer")}</a><a href="#" data-open="guide" title="Ask the Guide">${icon("bubble")}</a></span>
 <div class="tasks" data-tasks></div>
-<div class="tray"><button class="tray-w" type="button" data-wallet title="Your wallet">${icon("cone")}<span data-szy>Wallet</span></button><button class="tray-b" type="button" data-midi title="Play ${esc(ctx.site.nowPlaying)}" aria-pressed="false">${icon("note")}</button><span class="tray-n" data-counter title="Visitors">00000000</span><time class="tray-c" data-clock></time></div></footer>`;
+<div class="tray"><button class="tray-w" type="button" data-wallet title="Your wallet">${icon("cone")}<span data-szy>Wallet</span></button><button class="tray-b" type="button" data-midi title="Play ${esc(ctx.site.nowPlaying)}" aria-pressed="false">${icon("note")}</button><span class="tray-n" data-counter title="Visitors">00000000</span><span class="tray-x" data-wx hidden></span><time class="tray-c" data-clock></time></div></footer>`;
 }
 
 export const PLACES = [

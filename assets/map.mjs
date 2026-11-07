@@ -3,6 +3,8 @@
    The brick wall is drawn pixel by pixel so it stays sharp when the camera flies in to paint. The third column is Gzowo Street,
    with the exchange, the museum, the store and the coaster station. */
 
+import { PAL, SEASON, FROZEN, seasonalAll } from "/assets/season.mjs";
+
 export const TALL = 349, WALL_ROWS = 147 + TALL;
 const UP_ROWS = 877 / (323 / 129);
 export const SPR = {
@@ -20,10 +22,11 @@ const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
 export const KAYAK = [120, 28];
 export const PLACE_SPRITE = { rockets: "launchpad", printing: "workshop", games: "arcade", software: "lab", reviews: "billboard", guestbook: "mailbox", about: "signpost" };
 
-const SKY = ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
-const GRASS = { top: "#69c04c", bottom: "#56ae3f", dark: "#47993a", darker: "#3c8a32", light: "#86d65f", bank: "#3f8f35" };
-const PATH = { base: "#e9c98f", edge: "#c99f62", light: "#f4dcab", pebble: "#bf9661" };
-const FLOWERS = ["#ffffff", "#ffe14d", "#ff9ed2", "#c9a2ff", "#ffffff", "#ffd1e8"];
+const SKY = PAL.sky || ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
+const GRASS = PAL.grass;
+const PATH = PAL.path || { base: "#e9c98f", edge: "#c99f62", light: "#f4dcab", pebble: "#bf9661" };
+const FLOWERS = PAL.flowerCols;
+const SCENE_TREES = { spring: [["#4a8f50", "#7cc070"], ["#3f9a40", "#8fd27a"]], summer: [["#3f7d4a", "#5c9b5c"], ["#3a8a3c", "#5fb050"]], autumn: [["#9a5718", "#d2a72a"], ["#8f3f1c", "#d97b35"]], winter: [["#2a5c3f", "#f2f6fa"], ["#54453a", "#f2f6fa"]] }[SEASON];
 
 let images = null;
 export function loadSprites() {
@@ -246,11 +249,21 @@ function ground(c, g, r, x0, x1) {
     else if (t < 0.85) px(x, y, GRASS.light, 1, 1);
     else px(x, y, GRASS.darker, 2, 1);
   }
-  for (let i = 0; i < area / (k * k * 520); i++) {
+  for (let i = 0; i < (area / (k * k * 520)) * PAL.flowers; i++) {
     const x = x0 + r() * span, y = top + 14 + r() * (bot - top - 20);
     if (onPath(x, y) || onPath(x + 3 * k, y)) continue;
     const col = FLOWERS[Math.floor(r() * FLOWERS.length)];
     px(x - k, y, col); px(x + k, y, col); px(x, y - k, col); px(x, y + k, col); px(x, y, "#ffd23a"); px(x, y + 2 * k, GRASS.darker);
+  }
+  if (PAL.leaves) for (let i = 0; i < area / (k * k * 90); i++) {
+    const x = x0 + r() * span, y = top + 6 + r() * (bot - top - 8), col = PAL.leaves[Math.floor(r() * PAL.leaves.length)];
+    if (onPath(x, y) && r() < 0.6) continue;
+    px(x, y, col, r() < 0.5 ? 2 : 1, 1);
+  }
+  if (PAL.tufts) for (let i = 0; i < area / (k * k * 700); i++) {
+    const x = x0 + r() * span, y = top + 6 + r() * (bot - top - 8);
+    if (onPath(x, y)) continue;
+    px(x, y, PAL.tufts, 1, 2); px(x + k, y + k, PAL.tufts); px(x - k, y + k, PAL.tufts);
   }
   c.imageSmoothingEnabled = false;
   c.drawImage(mask, x0, 0, mask.width * k, mask.height * k);
@@ -261,12 +274,32 @@ function ground(c, g, r, x0, x1) {
   }
 }
 
+function ice(c, g, x0, x1) {
+  const [top, bot] = g.river, h = bot - top, k = g.k, r = rng(7717 + Math.round(x0));
+  const px = (x, y, col, w = 1, hh = 1) => { c.fillStyle = col; c.fillRect(Math.floor(x / k) * k, Math.floor(y / k) * k, w * k, hh * k); };
+  const gr = c.createLinearGradient(0, top, 0, bot);
+  gr.addColorStop(0, "#d9e9f4"); gr.addColorStop(1, "#bcd6ea");
+  c.fillStyle = gr;
+  c.fillRect(x0, top, x1 - x0, h);
+  for (let i = 0; i < ((x1 - x0) * h) / (k * k * 14); i++) px(x0 + r() * (x1 - x0), top + r() * h, r() < 0.5 ? "#e8f2f9" : "#c9dfee", 2 + Math.floor(r() * 5), 1);
+  for (let n = 0; n < (x1 - x0) / (60 * g.s); n++) {
+    let x = x0 + r() * (x1 - x0), y = top + h * (0.2 + r() * 0.7);
+    const len = 4 + Math.floor(r() * 7);
+    for (let j = 0; j < len; j++) { px(x, y, "#9dbfd6"); x += k * (1 + Math.floor(r() * 2)); y += k * (r() < 0.5 ? -1 : r() < 0.5 ? 1 : 0); if (y < top + k || y > bot - k) break; }
+  }
+  for (let x = x0 - (x0 % k); x < x1; x += k) {
+    const d = 1 + Math.round((Math.sin(x / (23 * g.s)) + 1) * 1.2 + (r() < 0.2 ? 1 : 0));
+    px(x, top, "#f4f8fc", 1, d);
+    if (r() < 0.25) px(x, bot - k * 2, "#e6eff7", 1, 2);
+  }
+}
 function river(c, g, img, x0, x1) {
   const [top, bot] = g.river, h = bot - top, k = g.k;
   c.fillStyle = "#2f74d6";
   c.fillRect(x0, top, x1 - x0, h);
   const im = img.water;
-  if (im) {
+  if (FROZEN) ice(c, g, x0, x1);
+  else if (im) {
     const cut = 4, sw = im.naturalWidth - cut * 2, sc = h / im.naturalHeight, tw = sw * sc;
     for (let x = 0, i = 0; x < x1; x += tw - 1, i++) {
       if (x + tw < x0) continue;
@@ -284,6 +317,7 @@ function river(c, g, img, x0, x1) {
     c.fillStyle = "#9aa1a9"; c.beginPath(); c.ellipse(x - rw * 0.08, y - rh * 0.12, rw * 0.38, rh * 0.32, 0, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#c3c8ce"; c.fillRect(Math.floor((x - rw * 0.22) / k) * k, Math.floor((y - rh * 0.3) / k) * k, k, k);
     if (moss) { c.fillStyle = GRASS.dark; c.fillRect(Math.floor((x + rw * 0.3) / k) * k, Math.floor((y - rh * 0.6) / k) * k, k, 2 * k); }
+    if (FROZEN) { c.fillStyle = "#f6f9fc"; c.beginPath(); c.ellipse(x - rw * 0.04, y - rh * 0.28, rw * 0.42, rh * 0.22, 0, 0, Math.PI * 2); c.fill(); }
   }
 }
 
@@ -305,7 +339,7 @@ async function paintHalf(g, img, half, dpr, pause) {
   const hit = (o) => o.x < x1 && o.x + o.w > x0;
   const draw = (o) => { const im = img[o.sprite]; if (im && hit(o)) c.drawImage(im, o.x, o.y, o.w, o.h); };
   draw(g.sun);
-  c.fillStyle = "#7fb98a";
+  c.fillStyle = PAL.hills;
   c.beginPath(); c.moveTo(x0, g.horizon);
   for (let x = x0; x <= x1 + 8; x += 8) c.lineTo(x, g.horizon - (18 + Math.sin(x / g.V * 7) * 10 + Math.sin(x / g.V * 23) * 4) * g.s);
   c.lineTo(x1 + 8, g.horizon); c.closePath(); c.fill();
@@ -328,6 +362,7 @@ function commit(canvas, off, g, half) {
 
 export async function drawMap(canvases, g, img, current = () => true) {
   const dpr = Math.min(2, window.devicePixelRatio || 1), pause = () => new Promise((r) => setTimeout(r));
+  img = seasonalAll(img);
   plan(g, img);
   const left = await paintHalf(g, img, 0, dpr, pause);
   if (!current()) return;
@@ -410,6 +445,7 @@ const MAT = {
   },
   plaster: () => plaster({ base: "#e6dbc3", crack: "#8c7f66", rim: "#a8987a", fall: 0.73, tex: 0.16, k: 61 }),
   whitewall: () => plaster({ base: "#f4f3ef", crack: "#a9a7a1", rim: "#c9c6bf", fall: 0.8, tex: 0.06, k: 251 }),
+  gallery: () => plaster({ base: "#2f4a40", crack: "#2a4239", rim: "#2f4a40", fall: 9, tex: 0.07, k: 271 }),
   pinkwall: () => plaster({ base: "#e9b8b4", crack: "#9a6f6b", rim: "#c48e89", fall: 0.76, tex: 0.14, k: 261 }),
   stone: () => {
     const S = pal(["#8d8a84", "#a29d94", "#7f7b76", "#b2aa9c", "#968b7c", "#6f6c69", "#a89a86"]), mort = pal(["#bdb4a5", "#aaa192"]);
@@ -591,8 +627,9 @@ export const WALL_KINDS = [
 ];
 const matCache = new Map(), REDBRICK = bricks({ w: 16, h: 9, k: 7, bricks: ["#b9472b", "#c4512f", "#ad4127", "#c95b36", "#b44a2c", "#bf4e2e", "#a63e26"], mortar: ["#d6a88a", "#c79a7c"] });
 const matOf = (id) => { if (!MAT[id]) return null; if (!matCache.has(id)) matCache.set(id, MAT[id]()); return matCache.get(id); };
-let kinds = {}, mats = [], matsKey = "[]";
+let kinds = {}, mats = [], matsKey = "[]", gal = null, galKey = "";
 const kindAt = (x, y) => {
+  if (y !== undefined && gal && x >= gal.mat.x0 && x < gal.mat.x1 && y >= gal.mat.y0 && y < gal.mat.y1) return "gallery";
   if (y !== undefined) for (let i = mats.length - 1; i >= 0; i--) { const m = mats[i]; if (x >= m.x0 && x < m.x1 && y >= m.y0 && y < m.y1) return m.k === "brick" ? undefined : m.k; }
   return kinds[Math.max(0, Math.floor((x - 2) / 400))];
 };
@@ -607,6 +644,95 @@ export function setWallMats(list) {
   tallJobs.clear();
   try { dispatchEvent(new CustomEvent("gl-wall-kinds")); } catch (e) {}
   return true;
+}
+
+const AX = (x) => 2 + x / 2.5, AY = (y) => 13 + y / (323 / 129);
+export function setWallGallery(data) {
+  const key = data ? JSON.stringify(data) : "";
+  if (key === galKey) return false;
+  galKey = key;
+  gal = null;
+  if (data && data.zone) {
+    const z = data.zone, r = (q) => ({ x: AX(q[0]), y: AY(q[1]), w: q[2] / 2.5, h: q[3] / (323 / 129) });
+    const col = (c, next) => ({ next, week: c.week, theme: c.theme || "", title: r(c.title), frames: c.frames.map((f, i) => ({ f: r(f.f), plq: r(f.plq), who: next ? null : (c.winners || [])[i] || null })) });
+    gal = { mat: { x0: AX(z.x0), x1: AX(z.x1), y0: AY(z.y0), y1: AY(z.y1), k: "gallery" }, header: data.header ? { ...r(data.header.rect), lines: data.header.lines } : null,
+      cols: [...(data.cols || []).map((c) => col(c, false)), ...(data.next ? [col(data.next, true)] : [])], future: (data.future || []).map((c) => col(c, true)) };
+  }
+  wallCache.clear();
+  artCache.clear();
+  tallCache.clear();
+  tallJobs.clear();
+  try { dispatchEvent(new CustomEvent("gl-wall-kinds")); } catch (e) {}
+  return true;
+}
+
+const FONT3 = {
+  A: [2, 5, 7, 5, 5], B: [6, 5, 6, 5, 6], C: [3, 4, 4, 4, 3], D: [6, 5, 5, 5, 6], E: [7, 4, 6, 4, 7], F: [7, 4, 6, 4, 4], G: [3, 4, 5, 5, 3], H: [5, 5, 7, 5, 5],
+  I: [7, 2, 2, 2, 7], J: [1, 1, 1, 5, 2], K: [5, 5, 6, 5, 5], L: [4, 4, 4, 4, 7], M: [17, 27, 21, 17, 17], N: [9, 13, 11, 9, 9], O: [2, 5, 5, 5, 2], P: [6, 5, 6, 4, 4],
+  Q: [2, 5, 5, 6, 3], R: [6, 5, 6, 5, 5], S: [3, 4, 2, 1, 6], T: [7, 2, 2, 2, 2], U: [5, 5, 5, 5, 7], V: [5, 5, 5, 5, 2], W: [17, 17, 21, 27, 17], X: [5, 5, 2, 5, 5],
+  Y: [5, 5, 2, 2, 2], Z: [7, 1, 2, 4, 7], 0: [7, 5, 5, 5, 7], 1: [2, 6, 2, 2, 7], 2: [6, 1, 2, 4, 7], 3: [6, 1, 2, 1, 6], 4: [5, 5, 7, 1, 1], 5: [7, 4, 6, 1, 6],
+  6: [3, 4, 7, 5, 7], 7: [7, 1, 2, 2, 2], 8: [7, 5, 7, 5, 7], 9: [7, 5, 7, 1, 6], ":": [0, 2, 0, 2, 0], ".": [0, 0, 0, 0, 2], ",": [0, 0, 0, 2, 4], "!": [2, 2, 2, 0, 2],
+  "?": [6, 1, 2, 0, 2], "-": [0, 0, 7, 0, 0], "/": [1, 1, 2, 4, 4], "'": [2, 2, 0, 0, 0], "&": [2, 5, 2, 5, 3], "#": [5, 7, 5, 7, 5], "+": [0, 2, 7, 2, 0], "(": [1, 2, 2, 2, 1], ")": [4, 2, 2, 2, 4], " ": [0, 0, 0, 0, 0],
+};
+const plain = (t) => String(t || "").toUpperCase().replace(/Ł/g, "L").normalize("NFD").replace(/[\u0300-\u036f]/g, "").split("").filter((ch) => FONT3[ch]).join("");
+const GW = { M: 5, W: 5, N: 4 }, gw = (ch) => GW[ch] || 3, tw3 = (t) => [...t].reduce((a, ch) => a + gw(ch) + 1, 0) - 1;
+const wrap3 = (t, px) => { const out = []; let line = ""; t.split(" ").forEach((w) => { const nx = line ? line + " " + w : w; if (tw3(nx) <= px) line = nx; else { if (line) out.push(line); line = w; while (line.length > 1 && tw3(line) > px) line = line.slice(0, -1); } }); if (line) out.push(line); return out; };
+function text3(c, t, x, y, k, col) {
+  c.fillStyle = col;
+  let at = 0;
+  [...t].forEach((ch) => { const w = gw(ch); FONT3[ch].forEach((row, r) => { for (let b = 0; b < w; b++) if (row & (1 << (w - 1 - b))) c.fillRect(Math.round(x + (at + b) * k), Math.round(y + r * k), k, k); }); at += w + 1; });
+}
+
+function galleryInk(cv, x0) {
+  if (!gal) return;
+  const c = cv.getContext("2d"), dy = TALL, X = (x) => Math.round(x - x0), Y = (y) => Math.round(y + dy), W = cv.width;
+  const seen = (x, w) => x + w >= x0 - 2 && x <= x0 + W + 2;
+  const box = (x, y, w, h, col) => { c.fillStyle = col; c.fillRect(X(x), Y(y), Math.round(w), Math.round(h)); };
+  if (gal.header && seen(gal.header.x, gal.header.w)) {
+    const h = gal.header, cx = h.x + h.w / 2, l1 = plain(h.lines[0]), l2 = plain(h.lines[1]).slice(0, 60);
+    text3(c, l1, X(cx - tw3(l1) * 2 + 1), Y(h.y + 7), 4, "#16251f");
+    text3(c, l1, X(cx - tw3(l1) * 2), Y(h.y + 6), 4, "#f3e6bd");
+    text3(c, l2, X(cx - tw3(l2)), Y(h.y + 34), 2, "#e2b54c");
+    box(cx - 130, h.y + 48, 260, 1, "#8f7a3e");
+    if (h.lines[2]) { const l3 = plain(h.lines[2]); text3(c, l3, X(cx - tw3(l3) / 2), Y(h.y + 52), 1, "#a9bfb2"); }
+  }
+  gal.future.forEach((col) => col.frames.forEach((fr) => {
+    const f = fr.f;
+    if (!seen(f.x, f.w)) return;
+    c.fillStyle = "#3d5c50";
+    for (let x = 0; x < Math.round(f.w); x += 3) { c.fillRect(X(f.x + x), Y(f.y), 1, 1); c.fillRect(X(f.x + x), Y(f.y + Math.round(f.h) - 1), 1, 1); }
+    for (let y = 0; y < Math.round(f.h); y += 3) { c.fillRect(X(f.x), Y(f.y + y), 1, 1); c.fillRect(X(f.x + Math.round(f.w) - 1), Y(f.y + y), 1, 1); }
+  }));
+  gal.cols.forEach((col) => {
+    if (!seen(col.title.x, col.title.w)) return;
+    const d = col.week ? new Date(col.week + "T12:00:00Z") : null, when = d ? (col.next ? "THIS WEEK" : "WEEK OF " + d.toLocaleDateString("en-GB", { day: "numeric", month: "short" }).toUpperCase()) : "";
+    const lines = [when, ...wrap3(plain(col.theme), Math.floor(col.title.w) - 2)].slice(0, 4);
+    lines.forEach((t, i) => text3(c, t, X(col.title.x + (col.title.w - tw3(t)) / 2), Y(col.title.y + 1 + i * 7), 1, i ? "#efe6cc" : "#e2b54c"));
+    col.frames.forEach((fr, i) => {
+      const f = fr.f, fx = Math.round(f.x), fy = Math.round(f.y), fw = Math.round(f.w), fh = Math.round(f.h);
+      if (col.next) {
+        c.fillStyle = "#d7b55a";
+        for (let x = 0; x < fw; x += 2) { c.fillRect(X(fx + x), Y(fy), 1, 1); c.fillRect(X(fx + x), Y(fy + fh - 1), 1, 1); }
+        for (let y = 0; y < fh; y += 2) { c.fillRect(X(fx), Y(fy + y), 1, 1); c.fillRect(X(fx + fw - 1), Y(fy + y), 1, 1); }
+        text3(c, "?", X(fx + fw / 2 - 3), Y(fy + fh / 2 - 5), 2, "#8fa99b");
+      } else {
+        box(fx + 1, fy + fh, fw, 1, "rgba(0,0,0,.4)"); box(fx + fw, fy + 1, 1, fh, "rgba(0,0,0,.4)");
+        box(fx, fy, fw, 1, "#5a3d0a"); box(fx, fy + fh - 1, fw, 1, "#5a3d0a"); box(fx, fy, 1, fh, "#5a3d0a"); box(fx + fw - 1, fy, 1, fh, "#5a3d0a");
+        box(fx + 1, fy + 1, fw - 2, 1, "#f7d774"); box(fx + 1, fy + 1, 1, fh - 2, "#f7d774"); box(fx + 1, fy + 2, fw - 2, 1, "#e9bf4f"); box(fx + 2, fy + 1, 1, fh - 2, "#e9bf4f");
+        box(fx + 1, fy + fh - 2, fw - 2, 1, "#a8761f"); box(fx + fw - 2, fy + 1, 1, fh - 2, "#a8761f"); box(fx + 2, fy + fh - 3, fw - 4, 1, "#c8962f"); box(fx + fw - 3, fy + 2, 1, fh - 4, "#c8962f");
+        box(fx + 3, fy + 3, fw - 6, 1, "#7a5410"); box(fx + 3, fy + fh - 4, fw - 6, 1, "#7a5410"); box(fx + 3, fy + 3, 1, fh - 6, "#7a5410"); box(fx + fw - 4, fy + 3, 1, fh - 6, "#7a5410");
+      }
+      const q = fr.plq, px = Math.round(q.x), py = Math.round(q.y), pw = Math.round(q.w), ph = Math.max(7, Math.round(q.h));
+      box(px, py, pw, ph, col.next ? "#3b5a4e" : "#d4b25a"); box(px, py, pw, 1, col.next ? "#4a6b5e" : "#ecd38a");
+      box(px, py + ph - 1, pw, 1, col.next ? "#26392f" : "#8a6620");
+      const rank = "#" + (i + 1), who = fr.who;
+      let t = who ? `${rank} ${plain(who.nick)}` : `${rank} ?`;
+      const sc = who ? ` ${who.score}/10` : "";
+      while (t.length > 4 && tw3(t + sc) > pw - 3) t = t.slice(0, -1);
+      t += sc;
+      text3(c, t, X(px + (pw - tw3(t)) / 2), Y(py + (ph - 5) / 2), 1, col.next ? "#c9b77e" : "#2a1d08");
+    });
+  });
 }
 
 export function setWallKinds(next) {
@@ -654,7 +780,7 @@ function extendFast(base, ends) {
   c.drawImage(base, 0, 0, W, 11, 0, 0, W, 11);
   c.drawImage(base, 0, 11, W, base.height - 11, 0, 11 + TALL, W, base.height - 11);
   for (let p = 0; 2 + p * 400 < W; p++) c.drawImage(upperBlock(kinds[p] || "brick"), 2 + p * 400, 11);
-  mats.forEach((m) => {
+  (gal ? [...mats, gal.mat] : mats).forEach((m) => {
     const ax0 = Math.max(0, Math.floor(m.x0)), ax1 = Math.min(W, Math.ceil(m.x1)), ay0 = Math.max(11 - TALL, Math.floor(m.y0)), ay1 = Math.min(11, Math.ceil(m.y1));
     if (ax1 <= ax0 || ay1 <= ay0) return;
     const f = matOf(m.k === "brick" ? null : m.k) || REDBRICK, im = c.createImageData(ax1 - ax0, ay1 - ay0), d = im.data;
@@ -699,6 +825,7 @@ export function wallTall(p, lamps = true, until = Infinity) {
     tallJobs.set(key, j);
   }
   if (!grow(j, until)) return null;
+  galleryInk(j.cv, j.x0);
   if (j.lamps) lampTop(j.cv, j.x0, { l: j.l, r: j.r });
   tallJobs.delete(key);
   tallCache.set(key, j.cv);
@@ -842,7 +969,7 @@ export function drawWall(canvas, w = SPR.wall[0], short = false, end = false) {
   if (!wallCache.has(key)) {
     const ends = { l: true, r: end || w === SPR.wall[0] };
     if (short) wallCache.set(key, wallLayer(0, w, ends));
-    else { const cv = extendFast(wallLayer(0, w, { ...ends, lamps: false }), ends); lampTop(cv, 0, ends); wallCache.set(key, cv); }
+    else { const cv = extendFast(wallLayer(0, w, { ...ends, lamps: false }), ends); galleryInk(cv, 0); lampTop(cv, 0, ends); wallCache.set(key, cv); }
   }
   const art = wallCache.get(key), k = w > 3000 ? 1 : w > 1000 ? 2 : 4;
   canvas.width = art.width * k;
@@ -872,14 +999,14 @@ function drawWallScene(canvas, p, rows, top) {
   for (let i = 1; i < SKY.length; i++) for (let x = i % 2; x < 400; x += 2) px(x, Math.floor(i * band), SKY[i - 1]);
   for (let x = 0; x < 400; x++) {
     const ax = x + p * 400, h = Math.round(10 + Math.sin(ax / 37) * 4 + Math.sin(ax / 13) * 2);
-    px(x, horizon - h, "#7fb98a", 1, h);
+    px(x, horizon - h, PAL.hills, 1, h);
   }
   const tree = (x, base, rad, dark, light, trunk) => {
     px(x - 1, base - rad, trunk, 2, rad);
     for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
       const d = Math.hypot(dx, dy * 1.1);
       if (d > rad + 0.3) continue;
-      px(x + dx, base - rad * 1.6 + dy, d > rad - 1.2 ? "#1f4a2a" : dx + dy < -rad * 0.6 && r() < 0.7 ? light : dark);
+      px(x + dx, base - rad * 1.6 + dy, d > rad - 1.2 ? (FROZEN && dy < -rad * 0.3 ? "#ffffff" : SEASON === "autumn" ? "#4a2a12" : "#1f4a2a") : dx + dy < -rad * 0.6 && r() < 0.7 ? light : dark);
     }
   };
   const g0 = horizon, gr = c.createLinearGradient(0, g0, 0, rows);
@@ -890,12 +1017,12 @@ function drawWallScene(canvas, p, rows, top) {
     const x = Math.floor(r() * 400), y = g0 + 1 + Math.floor(r() * (rows - g0)), t = r();
     if (t < 0.55) { px(x, y, GRASS.dark, 1, 2); px(x + 1, y + 1, GRASS.dark); } else if (t < 0.85) px(x, y, GRASS.light); else px(x, y, GRASS.darker, 2, 1);
   }
-  for (let i = 0; i < ((rows - g0) * 400) / 520; i++) {
+  for (let i = 0; i < (((rows - g0) * 400) / 520) * PAL.flowers; i++) {
     const x = 2 + Math.floor(r() * 396), y = g0 + 4 + Math.floor(r() * Math.max(1, rows - g0 - 6)), col = FLOWERS[Math.floor(r() * FLOWERS.length)];
     px(x - 1, y, col); px(x + 1, y, col); px(x, y - 1, col); px(x, y + 1, col); px(x, y, "#ffd23a");
   }
-  for (let x = -12 + r() * 10; x < 412; x += 16 + r() * 18) tree(Math.round(x), horizon + 2, Math.round(6 + r() * 4), "#3f7d4a", "#5c9b5c", "#4a3424");
-  for (let x = -12 + r() * 14; x < 412; x += 22 + r() * 26) tree(Math.round(x), top + 18, Math.round(8 + r() * 5), "#3a8a3c", "#5fb050", "#5b3d22");
+  for (let x = -12 + r() * 10; x < 412; x += 16 + r() * 18) tree(Math.round(x), horizon + 2, Math.round(6 + r() * 4), SCENE_TREES[0][0], SCENE_TREES[0][1], "#4a3424");
+  for (let x = -12 + r() * 14; x < 412; x += 22 + r() * 26) tree(Math.round(x), top + 18, Math.round(8 + r() * 5), SCENE_TREES[1][0], SCENE_TREES[1][1], "#5b3d22");
 }
 
 const KAYAK_COLORS = [["#ffb24d", "#f2801f", "#a8500f"], ["#5ad6cd", "#1fa39c", "#0f6c67"]];

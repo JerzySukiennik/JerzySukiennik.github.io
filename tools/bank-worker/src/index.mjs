@@ -344,8 +344,10 @@ async function pulse(env) {
   const old = await env.DB.prepare("SELECT gzm, gzf FROM prices WHERE t <= ? ORDER BY t DESC LIMIT 1").bind(now - DAY).first()
     || await env.DB.prepare("SELECT gzm, gzf FROM prices ORDER BY t ASC LIMIT 1").first();
   const live = (await env.DB.prepare("SELECT id, kind, nick, data, t, until FROM live WHERE until > ? AND t < ? ORDER BY t").bind(now, now + 120000).all()).results;
+  const w = await kvGet(env, ["wx_t", "wx_code", "wx_cloud", "wx_rain", "wx_snow", "wx_day", "wx_at", "wind"]);
   return {
     t: now, gzm: p.gzm, gzf: p.gzf,
+    wx: w.wx_at && now - w.wx_at < 3 * 3600000 ? { temp: w.wx_t, code: w.wx_code, cloud: w.wx_cloud, rain: w.wx_rain, snow: w.wx_snow, day: w.wx_day, wind: w.wind, at: w.wx_at } : null,
     chg: { gzm: old ? r2((p.gzm / old.gzm - 1) * 100) : 0, gzf: old ? r2((p.gzf / old.gzf - 1) * 100) : 0 },
     live: live.map((l) => ({ id: l.id, kind: l.kind, nick: l.nick, text: l.data, t: l.t, until: l.until })),
   };
@@ -605,6 +607,250 @@ async function wallSell(env, req, w, body) {
   return { ok: true, pay, got, me: await view(env, await me(env, w.id)) };
 }
 
+const WX = 1000, THEME_PRIZE = [60, 40, 25], THEME_TRIES = 3, STENCILS = 5, PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
+const GAL = { zone: { x0: 0, x1: 2000, y0: -877, y1: -40 }, panels: 2, perPanel: 5 };
+const THEME_FALLBACK = ["Rockets in the rain", "My dream treehouse", "Robots at the beach", "Space pizza", "The Narew at night", "Animals in sunglasses", "A city on a cloud",
+  "Dragons and drones", "Underwater Gzowo", "Tiny worlds", "Retro arcade", "Snow day in Gzowo", "Fruit with faces", "Bikes of the future", "A friendly monster", "Launch day"];
+const JUDGE = (th) => `You are Haiku, the judge of the weekly theme on the shared spray paint wall of gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. This week's theme is "${th.title}": ${th.about} Visitors paint on one long brick wall with spray cans, chalk, neon, paint rollers, masking tape and stencils; you see one drawing cut out from the wall with the wall behind it. Score how well it fits the theme and how good it is, 1 to 10: 1-2 off theme or a scribble, 3-4 a quick doodle that loosely fits, 5-6 clearly on theme with some care, 7-8 a detailed, creative take on the theme, 9-10 genuinely impressive and right on theme. Be honest but warm and say how it fits the theme. Mark it unsafe if it shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.`;
+const STENCIL_SYS = `You design spray paint stencils for the shared wall on gzowo.fun, a pixel-art website by a 14-year-old maker in Gzowo, Poland. A visitor describes a picture and you draw it as one simple flat SVG. It gets cut out of cardboard layer by layer: every color becomes its own stencil layer that is sprayed in turn, so draw it like a bold sticker or a screen print.
+Rules for the SVG:
+- viewBox="0 0 256 256" and a transparent background: never draw a background rectangle, a frame or a ground plane.
+- 2 to 5 solid colors written as 6 digit hex like #1b1b1b. No gradients, no opacity, no filters, no text, no images, no clip paths.
+- Only path, circle, ellipse, rect, polygon, polyline, line and g elements.
+- Big, simple, iconic shapes that fill most of the 256 by 256 box and read at a glance, like a good logo. Put a thick dark outline (#1b1b1b, stroke-width 6 to 10, round joins) around the main shapes, or a dark silhouette under the colored parts.
+- Nothing thinner than 6 units: no hairlines and no tiny dots. At most about 60 elements.
+- Draw back to front: later elements cover earlier ones. Never hide the main subject under a big shape: draw a helmet, glass or window as a ring or outline so the face inside shows.
+Mark it unsafe if the description asks for sexual content, nudity, gore, weapons aimed at people, hate symbols, slurs, bullying of a real person or personal data.`;
+
+function weekOf(ms = Date.now()) {
+  const [y, m, d] = new Date(ms).toLocaleDateString("sv-SE", { timeZone: "Europe/Warsaw" }).split("-").map(Number), t = Date.UTC(y, m - 1, d);
+  return new Date(t - ((new Date(t).getUTCDay() + 6) % 7) * DAY).toISOString().slice(0, 10);
+}
+function warsawMidnight(ymd) {
+  const [y, m, d] = ymd.split("-").map(Number);
+  for (const off of [1, 2]) {
+    const t = Date.UTC(y, m - 1, d) - off * 3600000;
+    if (new Date(t).toLocaleString("sv-SE", { timeZone: "Europe/Warsaw", hour12: false }).startsWith(ymd + " 00:00")) return t;
+  }
+  return Date.UTC(y, m - 1, d) - 3600000;
+}
+const weekEnd = (wk) => warsawMidnight(new Date(Date.parse(wk) + 7 * DAY + 3 * 3600000).toISOString().slice(0, 10));
+
+async function haikuTool(env, system, tool, content, max = 400) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: MODEL, max_tokens: max, thinking: { type: "disabled" }, system, tools: [tool], tool_choice: { type: "tool", name: tool.name }, messages: [{ role: "user", content }] }),
+  });
+  if (!res.ok) throw new Fail("Haiku is out for lunch, try again in a minute", 503);
+  const data = await res.json();
+  if (data.stop_reason === "max_tokens") throw new Fail("Haiku's drawing came out too big, try a simpler idea", 503);
+  const use = (data.content || []).find((c) => c.type === "tool_use");
+  if (!use) throw new Fail("Haiku is out for lunch, try again in a minute", 503);
+  return use.input;
+}
+
+async function themeOf(env, wk) {
+  const have = await env.DB.prepare("SELECT week, title, about FROM themes WHERE week = ?").bind(wk).first();
+  if (have) return have;
+  const past = (await env.DB.prepare("SELECT title FROM themes ORDER BY week DESC LIMIT 24").all()).results.map((r) => r.title);
+  let title = "", about = "";
+  try {
+    const month = new Date(Date.parse(wk) + 3 * DAY).toLocaleDateString("en-GB", { month: "long" });
+    const r = await haikuTool(env, "You pick the weekly drawing theme for the shared spray paint wall on gzowo.fun, a pixel-art website by a 14-year-old maker about his family's plot of land in Gzowo, Poland, by the Narew river, with a rocket launch pad, a workshop with 3D printers, an arcade, kayaks and pine trees. Visitors are kids, teens and their parents. A good theme is fun, visual, open to many ideas and easy to paint with spray cans, chalk, rollers and stencils. Now and then it is about Gzowo, rockets, the river or the season. Never scary, violent, sad or political.",
+      { name: "theme", description: "The theme for this week.", input_schema: { type: "object", additionalProperties: false, required: ["title", "about"], properties: {
+        title: { type: "string", description: "The theme in English, 2 to 5 words, at most 32 characters, no quotes." },
+        about: { type: "string", description: "One short inviting English sentence about what to paint, at most 110 characters." } } } },
+      `The week starting ${wk} (${month}). Pick a fresh theme, different from these past ones: ${past.join("; ") || "none yet"}.`, 200);
+    title = tidy(String(r.title || "").replace(/["“”]/g, ""), 32).replace(/\.\.\.$/, "");
+    about = tidy(String(r.about || ""), 120);
+    if (bad(title) || bad(about) || title.length < 3) title = "";
+  } catch (e) { title = ""; }
+  if (!title) { const n = Math.floor(Date.parse(wk) / (7 * DAY)); title = THEME_FALLBACK.filter((t) => !past.includes(t))[0] || THEME_FALLBACK[n % THEME_FALLBACK.length]; about = "Paint your own take on it anywhere on the wall, then enter it for Haiku to judge."; }
+  await env.DB.prepare("INSERT OR IGNORE INTO themes (week, title, about, t) VALUES (?, ?, ?, ?)").bind(wk, title, about, Date.now()).run();
+  return env.DB.prepare("SELECT week, title, about FROM themes WHERE week = ?").bind(wk).first();
+}
+
+function galCol(slot) {
+  const P = Math.floor(slot / GAL.perPanel), j = slot % GAL.perPanel;
+  if (slot < 0 || P >= GAL.panels) return null;
+  const x0 = P * WX + 15 + j * 200;
+  return { slot, title: [x0, -702, 170, 60], frames: [0, 1, 2].map((i) => ({ f: [x0, -632 + i * 184, 170, 140], plq: [x0 + 6, -632 + i * 184 + 144, 158, 26] })) };
+}
+
+async function bestOf(env, wk, wall) {
+  return (await env.DB.prepare(`SELECT e.w, MAX(e.score) score, MIN(e.t) t, wl.nick FROM theme_entries e LEFT JOIN wallets wl ON wl.id = e.w
+    WHERE e.week = ? AND e.wall = ? GROUP BY e.w ORDER BY score DESC, t ASC LIMIT 40`).bind(wk, wall).all()).results;
+}
+
+async function themeView(env, req, id) {
+  const wk = weekOf(), th = await themeOf(env, wk), wall = wallOf(req)[0], rows = await bestOf(env, wk, wall);
+  const mine = id ? await env.DB.prepare("SELECT COUNT(*) n, MAX(score) best FROM theme_entries WHERE week = ? AND wall = ? AND w = ?").bind(wk, wall, id).first() : null;
+  const rank = id ? rows.findIndex((r) => r.w === id) + 1 : 0;
+  return {
+    week: wk, title: th.title, about: th.about, ends: weekEnd(wk), prizes: THEME_PRIZE, tries: THEME_TRIES,
+    top: rows.slice(0, 5).map((r, i) => ({ rank: i + 1, nick: r.nick || "someone", score: r.score, me: r.w === id })),
+    mine: mine ? { entered: mine.n, best: mine.best || 0, rank } : null,
+  };
+}
+
+async function galleryView(env, req) {
+  const wall = wallOf(req)[0], wk = weekOf(), th = await themeOf(env, wk);
+  const rows = (await env.DB.prepare("SELECT week, slot, title, winners FROM gallery WHERE wall = ? AND slot >= 0 ORDER BY slot").bind(wall).all()).results;
+  const next = galCol(rows.length);
+  return {
+    zone: GAL.zone, week: wk, title: th.title, ends: weekEnd(wk),
+    header: { rect: [GAL.zone.x0 + 15, GAL.zone.y0 + 10, GAL.zone.x1 - GAL.zone.x0 - 30, 150], lines: ["THE WALL GALLERY", "THIS WEEK: " + th.title, "Enter your drawing with the Theme button in the wall painter"] },
+    cols: rows.map((r) => ({ ...galCol(r.slot), week: r.week, theme: r.title, winners: JSON.parse(r.winners) })).filter((c) => c.frames),
+    next: next ? { ...next, week: wk, theme: th.title, winners: [] } : null,
+    future: Array.from({ length: GAL.panels * GAL.perPanel }, (_, i) => galCol(i)).filter((c) => c && c.slot > rows.length),
+  };
+}
+
+async function themeEnter(env, req, w, body) {
+  const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(body.img || ""));
+  if (!m || m[1].length > 700000) throw new Fail("The drawing didn't arrive");
+  const wk = weekOf(), th = await themeOf(env, wk), wall = wallOf(req)[0];
+  const tries = (await env.DB.prepare("SELECT COUNT(*) n FROM theme_entries WHERE week = ? AND wall = ? AND w = ?").bind(wk, wall, w.id).first()).n;
+  if (tries >= THEME_TRIES) throw new Fail(`You entered ${THEME_TRIES} drawings this week. A new theme comes on Monday!`);
+  const list = await strokesOf(req, body.ids);
+  if (list.length > 400) throw new Fail("That drawing has too many strokes for the gallery");
+  await owned(list, body.key, w.id);
+  const sig = await sigOf(list);
+  if (await env.DB.prepare("SELECT 1 FROM theme_entries WHERE week = ? AND wall = ? AND sig = ?").bind(wk, wall, sig).first()) throw new Fail("That drawing is in this week's theme already");
+  const ops = JSON.stringify(list.map((x) => ({ p: x.p, id: x.id, v: x.v })));
+  if (ops.length > 900000) throw new Fail("That drawing is too big for the gallery");
+  await ipLimit(env, req, "themeq", 40);
+  const r = await critic(env, JUDGE(th), m[1], "image/jpeg", `Here is my drawing for this week's theme, "${th.title}". How well does it fit?`);
+  if (!r.safe) throw new Fail("Haiku can't put this one in the gallery");
+  const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  await env.DB.prepare("INSERT INTO theme_entries (id, week, wall, w, sig, score, comment, ops, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
+    .bind(id, wk, wall, w.id, sig, r.score, r.comment, ops, Date.now()).run();
+  const rows = await bestOf(env, wk, wall);
+  return { score: r.score, comment: r.comment, rank: rows.findIndex((x) => x.w === w.id) + 1, left: THEME_TRIES - tries - 1, title: th.title };
+}
+
+function pushIds(n) {
+  let now = Date.now(), t = "";
+  for (let i = 0; i < 8; i++) { t = PUSH[now % 64] + t; now = Math.floor(now / 64); }
+  const base = [...crypto.getRandomValues(new Uint8Array(6))].map((b) => PUSH[b % 64]).join("");
+  return Array.from({ length: n }, (_, i) => t + base + [3, 2, 1, 0].map((k) => PUSH[Math.floor(i / 64 ** k) % 64]).join("") + "zz");
+}
+
+function strokeWorld(x) {
+  const v = x.v, z = Number.isInteger(v.z) ? v.z : 0, sc = 2 ** -z, [ox, oy] = v.o ? String(v.o).split(",").map(Number) : [0, 0], base = x.p * WX;
+  const poly = (s) => { const n = String(s).split(",").map(Number), o = []; for (let i = 0; i + 1 < n.length; i += 2) o.push([base + (n[i] + ox) * sc, (n[i + 1] + oy) * sc]); return o; };
+  return { v, z, sc, d: poly(v.d), m: v.m ? String(v.m).split(";").map(poly) : null, s: v.s ? String(v.s).split("|").map((g) => g.split(";").map(poly)) : null };
+}
+
+function copyInto(wall, ops, f) {
+  const ws = ops.filter((o) => o.v && typeof o.v.d === "string").map(strokeWorld).filter((W) => W.d.length);
+  if (!ws.length) return {};
+  let bx0 = Infinity, by0 = Infinity, bx1 = -Infinity, by1 = -Infinity;
+  ws.forEach((W) => { const r = W.v.w * W.sc * (W.v.k === "e" ? 0.5 : 0.9); W.d.forEach(([x, y]) => { bx0 = Math.min(bx0, x - r); by0 = Math.min(by0, y - r); bx1 = Math.max(bx1, x + r); by1 = Math.max(by1, y + r); }); });
+  const fx = f[0] + 12, fy = f[1] + 12, fw = f[2] - 24, fh = f[3] - 24, bw = Math.max(1, bx1 - bx0), bh = Math.max(1, by1 - by0);
+  const S = Math.min(fw / bw, fh / bh, 3), ox = fx + (fw - bw * S) / 2, oy = fy + (fh - bh * S) / 2, P = Math.floor(f[0] / WX), base = P * WX, ids = pushIds(ws.length), patch = {};
+  ws.forEach((W, i) => {
+    const v = W.v, z2 = clamp(Math.round(W.z - Math.log2(S)), 0, 30), s2 = 2 ** z2;
+    const ints = (pts) => pts.map(([X, Y]) => [Math.max(0, Math.round((ox + (X - bx0) * S - base) * s2)), Math.round((oy + (Y - by0) * S) * s2)]);
+    const d = ints(W.d);
+    let qx = 0, qy = 0;
+    if (z2) { qx = Math.min(...d.map((q) => q[0])); qy = Math.min(...d.map((q) => q[1])); }
+    const enc = (list) => list.map(([a, b]) => a - qx + "," + (b - qy)).join(",");
+    const out = { k: v.k, d: enc(d), w: clamp(Math.round(v.w * S * 2 ** (z2 - W.z)), 3, 200), t: { ".sv": "timestamp" } };
+    if (out.d.length > 3000) return;
+    if (v.k !== "e") out.c = v.c;
+    if (z2) { out.z = z2; out.o = qx + "," + qy; }
+    if (v.h) out.h = v.h;
+    if (Number.isInteger(v.r)) out.r = v.r;
+    if (W.m) { const mm = W.m.map((p) => enc(ints(p))).join(";"); if (mm.length <= 4000) out.m = mm; }
+    if (W.s) { const ss = W.s.map((g) => g.map((p) => enc(ints(p))).join(";")).join("|"); if (ss.length <= 9000) out.s = ss; }
+    patch[`${wall}/${P}/${ids[i]}`] = out;
+  });
+  return patch;
+}
+
+async function closeWeek(env, wall, wk) {
+  const th = await env.DB.prepare("SELECT title FROM themes WHERE week = ?").bind(wk).first(), title = th ? th.title : "";
+  const top = (await bestOf(env, wk, wall)).slice(0, 3);
+  const used = (await env.DB.prepare("SELECT COUNT(*) n FROM gallery WHERE wall = ? AND slot >= 0").bind(wall).first()).n;
+  const col = top.length ? galCol(used) : null;
+  const winners = top.map((r, i) => ({ rank: i + 1, nick: r.nick || "someone", score: r.score }));
+  const lock = await env.DB.prepare("INSERT OR IGNORE INTO gallery (wall, week, slot, title, winners, t) VALUES (?, ?, ?, ?, ?, ?)").bind(wall, wk, col ? used : -1, title, JSON.stringify(winners), Date.now()).run();
+  if (!lock.meta.changes) return;
+  if (col) {
+    const patch = {};
+    for (const [i, r] of top.entries()) {
+      const e = await env.DB.prepare("SELECT ops FROM theme_entries WHERE week = ? AND wall = ? AND w = ? ORDER BY score DESC, t ASC LIMIT 1").bind(wk, wall, r.w).first();
+      if (e) Object.assign(patch, copyInto(wall, JSON.parse(e.ops), col.frames[i].f));
+    }
+    if (Object.keys(patch).length) await fetch(`${RTDB}/.json`, { method: "PATCH", body: JSON.stringify(patch) }).catch(() => null);
+  }
+  for (const [i, r] of top.entries()) await credit(env, r.w, THEME_PRIZE[i], "theme", `${["1st", "2nd", "3rd"][i]} place in the wall theme "${title}"`);
+}
+
+async function themeRoll(env, only) {
+  const now = Date.now(), lock = await env.DB.prepare("INSERT INTO kv (k, v) VALUES ('themeroll', ?1) ON CONFLICT(k) DO UPDATE SET v = ?1 WHERE v < ?2").bind(now, now - 120000).run();
+  if (!lock.meta.changes) return;
+  try {
+    const cur = weekOf();
+    await themeOf(env, cur);
+    const weeks = only ? [only] : (await env.DB.prepare("SELECT week FROM themes WHERE week < ? ORDER BY week").bind(cur).all()).results.map((r) => r.week);
+    for (const wk of weeks) for (const wall of ["muralWall", "muralWallDev"]) {
+      if (!(await env.DB.prepare("SELECT 1 FROM gallery WHERE wall = ? AND week = ?").bind(wall, wk).first())) await closeWeek(env, wall, wk);
+    }
+  } finally {
+    await env.DB.prepare("UPDATE kv SET v = 0 WHERE k = 'themeroll'").run();
+  }
+}
+
+const SVG_TAGS = new Set(["g", "path", "circle", "ellipse", "rect", "polygon", "polyline", "line"]);
+const SVG_ATTR = new Set(["d", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "fill-rule", "cx", "cy", "r", "rx", "ry", "x", "y", "width", "height", "points", "x1", "y1", "x2", "y2", "transform"]);
+function cleanSvg(src) {
+  const s = String(src || "").slice(0, 60000), out = [], stack = [];
+  const re = /<\s*(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)([^>]*?)(\/?)\s*>/g;
+  let m, shapes = 0;
+  while ((m = re.exec(s)) && out.length < 800) {
+    const [, close, raw, attrs, self] = m, tag = raw.toLowerCase();
+    if (!SVG_TAGS.has(tag)) continue;
+    if (close) { const i = stack.lastIndexOf(tag); if (i >= 0) { while (stack.length > i) out.push(`</${stack.pop()}>`); } continue; }
+    const at = [];
+    attrs.replace(/([a-zA-Z][a-zA-Z0-9-]*)\s*=\s*(?:"([^"]*)"|'([^']*)')/g, (_, k, a, b) => {
+      const key = k.toLowerCase(), val = String(a ?? b ?? "").trim();
+      if (SVG_ATTR.has(key) && val.length <= 12000 && /^[-#0-9a-zA-Z.,\s()%]*$/.test(val) && !/url|script|expression/i.test(val)) at.push(`${key}="${val}"`);
+      return "";
+    });
+    out.push(`<${tag}${at.length ? " " + at.join(" ") : ""}${self ? "/" : ""}>`);
+    if (tag !== "g") shapes++;
+    if (!self) stack.push(tag);
+  }
+  while (stack.length) out.push(`</${stack.pop()}>`);
+  if (!shapes) return null;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="512" height="512">${out.join("")}</svg>`;
+}
+
+async function stencilDraw(env, req, w, body) {
+  const text = cleanText(body.prompt, 80, 2);
+  if (!(await bump(env, w.id, "stencil", STENCILS))) throw new Fail(`Haiku drew ${STENCILS} stencils for you today, come back tomorrow`);
+  const refund = () => env.DB.prepare("UPDATE earns SET n = n - 1 WHERE w = ? AND day = ? AND kind = 'stencil' AND n > 0").bind(w.id, today()).run();
+  try {
+    await ipLimit(env, req, "stencil", 25);
+    const r = await haikuTool(env, STENCIL_SYS, { name: "stencil", description: "The stencil drawing.", input_schema: { type: "object", additionalProperties: false, required: ["safe", "name", "svg"], properties: {
+      safe: { type: "boolean" },
+      name: { type: "string", description: "A short name for the stencil, at most 20 characters, in the same language as the description: English for an English description, Polish for a Polish one." },
+      svg: { type: "string", description: "The whole SVG document with viewBox 0 0 256 256." } } } }, `Draw this stencil: ${text}`, 7000);
+    if (r.safe === false) throw new Fail("Haiku won't draw that one");
+    const svg = cleanSvg(r.svg);
+    if (!svg) throw new Fail("Haiku's drawing didn't work out, try again", 503);
+    const name = String(r.name || text).replace(/[<>"&]/g, "").trim().slice(0, 20) || "Stencil";
+    const n = await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = 'stencil'").bind(w.id, today()).first();
+    return { svg, name: bad(name) ? "Stencil" : name, left: Math.max(0, STENCILS - (n ? n.n : 0)) };
+  } catch (e) {
+    await refund();
+    throw e;
+  }
+}
+
 async function history(env, w) {
   const rows = (await env.DB.prepare("SELECT t, kind, szy, gzm, gzf, note FROM ledger WHERE w = ? ORDER BY id DESC LIMIT 40").bind(w.id).all()).results;
   return { rows };
@@ -626,7 +872,7 @@ async function tick(env) {
     fetch("https://danepubliczne.imgw.pl/api/data/hydro/id/152210180").then((r) => r.json()).catch(() => null),
     fetch("https://api.github.com/users/JerzySukiennik/events/public?per_page=100", { headers: { "user-agent": "gzowo-bank", accept: "application/vnd.github+json" } })
       .then((r) => (r.ok ? r.json() : null)).catch(() => null),
-    fetch("https://api.open-meteo.com/v1/forecast?latitude=52.67&longitude=21.12&current=wind_speed_10m,precipitation").then((r) => r.json()).catch(() => null),
+    fetch("https://api.open-meteo.com/v1/forecast?latitude=52.67&longitude=21.12&current=wind_speed_10m,precipitation,rain,showers,snowfall,temperature_2m,weather_code,cloud_cover,is_day&timezone=Europe%2FWarsaw").then((r) => r.json()).catch(() => null),
     count("hits.json"), count("plot/launches.json"), count("plot/garden.json?shallow=true"), count("plot/fish.json?shallow=true"),
     count("plot/folks.json?shallow=true"), count("plot/board.json?shallow=true"), count("guestbook.json?shallow=true"), count("reviews.json?shallow=true"),
   ]);
@@ -641,6 +887,9 @@ async function tick(env) {
   }
   const wind = wx && wx.current && typeof wx.current.wind_speed_10m === "number" ? wx.current.wind_speed_10m : kv.wind ?? 8;
   const rain = wx && wx.current && typeof wx.current.precipitation === "number" ? wx.current.precipitation : kv.rain ?? 0;
+  const cur = wx && wx.current && typeof wx.current.weather_code === "number" ? wx.current : null, num = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+  const sky = cur ? [kvSet(env, "wx_t", num(cur.temperature_2m)), kvSet(env, "wx_code", num(cur.weather_code)), kvSet(env, "wx_cloud", num(cur.cloud_cover)),
+    kvSet(env, "wx_rain", num(cur.rain) + num(cur.showers)), kvSet(env, "wx_snow", num(cur.snowfall)), kvSet(env, "wx_day", num(cur.is_day)), kvSet(env, "wx_at", now)] : [];
 
   const names = ["hits", "launches", "garden", "fish", "folks", "board", "guestbook", "reviews"];
   const totals = {};
@@ -686,7 +935,7 @@ async function tick(env) {
   };
   await env.DB.batch([
     kvSet(env, "f_gzm", f.gzm), kvSet(env, "f_gzf", f.gzf), kvSet(env, "p_gzm", p.gzm), kvSet(env, "p_gzf", p.gzf),
-    kvSet(env, "narew", narew), kvSet(env, "push7", push7), kvSet(env, "repos30", repos30), kvSet(env, "wind", wind), kvSet(env, "rain", rain),
+    kvSet(env, "narew", narew), kvSet(env, "push7", push7), kvSet(env, "repos30", repos30), kvSet(env, "wind", wind), kvSet(env, "rain", rain), ...sky,
     env.DB.prepare("INSERT INTO prices (t, gzm, gzf, why) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(t) DO UPDATE SET gzm = ?2, gzf = ?3, why = ?4")
       .bind(slot, r2(f.gzm * p.gzm), r2(f.gzf * p.gzf), JSON.stringify(why)),
     env.DB.prepare("DELETE FROM prices WHERE t < ?").bind(now - 30 * DAY),
@@ -771,6 +1020,16 @@ async function route(req, env, ctx) {
     if (method === "POST" && art[3] === "buy") return purchase(env, await need(), art[1], body);
   }
 
+  if (method === "GET" && path === "/wall/theme") { ctx.waitUntil(themeRoll(env).catch(() => {})); return themeView(env, req, id); }
+  if (method === "GET" && path === "/wall/gallery") return galleryView(env, req);
+  if (method === "POST" && path === "/wall/theme/enter") return themeEnter(env, req, await need(), body);
+  if (method === "POST" && path === "/wall/stencil") return stencilDraw(env, req, await need(), body);
+  if (method === "POST" && path === "/admin/theme/roll") {
+    if (!admin) throw new Fail("Nope", 403);
+    await env.DB.prepare("UPDATE kv SET v = 0 WHERE k = 'themeroll'").run();
+    await themeRoll(env, /^\d{4}-\d{2}-\d{2}$/.test(String(body.week || "")) ? body.week : undefined);
+    return { ok: true };
+  }
   if (path === "/admin/feedback") {
     if (!admin) throw new Fail("Nope", 403);
     if (method === "POST") await env.DB.prepare("UPDATE feedback SET done = ? WHERE id = ?").bind(body.done ? 1 : 0, +body.id).run();
@@ -807,5 +1066,6 @@ export default {
   },
   async scheduled(event, env, ctx) {
     ctx.waitUntil(tick(env));
+    ctx.waitUntil(themeRoll(env).catch((e) => console.error(e && e.stack ? e.stack : e)));
   },
 };

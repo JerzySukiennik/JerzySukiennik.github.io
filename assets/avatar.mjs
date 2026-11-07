@@ -32,6 +32,9 @@ const LINES = {
   kayakGo: ["Paddle time!", "Kayak? Say no more!", "To the river!"],
   kayak: ["The Narew is cold today!", "Wheee!", "Paddle, paddle, paddle.", "I can see a fish!", "Best office in Gzowo.", "Do not tell my mum I skipped homework."],
   kayakBack: ["Back to work.", "That was refreshing.", "My arms are noodles now."],
+  skateGo: ["Skates on!", "The Narew is frozen, let's go!", "Ice time!"],
+  skate: ["Wheee!", "Look, no hands!", "Triple axel. Almost.", "Faster than a kayak!", "The ice is singing!", "Best rink in Gzowo."],
+  skateBack: ["My legs are jelly.", "That was cold. And awesome.", "Back to work."],
   busy: ["I am already on the river!", "One kayak at a time!"],
   fire: ["Static fire! Whoa!", "Hear that? Engine test!", "Cover your ears!"],
   morning: ["Good morning! Juice first, rockets later.", "Early bird gets the rocket."],
@@ -44,6 +47,8 @@ const LINES = {
   rainMore: ["It is pouring now!", "OK, that is a lot of rain.", "Stop squeezing the clouds!", "The Narew will flood!"],
   wet: ["I love the sound of rain.", "Perfect weather for coding.", "No launch today. Weather hold.", "The river is getting bigger.", "Rain on the window. So cozy.", "My shoes are full of water."],
   rainKayak: ["Rain? I am wet anyway!", "Paddling in the rain. Epic."],
+  snow: ["Snow! Real snow!", "Snowball fight, anyone?", "Gzowo goes white!", "Let it snow!"],
+  snowMore: ["Now it is a blizzard!", "So much snow!", "We will need a shovel."],
   rainbow: ["Rainbow!", "Look, a rainbow!", "The sun is back!", "Is there gold at the end of it?"],
   scrub: ["Launch scrubbed. Weather.", "No engine test in the rain."],
   countdown: ["T minus 3...", "Here we go!", "Everybody back!"],
@@ -245,7 +250,7 @@ void main(){
 
   const S = { s: 0, target: 0, key: null, state: "idle", until: performance.now() + 1500, yaw: 0, want: 0, x: 0, y: 0, h: 100, w: 66, lift: 0, lost: 0, backAt: 0, mode: "walk", trip: null, kw: 0, kh: 0, z: 0 };
   const B2 = { line: "", shown: 0, until: 0, kind: "say", wait: 0 };
-  let emoteUntil = 0, lastInput = performance.now(), dozing = false, wet = false, shaking = 0;
+  let emoteUntil = 0, lastInput = performance.now(), dozing = false, wet = false, snowing = false, shaking = 0;
 
   function size() {
     S.h = Math.round(G.person);
@@ -418,7 +423,9 @@ void main(){
     S.trip = null;
     S.s = G.trip.s;
     S.state = "idle"; S.until = performance.now() + (silent ? 600 : 2600);
-    if (!silent) { say(fresh(T.kind === "fish" ? LINES.fishBack : LINES.kayakBack), "say", 2400); play("wave"); }
+    if (act.walk) act.walk.timeScale = 1;
+    model.rotation.z = 0;
+    if (!silent) { say(fresh(T.kind === "fish" ? LINES.fishBack : T.kind === "skate" ? LINES.skateBack : LINES.kayakBack), "say", 2400); play("wave"); }
   }
 
   function fishGo() {
@@ -450,6 +457,20 @@ void main(){
       S.s = G.trip.s + (S.s > G.trip.s ? 1 : -1) * Math.min(Math.abs(S.s - G.trip.s), G.speed * 1.5);
     }
     say(fresh(LINES.kayakGo), "say", 1800);
+    pop("note", 1200);
+  }
+
+  function startSkate() {
+    if (!G.kayaks || !G.kayaks[0]) return;
+    if (S.trip) { say(fresh(LINES.busy), "shout", 1600); pop("alert"); return; }
+    S.trip = { kind: "skate", kb: G.kayaks[0], phase: "go", i: 0, p: null, t0: 0, afloat: false };
+    S.state = "trip";
+    if (dozing) dozing = false;
+    const jy = pointAt(G.trip.s)[1];
+    if (!onScreen() || Math.abs(S.s - G.trip.s) > G.V * 1.4 || (G.mode === "tall" && Math.abs(jy - S.y) > innerHeight)) {
+      S.s = G.trip.s + (S.s > G.trip.s ? 1 : -1) * Math.min(Math.abs(S.s - G.trip.s), G.speed * 1.5);
+    }
+    say(fresh(LINES.skateGo), "say", 1800);
     pop("note", 1200);
   }
 
@@ -487,7 +508,7 @@ void main(){
             size(); play("idle"); S.want = 0;
             dispatchEvent(new CustomEvent("gz:fish-ready", { detail: { tip: rodTip } }));
           } else if (T.phase === "down") {
-            const kb = T.kb, seat = [kb.x + kb.w / 2, kb.y + kb.h * (11.5 / 28)];
+            const kb = T.kb, seat = T.kind === "skate" ? [kb.x + kb.w / 2, kb.y + kb.h * 0.86] : [kb.x + kb.w / 2, kb.y + kb.h * (11.5 / 28)];
             T.phase = "jump"; T.from = [S.x, S.y]; T.to = seat; T.t0 = t; T.dur = 560;
           } else endTrip(false);
         }
@@ -507,7 +528,16 @@ void main(){
       S.want = T.to[0] > T.from[0] ? Math.PI / 2 : -Math.PI / 2;
       play("run");
       if (u >= 1) {
-        if (T.phase === "jump") {
+        if (T.phase === "jump" && T.kind === "skate") {
+          const [l0, l1] = G.lane, home = T.to[0], room = [home - l0, l1 - home];
+          const dir = room[1] >= room[0] ? 1 : -1, span = Math.max(room[0], room[1]);
+          T.home = home; T.dir = dir; T.out = home + dir * span * R(0.6, 0.95); T.iceY = T.to[1];
+          const total = R(11000, 17000), turn = 1100, leg = (total - turn) / 2;
+          T.t0 = t; T.legs = [leg, turn, leg]; T.phase = "skate"; T.said = false; T.lastDust = 0;
+          S.z = Math.round(T.iceY) + 4;
+          if (act.walk) act.walk.timeScale = 0.55;
+          say(fresh(LINES.skate), "say", 2200);
+        } else if (T.phase === "jump") {
           T.afloat = true;
           T.el.classList.add("is-afloat");
           drawKayak(T.el.querySelector("canvas"), T.n, false);
@@ -526,6 +556,29 @@ void main(){
           T.phase = "up"; T.route = T.route.slice().reverse(); T.i = 1;
         }
       }
+      return;
+    }
+    if (T.phase === "skate") {
+      const el0 = t - T.t0, [a, b, c] = T.legs, glide = (u) => { const e = u * u * (3 - 2 * u); return Math.min(1, Math.max(0, e + Math.sin(u * Math.PI * 9) * 0.012 * Math.sin(u * Math.PI))); };
+      let x, face = T.dir;
+      if (el0 < a) { x = T.home + (T.out - T.home) * glide(el0 / a); S.want = face * Math.PI / 2; }
+      else if (el0 < a + b) { const u = (el0 - a) / b; x = T.out + T.dir * Math.sin(u * Math.PI) * G.person * 0.3; S.want = face * Math.PI / 2 + T.dir * u * Math.PI * 3; }
+      else if (el0 < a + b + c) { x = T.out + (T.home - T.out) * glide((el0 - a - b) / c); face = -T.dir; S.want = face * Math.PI / 2; }
+      else {
+        if (act.walk) act.walk.timeScale = 1;
+        model.rotation.z = 0;
+        const end = G.trip.walk[G.trip.walk.length - 1] || G.trip.walk[1];
+        T.phase = "hop"; T.from = [T.home, T.iceY]; T.to = end; T.t0 = t; T.dur = 560;
+        T.route = G.trip.down.concat(G.trip.walk.slice(1));
+        return;
+      }
+      const moving = el0 < a || el0 > a + b;
+      play(moving ? "walk" : "idle");
+      model.rotation.z = moving ? Math.sin(el0 / 230) * 0.13 : 0;
+      S.x = x; S.y = T.iceY + Math.abs(Math.sin(el0 / 230)) * G.s * 1.2;
+      S.z = Math.round(T.iceY) + 4;
+      if (moving && t - T.lastDust > 460) { T.lastDust = t; splash(x - face * G.person * 0.22, T.iceY + G.person * 0.02, G.person * 0.32); }
+      if (!T.said && el0 > a * 0.6) { T.said = true; say(fresh(LINES.skate), Math.random() < 0.3 ? "think" : "say", 2400); if (Math.random() < 0.5) pop(pick(["note", "heart"])); }
       return;
     }
     if (T.phase === "row") {
@@ -570,6 +623,7 @@ void main(){
     }
   });
   addEventListener("gz:kayak", (e) => { if (running) startTrip(e.detail); });
+  addEventListener("gz:skate", () => { if (running) startSkate(); });
   addEventListener("gz:fish-go", () => { if (running) fishGo(); });
   addEventListener("gz:fish-bite", () => { if (running && fishing) { say(fresh(LINES.bite), "shout", 1100); pop("alert", 1000); } });
   addEventListener("gz:fish-done", (e) => {
@@ -588,17 +642,17 @@ void main(){
   addEventListener("gz:fire", () => { if (running && onScreen() && S.state !== "trip") { say(fresh(LINES.fire), "shout", 2000); pop("alert", 1200); } });
   addEventListener("gz:painted", () => { if (running && S.state !== "trip") { say(fresh(LINES.painted), "say", 2400); pop("heart"); } });
   addEventListener("gz:rain", (e) => {
-    const { on, quiet } = e.detail, was = wet;
-    wet = on;
-    if (S.mode === "walk") U2.want = on;
+    const { on, quiet, snow } = e.detail, was = wet || snowing, wasSnow = snowing;
+    wet = on && !snow; snowing = on && !!snow;
+    if (S.mode === "walk") U2.want = wet;
     if (!running || dozing) return;
     if (on && !was) {
-      if (S.state === "trip") { say(fresh(LINES.rainKayak), "say", 2200); return; }
-      stop(fresh(LINES.rain), "shout", 2000);
+      if (S.state === "trip") { if (S.trip && S.trip.kind !== "skate") say(fresh(LINES.rainKayak), "say", 2200); return; }
+      stop(fresh(snow ? LINES.snow : LINES.rain), "shout", 2000);
       pop("sweat", 1400);
     } else if (on) {
-      if (S.state !== "trip" && onScreen()) { say(fresh(LINES.rainMore), "shout", 1800); pop("alert", 1000); }
-    } else if (was && !quiet && S.state !== "trip" && onScreen()) {
+      if (S.state !== "trip" && onScreen()) { say(fresh(snow ? LINES.snowMore : LINES.rainMore), "shout", 1800); pop("alert", 1000); }
+    } else if (was && !wasSnow && !quiet && S.state !== "trip" && onScreen()) {
       setTimeout(() => { if (running && S.state !== "trip" && !wet) { stop(fresh(LINES.rainbow), "say", 2600); pop("heart"); } }, 700);
     }
   });

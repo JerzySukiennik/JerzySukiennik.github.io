@@ -61,3 +61,5 @@ The big wall at `/wall/` (`assets/wall3d/`) uses only CC0 1.0 recordings from fr
 | song1.mp3 | Peaceful Hip Hop | shortiefoeva2 | https://freesound.org/people/shortiefoeva2/sounds/411080/ |
 | song2.mp3 | Easy Going Music Loop | Seth_Makes_Sounds | https://freesound.org/people/Seth_Makes_Sounds/sounds/691837/ |
 | song3.mp3 | Dayum | loveless1017 | https://freesound.org/people/loveless1017/sounds/455443/ |
+| roll.mp3 | Painting Rollar on Wall | Kate_is_yellow | https://freesound.org/people/Kate_is_yellow/sounds/708207/ |
+| dip.mp3 | Paint splash | colorsCrimsonTears | https://freesound.org/people/colorsCrimsonTears/sounds/577966/ |

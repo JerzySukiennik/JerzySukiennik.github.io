@@ -2,6 +2,7 @@
    to hook the fish. Eleven river fish, an old boot and a very rare golden fish, each with a size, and the biggest catches go into a records table. */
 
 import { pix } from "/assets/life.mjs";
+import { FROZEN } from "/assets/season.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
@@ -77,7 +78,7 @@ export function createFishing(world) {
   dock.setAttribute("aria-label", "Dock, go fishing");
   dock.innerHTML = `<span class="spot-l"><b>Fishing</b><em>click the dock</em></span>`;
   spots.append(dock);
-  let g = null, state = "idle", tip = null, bob = null, line = null, raf = 0, timers = [], box = null, readyT = 0, at = [0, 0];
+  let g = null, state = "idle", tip = null, bob = null, line = null, hole = null, raf = 0, timers = [], box = null, readyT = 0, at = [0, 0];
 
   const later = (f, ms) => timers.push(setTimeout(f, ms));
   const clear = () => { timers.forEach(clearTimeout); timers = []; };
@@ -126,6 +127,13 @@ export function createFishing(world) {
     line = document.createElement("i");
     line.className = "fish-line";
     world.append(line, bob);
+    if (FROZEN) {
+      const k = Math.max(2, 2.4 * g.s);
+      hole = document.createElement("i");
+      hole.className = "fish-hole";
+      hole.style.cssText = `left:${to[0] - 5 * k}px;top:${to[1] - 1.5 * k}px;width:${10 * k}px;height:${4 * k}px;z-index:${Math.round(to[1])};--k:${k.toFixed(2)}`;
+      world.append(hole);
+    }
     const t0 = performance.now();
     const fly = (now) => {
       const u = Math.min(1, (now - t0) / 520);
@@ -174,7 +182,8 @@ export function createFishing(world) {
   function finish() {
     if (bob) bob.remove();
     if (line) line.remove();
-    bob = line = null;
+    if (hole) hole.remove();
+    bob = line = hole = null;
     state = "idle";
   }
 

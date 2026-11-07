@@ -2,6 +2,7 @@
    a busy 3D printer, a rocket that test-fires now and then, and two kayaks at the dock that take Jurek out on the Narew. */
 
 import { drawKayak } from "/assets/map.mjs";
+import { SEASON, FROZEN } from "/assets/season.mjs";
 
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const R = (a, b) => a + Math.random() * (b - a);
@@ -31,6 +32,11 @@ const FLY = (wing, edge) => pix([
   ["...E...", "..AAA..", "...B...", "..ABA..", "...A...", "......."],
 ], { A: wing, E: edge, B: "#2b2b2b" });
 const FISH = pix([["..LLLL...", ".XXXXXE.T", "XXXXXXXTT", ".DDDDDD.T", "..DDDD..."]], { L: "#d9eefc", X: "#9ec7e6", D: "#6f9fc4", E: "#1d2a35", T: "#7fb0d6" });
+const SKATES = pix([
+  ["....HH........", "...H..H.......", "..H....H......", ".BB....BB.....", ".BBB...BBB....", ".BBBB..BBBB...", ".BBBBB.BBBBB..", ".SSSSS.SSSSS..", "MMMMMM.MMMMMM.", ".M...M..M...M."],
+], { H: "#6b5a4b", B: "#f4f1ea", S: "#c9c2b6", M: "#9aa3ad" });
+const LEAF = (c) => pix([[".L.", "LLL", ".L."]], { L: c });
+const LEAVES = ["#d97b35", "#e3b82e", "#b85a26", "#c98a2a"].map(LEAF);
 const PUFF = pix([["...WWWW...", ".WWWWWWWW.", "WWWWWWWWWW", "WWWWWWWWWW", "WWWWWWWWGG", ".WWWWWGGG.", "..GGGGGG..", ".........."]], { W: "#f6f8fa", G: "#c7cdd4" });
 const FLAME = pix([
   [".WWWWWWW.", ".WYYYYYW.", "..YYWYY..", "..YYYYY..", "..YOYOY..", "...OYO...", "...OOO...", "...OOO...", "....O....", "....O....", ".........", ".........", ".........", "........."],
@@ -51,6 +57,20 @@ export function createLife(world) {
   let g = null, paused = false, wet = false, fireT = 0, fishT = 0;
   addEventListener("gz:rain", (e) => { wet = e.detail.on; root.classList.toggle("is-wet", wet); });
 
+  const skates = document.createElement("button");
+  skates.type = "button";
+  skates.className = "spot spot-skates";
+  skates.hidden = !FROZEN;
+  skates.setAttribute("aria-label", "Ice skates, take Jurek skating on the frozen Narew");
+  skates.innerHTML = `<i class="sk-art" style="--sk:${SKATES}"></i><span class="spot-l"><b>Skates</b><em>the Narew is frozen</em></span>`;
+  skates.addEventListener("click", (e) => {
+    e.preventDefault();
+    skates.classList.remove("is-poked");
+    void skates.offsetWidth;
+    skates.classList.add("is-poked");
+    dispatchEvent(new CustomEvent("gz:skate"));
+  });
+  spots.append(skates);
   const kayaks = [0, 1].map((n) => {
     const b = document.createElement("button");
     b.type = "button";
@@ -67,6 +87,7 @@ export function createLife(world) {
       dispatchEvent(new CustomEvent("gz:kayak", { detail: n }));
     });
     spots.append(b);
+    if (FROZEN) b.hidden = true;
     return b;
   });
 
@@ -129,6 +150,17 @@ export function createLife(world) {
     gull.style.background = "url(/assets/map/gull.webp) center/100% 100%";
     const fl = g.mode === "tall" ? [[250, 1075], [150, 2075], [600, 1250], [540, 1880]].map(([x, y]) => [x * g.V / 390, y * g.V / 390]) : [[0.205 * g.V, 0.875 * g.H], [0.49 * g.V, 0.905 * g.H], [1.42 * g.V, 0.79 * g.H], [1.66 * g.V, 0.82 * g.H]];
     fl.forEach(([x, y], i) => make("life-fly", `left:${x}px;top:${y}px;z-index:${Math.round(y)};--d:${11 + i * 4}s;--dl:${-i * 3}s;--fly:${i ? FLY("#ffd84a", "#c98a12") : FLY("#ffffff", "#9aa6b2")}`, "<i></i>"));
+    if (FROZEN && g.kayaks[0]) {
+      const kb = g.kayaks[0], w = kb.w * 0.42, h = w * (10 / 14);
+      skates.style.left = kb.x + kb.w * 0.3 + "px"; skates.style.top = kb.y + kb.h - h + "px";
+      skates.style.width = w + "px"; skates.style.height = h + "px";
+      skates.style.zIndex = Math.round(kb.y + kb.h);
+    }
+    if (SEASON === "autumn" && !calm) {
+      (g.props || []).filter((o) => /^tree|^bush/.test(o.sprite)).forEach((t, i) => {
+        for (let n = 0; n < 2; n++) make("life-leaf", `left:${(t.x + t.w * R(0.2, 0.8)).toFixed(0)}px;top:${(t.y + t.h * R(0.15, 0.45)).toFixed(0)}px;z-index:${Math.round(t.y + t.h) + 1};--leaf:${LEAVES[(i + n) % LEAVES.length]};--fall:${(t.h * R(0.55, 0.85)).toFixed(0)}px;--dx:${(R(-1, 1) * t.w * 0.4).toFixed(0)}px;--d:${R(6, 11).toFixed(1)}s;--dl:${(-R(0, 11)).toFixed(1)}s`);
+      });
+    }
     g.kayaks.forEach((kb, n) => {
       const b = kayaks[n];
       if (b.classList.contains("is-afloat")) return;
@@ -147,7 +179,7 @@ export function createLife(world) {
 
   function fish() {
     fishT = setTimeout(fish, R(7000, 16000));
-    if (paused || document.hidden || !g) return;
+    if (paused || document.hidden || !g || FROZEN) return;
     const [top, bot] = g.river, dock = g.river_props[0];
     let x = 0;
     for (let i = 0; i < 6; i++) {

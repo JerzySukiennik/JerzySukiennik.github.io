@@ -5,6 +5,7 @@ import { geometry, drawMap, drawWall, loadSprites } from "/assets/map.mjs";
 import { createMural } from "/assets/mural.mjs";
 import { createLife } from "/assets/life.mjs";
 import { createWeather } from "/assets/weather.mjs";
+import { seasonDom } from "/assets/season.mjs";
 import { createLaunch } from "/assets/rocket.mjs";
 import { createGarden } from "/assets/garden.mjs";
 import { createFishing } from "/assets/fishing.mjs";
@@ -119,6 +120,8 @@ function layout() {
   mapReady = loadSprites().then((img) => (g === geo ? drawMap(maps, g, img, () => g === geo) : null));
   panned();
   if (mode === "land") wins.querySelectorAll(".win:not([hidden])").forEach(keepInside);
+  seasonDom(world);
+  setTimeout(() => seasonDom(world), 1500);
   window.gzMap = { geo, world, pan };
   window.dispatchEvent(new CustomEvent("gz:map", { detail: { geo, world, pan } }));
 }

@@ -313,13 +313,16 @@
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
           },
           "a": {
             ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
           },
           "u": {
             ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
+          },
+          "r": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000000 && newData.val() % 1 === 0"
           }
         }
       },
@@ -403,6 +406,9 @@
           },
           "u": {
             ".validate": "newData.isString()"
+          },
+          "r": {
+            ".validate": "newData.isNumber()"
           }
         }
       }
@@ -448,13 +454,16 @@
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+            ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
           },
           "a": {
             ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
           },
           "u": {
             ".validate": "newData.isString() && newData.val().matches(/^[0-9a-f]{12}$/)"
+          },
+          "r": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000000 && newData.val() % 1 === 0"
           }
         }
       },
@@ -538,6 +547,9 @@
           },
           "u": {
             ".validate": "newData.isString()"
+          },
+          "r": {
+            ".validate": "newData.isNumber()"
           }
         }
       }
@@ -896,7 +908,7 @@
               ".validate": "newData.isString() && newData.val().length <= 12"
             },
             "h": {
-              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
             },
             "w": {
               ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
@@ -914,6 +926,9 @@
             },
             "$other": {
               ".validate": false
+            },
+            "r": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000000 && newData.val() % 1 === 0"
             }
           },
           "$other": {
@@ -1033,7 +1048,7 @@
               ".validate": "newData.isString() && newData.val().length <= 12"
             },
             "h": {
-              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
             },
             "w": {
               ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
@@ -1051,6 +1066,9 @@
             },
             "$other": {
               ".validate": false
+            },
+            "r": {
+              ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100000000 && newData.val() % 1 === 0"
             }
           },
           "$other": {

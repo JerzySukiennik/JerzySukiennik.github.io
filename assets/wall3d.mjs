@@ -6,17 +6,18 @@ import * as THREE from "three";
 import { createMural, paintOp, wallIcon } from "/assets/mural.mjs";
 import { wallFace, wallTall } from "/assets/map.mjs";
 import { picker, cutter } from "/assets/stencil.mjs";
-import { me as wallet, code as walletCode, api as bank } from "/assets/bank.mjs";
+import { PAL, FROZEN, seasonal } from "/assets/season.mjs";
+import { me as wallet, code as walletCode, api as bank, ensure } from "/assets/bank.mjs";
 
 const U = 0.01, WX = 1000, WY = 323, UPH = 877, ARTY = 323 / 129, TW = 250, TH = 300, RF = 0.5, RN = 2.4;
 const WALL_H = (WY + UPH) * U, THICK = 0.4, EYE = 1.65, RAD = 0.28;
 const X = (ux) => ux * U, Y = (uy) => (WY - uy) * U;
 const SND = "/assets/wall3d/", SPR = "/assets/map/";
-const TOOLS = [["spray", "Spray"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow"], ["eraser", "Eraser"], ["tape", "Tape"], ["stencil", "Stencil"]];
-const REACH = { spray: 3.2, bands: 3.2, neon: 3.2, chalk: 1.05, eraser: 1.05, tape: 2.4, stencil: 2.8 };
-const SKY = ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
-const GRASS = ["#69c04c", "#56ae3f", "#47993a", "#3c8a32", "#86d65f", "#5fb544"];
-const FLOWERS = ["#ffffff", "#ffe14d", "#ff9ed2", "#c9a2ff", "#ffffff", "#ffd1e8"];
+const TOOLS = [["spray", "Spray"], ["chalk", "Chalk"], ["neon", "Neon"], ["bands", "Rainbow"], ["roller", "Roller"], ["eraser", "Eraser"], ["tape", "Tape"], ["stencil", "Stencil"]];
+const REACH = { spray: 3.2, bands: 3.2, neon: 3.2, roller: 1.15, chalk: 1.05, eraser: 1.05, tape: 2.4, stencil: 2.8 };
+const SKY = PAL.sky || ["#3a74d6", "#4381dd", "#4e8ee3", "#5a9be8", "#68a8ee", "#78b5f2", "#8ac2f6", "#9ecff9"];
+const GRASS = [PAL.grass.top, PAL.grass.bottom, PAL.grass.dark, PAL.grass.darker, PAL.grass.light, PAL.grass.bottom];
+const FLOWERS = PAL.flowerCols.length ? (PAL.leaves ? [...PAL.flowerCols, ...PAL.leaves, ...PAL.leaves] : PAL.flowerCols) : ["#ffffff", "#e8f0f8"];
 const RAINBOW = ["#ff2d2d", "#ff8a00", "#ffe600", "#38e03b", "#00e5ff", "#2f6bff", "#b14bff"];
 const SONGS = [["song1.mp3", "Peaceful Hip Hop", "shortiefoeva2"], ["song2.mp3", "Easy Going", "Seth_Makes_Sounds"], ["song3.mp3", "Dayum", "loveless1017"]];
 const LIFT = { len: 2.6, dep: 1.2, deck: 1.0, max: 10.4, speed: 0.85, drive: 1.6 };
@@ -83,7 +84,14 @@ function start() {
   function texOf(w, h, draw, rep) { const c = canvas(w, h), x = c.getContext("2d"); draw(x, w, h); return pix(new THREE.CanvasTexture(c), rep); }
   function dots(x, w, h, cols, k, n) { for (let i = 0; i < n; i++) { x.fillStyle = cols[Math.floor(hash(i, k, 1) * cols.length)]; x.fillRect(Math.floor(hash(i, k, 2) * w), Math.floor(hash(i, k, 3) * h), 1, 1); } }
   const loader = new THREE.TextureLoader(), sprites = {};
-  ["tree1", "tree2", "tree3", "pine", "bush", "lamp", "cloud1", "cloud2", "cloud3", "cloud4", "sun", "bench"].forEach((k) => { sprites[k] = pix(loader.load(SPR + k + ".webp")); });
+  ["tree1", "tree2", "tree3", "pine", "bush", "lamp", "cloud1", "cloud2", "cloud3", "cloud4", "sun", "bench"].forEach((k) => {
+    if (!/^cloud|^sun/.test(k)) {
+      const tex = pix(new THREE.Texture()), im = new Image();
+      im.src = SPR + k + ".webp";
+      im.decode().then(() => { tex.image = seasonal(im, k); tex.needsUpdate = true; }, () => {});
+      sprites[k] = tex;
+    } else sprites[k] = pix(loader.load(SPR + k + ".webp"));
+  });
   const SIZE = { tree1: [98, 103], tree2: [72, 101], tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], bench: [99, 49] };
   const spriteMats = {};
   function sprite(k, h, fog = true) {
@@ -130,9 +138,9 @@ function start() {
   gravel.rotation.x = -Math.PI / 2;
   scene.add(gravel);
   const waterTex = texOf(64, 32, (x, w, h) => {
-    x.fillStyle = "#3b86c9"; x.fillRect(0, 0, w, h);
-    dots(x, w, h, ["#2f74b5", "#4a97d8", "#2a6aa8"], 3, 300);
-    for (let i = 0; i < 26; i++) { const gx = Math.floor(hash(i, 11) * w), gy = Math.floor(hash(i, 12) * h); x.fillStyle = i % 3 ? "#8cc8f2" : "#ffffff"; x.fillRect(gx, gy, 3 + Math.floor(hash(i, 13) * 4), 1); }
+    x.fillStyle = FROZEN ? "#cfe2f0" : "#3b86c9"; x.fillRect(0, 0, w, h);
+    dots(x, w, h, FROZEN ? ["#e6f1f9", "#bcd6ea", "#f4f8fc"] : ["#2f74b5", "#4a97d8", "#2a6aa8"], 3, 300);
+    for (let i = 0; i < 26; i++) { const gx = Math.floor(hash(i, 11) * w), gy = Math.floor(hash(i, 12) * h); x.fillStyle = FROZEN ? (i % 3 ? "#9dbfd6" : "#ffffff") : i % 3 ? "#8cc8f2" : "#ffffff"; x.fillRect(gx, gy, 3 + Math.floor(hash(i, 13) * 4), 1); }
   }, true);
   waterTex.repeat.set(120, 3);
   const river = new THREE.Mesh(new THREE.PlaneGeometry(600, 10), new THREE.MeshBasicMaterial({ map: waterTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }));
@@ -207,6 +215,7 @@ function start() {
     aim: () => aim,
     pick() { openPicker(); },
     sync() { if (ui) hudSync(); },
+    roll(q) { rollLv(q); },
   });
   if (walletCode()) bank("/me").catch(() => {});
 
@@ -546,7 +555,12 @@ function start() {
     eraser: box(0.09, 0.05, 0.06, new THREE.MeshLambertMaterial({ color: 0xff9ec7 }), 0, 0.04, 0),
     tape: new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.018, 6, 14), new THREE.MeshLambertMaterial({ color: 0xe6d49c })),
     stencil: box(0.17, 0.13, 0.006, new THREE.MeshLambertMaterial({ color: 0xc49a5e }), 0, 0.08, 0),
+    roller: new THREE.Group(),
   };
+  const napMat = new THREE.MeshLambertMaterial({ color: 0x2fb36b }), wire = new THREE.MeshLambertMaterial({ color: 0x9aa3ab });
+  const nap = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 14), napMat);
+  nap.rotation.z = Math.PI / 2; nap.position.set(0, 0.2, 0);
+  tools3.roller.add(nap, box(0.008, 0.008, 0.008, wire, 0.104, 0.2, 0), box(0.006, 0.09, 0.006, wire, 0.106, 0.155, 0), box(0.1, 0.006, 0.006, wire, 0.056, 0.11, 0), box(0.026, 0.13, 0.026, new THREE.MeshLambertMaterial({ color: 0x8a5a36 }), 0.006, 0.04, 0));
   tools3.tape.position.y = 0.05;
   const held = new THREE.Group();
   held.add(fist);
@@ -572,6 +586,7 @@ function start() {
     finger.visible = k === "spray";
     const st = api.get();
     paintLabel(t === "bands" ? "rainbow" : t === "neon" ? st.hex : st.color);
+    napMat.color.set(/^#/.test(st.color) ? st.color : st.color === "gold" ? "#d9a43a" : st.color === "chrome" ? "#c4ccd4" : "#ff8a00");
   }
 
   const MIST = 220, mist = { pos: new Float32Array(MIST * 3), col: new Float32Array(MIST * 3), vel: new Float32Array(MIST * 3), life: new Float32Array(MIST), i: 0, acc: 0 };
@@ -630,9 +645,9 @@ function start() {
   camera.add(listener);
   scene.add(camera);
   AC.ctx = listener.context;
-  const LOOPS = ["spray", "chalk", "eraser", "lift", "drone", "steps", "meadow", "creek"], SHOTS = ["pssht", "shake", "tape", "rip", "peel", "shutter", "click"];
+  const LOOPS = ["spray", "chalk", "eraser", "roll", "lift", "drone", "steps", "meadow", "creek"], SHOTS = ["pssht", "shake", "tape", "rip", "peel", "shutter", "click", "dip"];
   const audioLoader = new THREE.AudioLoader();
-  [...LOOPS.map((k) => [k, k + ".wav"]), ...SHOTS.map((k) => [k, k + ".mp3"])].forEach(([k, f]) => audioLoader.load(SND + f, (b) => { AC.buf[k] = b; if (LOOPS.includes(k)) loopNode(k); }, undefined, () => {}));
+  [...LOOPS.map((k) => [k, k + (k === "roll" ? ".mp3" : ".wav")]), ...SHOTS.map((k) => [k, k + ".mp3"])].forEach(([k, f]) => audioLoader.load(SND + f, (b) => { AC.buf[k] = b; if (LOOPS.includes(k)) loopNode(k); }, undefined, () => {}));
   function loopNode(k) {
     const a = new THREE.Audio(listener);
     a.setBuffer(AC.buf[k]);
@@ -649,7 +664,7 @@ function start() {
   function stepAudio(dt) {
     if (AC.ctx.state !== "running") return;
     Object.entries(AC.loops).forEach(([k, L]) => {
-      const fast = k === "spray" || k === "chalk" || k === "eraser" ? 24 : 6;
+      const fast = k === "spray" || k === "chalk" || k === "eraser" || k === "roll" ? 24 : 6;
       L.v = lerp(L.v, L.want, 1 - Math.exp(-dt * fast));
       if (L.v > 0.002 && !L.started) { L.a.offset = Math.random() * (AC.buf[k].duration * 0.8); L.a.play(); L.started = true; }
       if (L.started) { L.a.setVolume(L.v); if (L.a.source && Math.abs(L.a.playbackRate - L.rate) > 0.01) L.a.setPlaybackRate(L.rate); }
@@ -698,8 +713,8 @@ function start() {
 
   function openPicker() {
     if (!ui.pick) {
-      ui.pick = picker(ui.dlg, { onPick: (st) => placeFromPicker(st), onCut: () => { ui.cut.open(); }, onPicture: (f) => ui.cut.picture(f) });
-      ui.cut = cutter(ui.dlg, { onSave: (st) => placeFromPicker(st) });
+      ui.pick = picker(ui.dlg, { onPick: (st) => placeFromPicker(st), onCut: () => { ui.cut.open(); }, onPicture: (f) => ui.cut.picture(f), onDescribe: () => ui.cut.describe() });
+      ui.cut = cutter(ui.dlg, { onSave: (st) => placeFromPicker(st), draw: (prompt) => ensure().then(() => bank("/wall/stencil", { prompt })) });
     }
     pickOpen = true;
     if (document.pointerLockElement) document.exitPointerLock();
@@ -755,7 +770,7 @@ function start() {
     if (!locked) return;
     if (e.code === "Space") e.preventDefault();
     keys.add(e.code);
-    if (/^Digit[1-7]$/.test(e.code)) { pickTool(TOOLS[+e.code.slice(5) - 1][0]); return; }
+    if (/^Digit[1-8]$/.test(e.code)) { pickTool(TOOLS[+e.code.slice(5) - 1][0]); return; }
     if ((e.ctrlKey || e.metaKey) && k === "z") { e.preventDefault(); if (e.shiftKey) api.redo(); else api.undo(); return; }
     if ((e.ctrlKey || e.metaKey) && k === "y") { e.preventDefault(); api.redo(); return; }
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1054,7 +1069,7 @@ function start() {
   function buildUi() {
     const el = document.createElement("div");
     el.className = "w3-ui";
-    const slot = ([t, name], i) => `<button type="button" class="w3-slot" data-t="${t}" title="${name} (${i + 1})">${wallIcon(t, 32)}<b>${i + 1}</b><span>${name}</span></button>`;
+    const slot = ([t, name], i) => `<button type="button" class="w3-slot" data-t="${t}" title="${name} (${i + 1})">${wallIcon(t, 32)}<b>${i + 1}</b><span>${name}</span>${t === "roller" ? '<i class="rb-lv" aria-hidden="true"><b data-roll-lv></b></i>' : ""}</button>`;
     el.innerHTML = `<div class="w3-cross" aria-hidden="true"><i></i></div>
 <div class="w3-info"><b>The Big Wall</b><span data-where></span></div>
 <div class="w3-hint" data-hint hidden></div>
@@ -1063,7 +1078,7 @@ function start() {
 <div class="w3-flashlight" aria-hidden="true"></div>
 <div class="w3-start w3-card" role="dialog" aria-label="The Big Wall"><header class="tb"><span class="tb-t">The Big Wall</span></header><div class="w3-pad">
 <p><b>The same wall as on the map, only twelve meters tall.</b> The bottom 3.2 m is everything painted so far; above it the wall is fresh. Everyone painting right now is here with you.</p>
-<table class="w3-keys"><tr><td>Mouse</td><td>look, hold the left button to spray</td></tr><tr><td>W A S D</td><td>walk (Shift runs)</td></tr><tr><td>1 to 7</td><td>spray, chalk, neon, rainbow, eraser, tape, stencil</td></tr><tr><td>Wheel</td><td>size; closer to the wall sprays thinner</td></tr><tr><td>C, X</td><td>next spray cap, next color</td></tr><tr><td>Right button</td><td>take a color from the wall</td></tr><tr><td>E</td><td>get on or off the scissor lift; on it, Space goes up and Shift down</td></tr><tr><td>F</td><td>photo drone</td></tr><tr><td>B</td><td>boombox, again for the next song</td></tr><tr><td>Z</td><td>undo (Shift+Z redo)</td></tr><tr><td>Tab or Esc</td><td>menu and colors</td></tr></table>
+<table class="w3-keys"><tr><td>Mouse</td><td>look, hold the left button to spray</td></tr><tr><td>W A S D</td><td>walk (Shift runs)</td></tr><tr><td>1 to 8</td><td>spray, chalk, neon, rainbow, roller, eraser, tape, stencil</td></tr><tr><td>Wheel</td><td>size; closer to the wall sprays thinner</td></tr><tr><td>C, X</td><td>next spray cap, next color</td></tr><tr><td>Right button</td><td>take a color from the wall</td></tr><tr><td>E</td><td>get on or off the scissor lift; on it, Space goes up and Shift down</td></tr><tr><td>F</td><td>photo drone</td></tr><tr><td>B</td><td>boombox, again for the next song</td></tr><tr><td>Z</td><td>undo (Shift+Z redo)</td></tr><tr><td>Tab or Esc</td><td>menu and colors</td></tr></table>
 <p class="w3-row"><button class="btn go" type="button" data-play>Play</button><a class="btn" href="/">Back to the map</a></p></div></div>
 <div class="w3-menu w3-card" role="dialog" aria-label="Paused" hidden><header class="tb"><span class="tb-t">The Big Wall - Paused</span><span class="tb-btns"><button class="tb-x" type="button" data-play aria-label="Back to the wall"></button></span></header><div class="w3-pad w3-cols">
 <section><h3>Color</h3><canvas class="w3-sv" width="200" height="120" data-sv></canvas><canvas class="w3-hu" width="200" height="14" data-hu></canvas>
@@ -1136,9 +1151,20 @@ function start() {
     else if (me.lift) t = lift.h < 0.15 ? "Space up, Shift down, W A S D drive, E get off" : `Lift at ${lift.h.toFixed(1)} m: Space up, Shift down, W A S D drive`;
     else if (nearLift()) t = "E: get on the scissor lift";
     else if (res && res.far && res.hy > WALL_H) t = "That is above the wall";
-    else if (res && res.far && res.hx >= 0 && res.hy >= 0) t = st.tool === "chalk" || st.tool === "eraser" ? "Walk up to the wall to touch it" : "Too far from the wall, walk closer";
+    else if (res && res.far && res.hx >= 0 && res.hy >= 0) t = st.tool === "chalk" || st.tool === "eraser" || st.tool === "roller" ? "Walk up to the wall to touch it" : "Too far from the wall, walk closer";
     else if (res && res.hy > EYE + 1.6 && !me.lift) t = "Take the scissor lift to reach up there (E next to it)";
     hint(t);
+  }
+
+  let rollQ = 1;
+  function rollLv(q) {
+    if (q >= 1 && rollQ < 0.97) { shot("dip", 0.55, 0.92 + Math.random() * 0.16); if (!anim.swap) anim.swap = { t: 0, to: "roller" }; }
+    rollQ = q;
+    const el = ui && ui.root.querySelector("[data-roll-lv]");
+    if (!el) return;
+    el.style.transition = q >= 1 ? "transform .6s cubic-bezier(.2,.8,.3,1)" : "transform .1s linear";
+    el.style.transform = `scaleY(${q})`;
+    el.parentNode.classList.toggle("dry", q < 0.35);
   }
 
   function afterStroke() {
@@ -1174,8 +1200,7 @@ function start() {
     if (frame % 10 === 6) detail();
     if (dt > 0.026) slow++; else slow = Math.max(0, slow - 1);
     if (slow > 90 && DPRX > 1) { DPRX = 1; slow = 0; resize(); }
-    waterTex.offset.x = (now / 1000) * 0.02;
-    waterTex.offset.y = Math.sin(now / 1700) * 0.04;
+    if (!FROZEN) { waterTex.offset.x = (now / 1000) * 0.02; waterTex.offset.y = Math.sin(now / 1700) * 0.04; }
 
     const res = computeAim(), st = api.get();
     if (mouseDown && locked && !drone.on) {
@@ -1194,6 +1219,7 @@ function start() {
     loop("spray", spraying ? (st.head === "brush" ? 0.22 : 0.5) : 0, rate);
     loop("chalk", api.painting() && st.tool === "chalk" ? 0.55 : 0, 1);
     loop("eraser", api.painting() && st.tool === "eraser" ? 0.5 : 0, 1);
+    loop("roll", api.painting() && st.tool === "roller" ? 0.75 : 0, 1);
     loop("meadow", 0.32);
     loop("creek", clamp(1 - Math.abs(camera.position.z - 14) / 22, 0.05, 0.5) * 0.6);
     if (!me.lift) loop("lift", 0);

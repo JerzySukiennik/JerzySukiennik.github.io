@@ -270,7 +270,7 @@ const pastedImage = (e) => {
   return it ? it.getAsFile() : null;
 };
 
-export function picker(host, { onPick, onCut, onPicture, onClose }) {
+export function picker(host, { onPick, onCut, onPicture, onDescribe, onClose }) {
   const el = document.createElement("div");
   el.className = "pt-pick";
   el.hidden = true;
@@ -281,7 +281,7 @@ export function picker(host, { onPick, onCut, onPicture, onClose }) {
     const mine = saved(), all = [...presets(), ...mine];
     el.innerHTML = `<header class="tb"><h2 class="tb-t">Stencils</h2><span class="tb-btns"><button class="tb-x" type="button" data-pk-x aria-label="Close"></button></span></header>` +
       `<div class="pt-pick-g">${all.map((s) => `<span class="pt-pk"><button type="button" data-pk="${s.id}" title="${esc(s.name)}"><canvas></canvas><span>${esc(s.name)}</span></button>${s.id.startsWith("u:") ? `<button type="button" class="pt-pk-del" data-pk-del="${s.id}" aria-label="Throw away ${esc(s.name)}" title="Throw away">x</button>` : ""}</span>`).join("")}</div>` +
-      `<p class="pt-pick-a"><button class="btn" type="button" data-pk-pic>From a picture...</button><button class="btn" type="button" data-pk-cut>Cut your own...</button></p>`;
+      `<p class="pt-pick-a">${onDescribe ? '<button class="btn" type="button" data-pk-ai>Describe it...</button>' : ""}<button class="btn" type="button" data-pk-pic>From a picture...</button><button class="btn" type="button" data-pk-cut>Cut your own...</button></p>`;
     el.querySelectorAll("[data-pk] canvas").forEach((cv, i) => sheetThumb(cv, all[i]));
     el._all = all;
   }
@@ -291,6 +291,7 @@ export function picker(host, { onPick, onCut, onPicture, onClose }) {
     if (b.hasAttribute("data-pk-x")) { close(); if (onClose) onClose(); return; }
     if (b.hasAttribute("data-pk-cut")) { close(); onCut(); return; }
     if (b.hasAttribute("data-pk-pic")) { close(); onPicture(); return; }
+    if (b.hasAttribute("data-pk-ai")) { close(); onDescribe(); return; }
     if (b.dataset.pkDel) { forget(b.dataset.pkDel); render(); return; }
     const st = (el._all || []).find((s) => s.id === b.dataset.pk);
     if (st) { close(); onPick(st); }
@@ -702,9 +703,9 @@ function importer(host, { onSave, onEdit }) {
   box.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.stopPropagation(); hide(); } });
   function hide() { box.hidden = true; }
   return {
-    open(blob) {
+    open(blob, name) {
       box.hidden = false;
-      if (blob) load(blob, "Pasted picture");
+      if (blob) load(blob, name || "Pasted picture");
       else if (!src) hint("Every color of the picture gets its own hole in the cardboard. Logos and drawings work best.");
       sync();
       draw();
@@ -716,7 +717,67 @@ function importer(host, { onSave, onEdit }) {
   };
 }
 
-export function cutter(host, { onSave }) {
+const IDEAS = ["a cat in sunglasses", "a rocket taking off", "a fox astronaut", "a pine tree in the snow", "a skateboarding frog", "a smiling sun"];
+function describer(host, { draw, onDrawn }) {
+  const box = document.createElement("div");
+  box.className = "pt-cut";
+  box.setAttribute("role", "dialog");
+  box.setAttribute("aria-label", "Stencil from words");
+  box.innerHTML = `<div class="pt-cut-w pt-say"><header class="tb"><h2 class="tb-t">Stencil from words</h2><span class="tb-btns"><button class="tb-x" type="button" data-say-x aria-label="Close"></button></span></header>` +
+    `<div class="pt-say-b"><label>What should Haiku draw?<input type="text" data-say-in maxlength="80" placeholder="a cat in sunglasses" autocomplete="off" spellcheck="false"></label>` +
+    `<p class="pt-say-ideas">${IDEAS.map((t) => `<button type="button" class="pt-say-idea" data-say-idea="${t}">${t}</button>`).join("")}</p>` +
+    `<p class="pt-cut-hint" data-say-hint></p><p class="pt-cut-row"><button class="btn go" type="button" data-say-go>Draw it</button></p></div></div>`;
+  host.append(box);
+  box.hidden = true;
+  const input = box.querySelector("[data-say-in]"), go = box.querySelector("[data-say-go]"), hintEl = box.querySelector("[data-say-hint]");
+  const DEFAULT = "Haiku draws it in a few flat colors. Every color becomes its own layer of the stencil, so you spray them one by one. Five a day.";
+  let busy = 0, dots = 0;
+  const hint = (t) => { hintEl.textContent = t; };
+  async function run() {
+    const text = input.value.trim();
+    if (text.length < 2) { hint("Write what Haiku should draw, like a cat in sunglasses."); input.focus(); return; }
+    const ticket = ++busy;
+    go.disabled = input.disabled = true;
+    box.querySelectorAll("[data-say-idea]").forEach((b) => { b.disabled = true; });
+    let n = 0;
+    hint("Haiku is drawing");
+    clearInterval(dots);
+    dots = setInterval(() => { n = (n + 1) % 4; hint("Haiku is drawing" + ".".repeat(n)); }, 400);
+    try {
+      const j = await draw(text);
+      if (ticket !== busy) return;
+      const blob = new Blob([j.svg], { type: "image/svg+xml" });
+      box.hidden = true;
+      onDrawn(blob, j.name || text.slice(0, 20), j.left);
+    } catch (e) {
+      if (ticket === busy) hint(e && e.message ? e.message : "Haiku couldn't draw that, try again.");
+    } finally {
+      if (ticket === busy) { clearInterval(dots); go.disabled = input.disabled = false; box.querySelectorAll("[data-say-idea]").forEach((b) => { b.disabled = false; }); }
+    }
+  }
+  box.addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b || b.disabled) return;
+    if (b.hasAttribute("data-say-x")) { busy++; clearInterval(dots); box.hidden = true; return; }
+    if (b.dataset.sayIdea) { input.value = b.dataset.sayIdea; input.focus(); return; }
+    if (b.hasAttribute("data-say-go")) run();
+  });
+  input.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter") { e.preventDefault(); run(); } if (e.key === "Escape") { busy++; clearInterval(dots); box.hidden = true; } });
+  return {
+    open() {
+      box.hidden = false;
+      go.disabled = input.disabled = false;
+      box.querySelectorAll("[data-say-idea]").forEach((b) => { b.disabled = false; });
+      hint(DEFAULT);
+      input.focus({ preventScroll: true });
+      input.select();
+    },
+    close() { busy++; clearInterval(dots); box.hidden = true; },
+    get shown() { return !box.hidden; },
+  };
+}
+
+export function cutter(host, { onSave, draw }) {
   const box = document.createElement("div");
   box.className = "pt-cut";
   box.setAttribute("role", "dialog");
@@ -747,6 +808,7 @@ export function cutter(host, { onSave }) {
       show();
     },
   });
+  const say = draw ? describer(host, { draw, onDrawn: (blob, name) => imp.open(blob, name) }) : null;
 
   function paint() {
     const V = view.width, k = V / N;
@@ -852,7 +914,8 @@ export function cutter(host, { onSave }) {
   return {
     open: show,
     picture(blob) { hide(); imp.open(blob); },
-    close() { hide(); imp.close(); },
-    get shown() { return !box.hidden || imp.shown; },
+    describe() { hide(); imp.close(); if (say) say.open(); },
+    close() { hide(); imp.close(); if (say) say.close(); },
+    get shown() { return !box.hidden || imp.shown || !!(say && say.shown); },
   };
 }
