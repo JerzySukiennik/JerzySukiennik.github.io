@@ -539,7 +539,7 @@ const sigOf = async (list) => sha(list.map((s) => [s.v.k, s.v.c, s.v.w, s.v.z, s
 
 function inkOf(v) {
   if (v.k === "e") return 0;
-  const sc = 2 ** -(Number.isInteger(v.z) ? clamp(v.z, 0, 30) : 0), n = String(v.d).split(",").map(Number), w = clamp(+v.w || 12, 3, 200) * sc;
+  const sc = 2 ** -(Number.isInteger(v.z) ? clamp(v.z, 0, 30) : 0), n = String(v.d).split(",").map(Number), w = clamp(+v.w || 12, 3, 4000) * sc;
   let len = 0;
   for (let i = 2; i + 1 < n.length; i += 2) len += Math.hypot(n[i] - n[i - 2], n[i + 1] - n[i - 1]);
   return (len * sc + w) * w;
@@ -760,14 +760,14 @@ function copyInto(wall, ops, f) {
     let qx = 0, qy = 0;
     if (z2) { qx = Math.min(...d.map((q) => q[0])); qy = Math.min(...d.map((q) => q[1])); }
     const enc = (list) => list.map(([a, b]) => a - qx + "," + (b - qy)).join(",");
-    const out = { k: v.k, d: enc(d), w: clamp(Math.round(v.w * S * 2 ** (z2 - W.z)), 3, 200), t: { ".sv": "timestamp" } };
+    const out = { k: v.k, d: enc(d), w: clamp(Math.round(v.w * S * 2 ** (z2 - W.z)), 3, 4000), t: { ".sv": "timestamp" } };
     if (out.d.length > 3000) return;
     if (v.k !== "e") out.c = v.c;
     if (z2) { out.z = z2; out.o = qx + "," + qy; }
     if (v.h) out.h = v.h;
     if (Number.isInteger(v.r)) out.r = v.r;
     if (W.m) { const mm = W.m.map((p) => enc(ints(p))).join(";"); if (mm.length <= 4000) out.m = mm; }
-    if (W.s) { const ss = W.s.map((g) => g.map((p) => enc(ints(p))).join(";")).join("|"); if (ss.length <= 9000) out.s = ss; }
+    if (W.s) { const ss = W.s.map((g) => g.map((p) => enc(ints(p))).join(";")).join("|"); if (ss.length <= 30000) out.s = ss; }
     patch[`${wall}/${P}/${ids[i]}`] = out;
     const { t, ...b } = out;
     made.push({ p: P, id: ids[i], b });

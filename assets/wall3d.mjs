@@ -3,7 +3,7 @@
    and a boombox plays CC0 songs. Painting runs through the 2D wall's own core, attached as a host with a virtual camera. */
 
 import * as THREE from "three";
-import { createMural, paintOp, wallIcon } from "/assets/mural.mjs";
+import { createMural, paintOp, wallIcon, SIZE_TOP } from "/assets/mural.mjs";
 import { wallFace, wallTall } from "/assets/map.mjs";
 import { picker, cutter } from "/assets/stencil.mjs";
 import { PAL, FROZEN, seasonal } from "/assets/season.mjs";
@@ -764,7 +764,7 @@ function start() {
   addEventListener("wheel", (e) => {
     if (!locked) return;
     const st = api.get();
-    api.set({ size: clamp(st.size - Math.sign(e.deltaY) * 0.25, 0, 4) });
+    api.set({ size: clamp(st.size - Math.sign(e.deltaY) * 0.25, 0, SIZE_TOP) });
     hudSync();
   }, { passive: true });
   addEventListener("keydown", (e) => {
@@ -785,7 +785,7 @@ function start() {
     if (k === "x") { nextColor(); return; }
     if (k === "f") { startDrone(); return; }
     if (k === "b") { boomKey(); return; }
-    if (k === "[" || k === "]") { const st = api.get(); api.set({ size: clamp(st.size + (k === "]" ? 0.25 : -0.25), 0, 4) }); hudSync(); }
+    if (k === "[" || k === "]") { const st = api.get(); api.set({ size: clamp(st.size + (k === "]" ? 0.25 : -0.25), 0, SIZE_TOP) }); hudSync(); }
   });
   addEventListener("keyup", (e) => keys.delete(e.code));
   addEventListener("blur", () => { keys.clear(); if (mouseDown) { mouseDown = false; api.up(); } });
@@ -1078,7 +1078,7 @@ function start() {
     el.innerHTML = `<div class="w3-cross" aria-hidden="true"><i></i></div>
 <div class="w3-info"><b>The Big Wall</b><span data-where></span></div>
 <div class="w3-hint" data-hint hidden></div>
-<div class="w3-bar">${TOOLS.map(slot).join("")}<span class="w3-cur"><i data-sw></i><span><b data-cap>Standard</b><input type="range" min="0" max="4" step="0.05" data-size-bar aria-label="Size" tabindex="-1"></span></span></div>
+<div class="w3-bar">${TOOLS.map(slot).join("")}<span class="w3-cur"><i data-sw></i><span><b data-cap>Standard</b><input type="range" min="0" max="${SIZE_TOP}" step="0.05" data-size-bar aria-label="Size" tabindex="-1"></span></span></div>
 <div class="w3-count" hidden></div>
 <div class="w3-flashlight" aria-hidden="true"></div>
 <div class="w3-start w3-card" role="dialog" aria-label="The Big Wall"><header class="tb"><span class="tb-t">The Big Wall</span></header><div class="w3-pad">
@@ -1089,7 +1089,7 @@ function start() {
 <section><h3>Color</h3><canvas class="w3-sv" width="200" height="120" data-sv></canvas><canvas class="w3-hu" width="200" height="14" data-hu></canvas>
 <p class="w3-row"><input type="text" maxlength="7" data-hex spellcheck="false" aria-label="Color code"><button class="btn" type="button" data-metal="chrome">Chrome</button><button class="btn" type="button" data-metal="gold">Gold</button></p>
 <div class="w3-sw" data-shades></div><h4>Recent</h4><div class="w3-sw" data-recent></div></section>
-<section><h3>Spray cap</h3><div class="w3-caps" data-caps></div><h3>Size</h3><input type="range" min="0" max="4" step="0.05" data-size aria-label="Size"><p class="w3-note">Closer to the wall sprays thinner and sharper, farther away wider.</p></section>
+<section><h3>Spray cap</h3><div class="w3-caps" data-caps></div><h3>Size</h3><input type="range" min="0" max="${SIZE_TOP}" step="0.05" data-size aria-label="Size"><p class="w3-note">Closer to the wall sprays thinner and sharper, farther away wider.</p></section>
 <section><h3>Wall</h3><p class="w3-row"><button class="btn" type="button" data-undo>Undo (Z)</button><button class="btn" type="button" data-redo>Redo</button></p><p class="w3-row"><button class="btn" type="button" data-stencils>Stencils...</button></p>
 <p class="w3-row"><button class="btn" type="button" data-drone>Photo drone (F)</button><button class="btn" type="button" data-boom>Boombox (B)</button></p>
 <p class="w3-note">Songs on the boombox are free CC0 tracks from freesound.org.</p>

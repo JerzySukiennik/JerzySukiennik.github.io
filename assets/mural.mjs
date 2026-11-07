@@ -35,14 +35,18 @@ function loadGallery() {
   return galleryJob;
 }
 const PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
-const SIZES = [3, 6, 12, 22, 40];
-const RUBS = [6, 12, 22, 40, 70];
-const TAPES = [8, 14, 22, 34, 52];
+const SIZES = [3, 6, 12, 22, 40, 90, 200, 450];
+const RUBS = [6, 12, 22, 40, 70, 150, 330, 700];
+const TAPES = [8, 14, 22, 34, 52, 90, 150, 240];
+export const SIZE_TOP = SIZES.length - 1;
+const W_MAX = 4000;
+const marginOf = (c, h) => (c && c[0] === "n" ? 2.05 : h === "fat" ? 3.1 : h === "splat" ? 2.9 : h === "flat" ? 1.9 : h === "brush" ? 0.7 : h === "roller" ? 0.62 : 1.7);
+const spanOf = (c, h) => Math.floor((WX - 2) / marginOf(c, h));
 const RAINBOW = ["#ff2d2d", "#ff8a00", "#ffe600", "#38e03b", "#00e5ff", "#2f6bff", "#b14bff"];
 const HEX = /^#[0-9a-f]{6}$/, TAG = /^[0-9a-f]{12}$/;
 const sha = async (s) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))), (x) => x.toString(16).padStart(2, "0")).join("");
 const TAPE = "#e6d49c", TAPE_HI = "#f5ebc8", TAPE_LO = "#d0bb7e", CARD = "#c49a5e";
-const MAX_TAPES = 30, MAX_SHEETS = 8, M_MAX = 4000, S_MAX = 9000, Q_MAX = 1000, SHEET_M = 0.12;
+const MAX_TAPES = 30, MAX_SHEETS = 8, M_MAX = 4000, S_MAX = 30000, Q_MAX = 1000, SHEET_M = 0.12;
 const BRUSH = ["spray", "chalk", "neon", "bands", "roller"];
 const HEADS = [
   ["std", "Standard", "The cap the can came with", 1],
@@ -901,7 +905,7 @@ export function createMural(el, opts) {
     const h = localStorage.getItem("gl-wall-cap");
     if (HEAD_IDS.has(h)) head = h;
     const sz = localStorage.getItem("gl-wall-size");
-    if (sz !== null && +sz >= 0 && +sz <= 4) size = +sz;
+    if (sz !== null && +sz >= 0 && +sz <= SIZE_TOP) size = +sz;
     const rc = JSON.parse(localStorage.getItem("gl-wall-recent") || "null");
     if (Array.isArray(rc)) { const ok = rc.filter((c) => typeof c === "string" && (HEX.test(c) || METAL[c] || (c === "rainbow" && rainbow))).slice(0, 10); recent = [...ok, ...RECENT0.filter((c) => !ok.includes(c))].slice(0, 10); }
   } catch (e) {}
@@ -2029,7 +2033,7 @@ export function createMural(el, opts) {
     if (pts.length % 2) pts.pop();
     if (pts.length < 2 || pts.some((n) => !isFinite(n))) return null;
     const h = s.k === "d" && H_OK.has(s.h) ? s.h : undefined;
-    return bounds({ id: s.id, p: s.p, k: s.k, c: s.c, w: s.w, z: s.z, h, r: h === "roller" && Number.isInteger(s.r) && s.r > 0 && s.r <= 1e8 ? s.r : undefined, d: pts, mask: null, up: pts.some((n, i) => i % 2 === 1 && n < 0) });
+    return bounds({ id: s.id, p: s.p, k: s.k, c: s.c, w: Math.min(s.w, spanOf(s.c, h)), z: s.z, h, r: h === "roller" && Number.isInteger(s.r) && s.r > 0 && s.r <= 1e8 ? s.r : undefined, d: pts, mask: null, up: pts.some((n, i) => i % 2 === 1 && n < 0) });
   }
   function drawInk() {
     inkRaf = 0;
@@ -2177,7 +2181,7 @@ export function createMural(el, opts) {
   function bounds(op) {
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (let i = 0; i < op.d.length; i += 2) { x0 = Math.min(x0, op.d[i]); x1 = Math.max(x1, op.d[i]); y0 = Math.min(y0, op.d[i + 1]); y1 = Math.max(y1, op.d[i + 1]); }
-    const m = op.w * (op.c && op.c[0] === "n" ? 2.05 : op.h === "fat" ? 3.1 : op.h === "splat" ? 2.9 : op.h === "flat" ? 1.9 : op.h === "brush" ? 0.7 : op.h === "roller" ? 0.62 : 1.7), b = op.p * WX;
+    const m = op.w * marginOf(op.c, op.h), b = op.p * WX;
     op.bb = [b + x0 - m, y0 - m, b + x1 + m, y1 + m + op.w * (op.h === "drip" ? 11 : op.h === "brush" || op.h === "roller" ? 0 : 6.5)];
     return op;
   }
@@ -2227,7 +2231,7 @@ export function createMural(el, opts) {
     const mask = tp.length || sh.length ? { tapes: tp, tapeIds: tp.map((_, i) => ids.t[i] || null), sheets: sh } : null;
     const h = (v.k === "d" && H_OK.has(v.h)) || (v.k === "e" && v.h === "roller") ? v.h : undefined, a = TAG.test(v.a) ? v.a : undefined, u = TAG.test(v.u) ? v.u : undefined;
     const r = h === "roller" && Number.isInteger(v.r) && v.r > 0 && v.r <= 1e8 ? v.r : undefined;
-    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, r, wr: clamp(v.w || 12, 3, 200), w: clamp(v.w || 12, 3, 200) * sc, z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u, up: d.some((n, i) => i % 2 === 1 && n < 0) });
+    return bounds({ id, p, k: v.k, d, raw: v.d, c: v.k === "e" ? undefined : v.c, h, r, wr: clamp(v.w || 12, 3, W_MAX), w: Math.min(clamp(v.w || 12, 3, W_MAX) * sc, spanOf(v.c, h)), z, o: z ? v.o : undefined, mask, m: v.m, s: v.s, q: mask ? v.q : undefined, a, u, up: d.some((n, i) => i % 2 === 1 && n < 0) });
   }
 
   function add(P, id, v) {
@@ -2691,7 +2695,7 @@ export function createMural(el, opts) {
       it.o = ox + "," + oy;
     }
     it.raw = ints.map((n, i) => n - (i % 2 ? oy : ox)).join(",");
-    it.wr = clamp(Math.round(it.w * s), 3, 200);
+    it.wr = clamp(Math.round(it.w * s), 3, W_MAX);
     it.m = it.s = it.q = undefined;
     it.wc = null;
     if (!it.mask) return;
@@ -2831,7 +2835,7 @@ export function createMural(el, opts) {
     const zz = host ? Z / HOST_K : (k0 * Z) / 1.15, zl = Math.max(0, Math.ceil(Math.log2(zz) - 1e-9)), k = tool === "eraser" || tool === "wipe" ? "e" : tool === "chalk" ? "c" : "d";
     const c = k === "e" ? undefined : k === "c" ? hex : tool === "neon" ? "n" + hex : tool === "bands" ? "bands" : color;
     const h = tool === "roller" || tool === "wipe" ? "roller" : tool === "spray" && head !== "std" ? head : undefined;
-    live = { id: pushId(), p, k, c, h, w: (k === "e" && h !== "roller" ? sizeOf(RUBS) : sizeOf(SIZES) * (h === "roller" ? ROLL_K : 1)) / zz, z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined, ppu0: Z, r: h === "roller" && carry ? carry : undefined };
+    live = { id: pushId(), p, k, c, h, w: Math.min(W_MAX / 2 ** zl, spanOf(c, h), (k === "e" && h !== "roller" ? sizeOf(RUBS) : sizeOf(SIZES) * (h === "roller" ? ROLL_K : 1)) / zz), z: zl, d: [], g, ps: new Map(), mask: maskNow(p, zl), a: tagA || undefined, u: tagU || undefined, ppu0: Z, r: h === "roller" && carry ? carry : undefined };
     if (c && c !== "bands") keepColor(c[0] === "n" ? c.slice(1) : c);
     panel(p).seen[live.id] = true;
     layers.forEach((L) => { if (wants(L, live) && !L.tile && !L.job) rerender(L, true); });
@@ -3065,7 +3069,7 @@ export function createMural(el, opts) {
       grp("Paint", tl(TOOLS.slice(0, 5))) + grp("Cover", tl(TOOLS.slice(5))) +
       grp("Wall", rbB("data-mat", ICONS.wallk, "Material", "Change the wall material: place a box, size it, then use it") + rbB("data-sellmode", ICONS.sell, "Sell", "Sell your own drawing to Haiku: draw a loop around it") + rbB("data-theme", ICONS.theme, "Theme", "Theme of the week: enter a drawing, Haiku's best three go to the wall gallery")) +
       grp("Cap", rbB("data-caps", ICONS.caps, "Standard ▾", "Spray caps")) +
-      grp("Size", `<input type="range" min="0" max="4" step="0.05" data-size aria-label="Brush size"><span class="rb-dot"><i data-dot></i></span>`, " rb-size") +
+      grp("Size", `<input type="range" min="0" max="${SIZE_TOP}" step="0.05" data-size aria-label="Brush size"><span class="rb-dot"><i data-dot></i></span>`, " rb-size") +
       grp("Color", `<button type="button" class="rb-b rb-cur" data-colbtn title="Pick any color"><i data-cur></i><span>Color ▾</span></button><span class="rb-rec" data-recent></span>`) +
       grp("History", rbB("data-undo", ICONS.undo, "Undo", `Take back your last stroke (${UNDO_KEY})`) + rbB("data-redo", ICONS.redo, "Redo", `Put it back (Shift+${UNDO_KEY})`) + rbB("data-lapse", ICONS.lapse, "Replay", "Timelapse: watch this part of the wall get painted")) +
       grp("View", rbB('data-zoom="in"', ICONS.zin, "Zoom in", "Zoom in (E or the wheel)") + rbB('data-zoom="out"', ICONS.zout, "Zoom out", "Zoom out (Q or the wheel)") + (TOUCH ? "" : rbB("data-big", ICONS.play, "Big wall", "Play: walk up to the wall in 3D, with a scissor lift up to 12 meters") + rbB("data-cancur", ICONS.cancur, "Can cursor", "Show a spray can next to the brush"))) +
@@ -3642,7 +3646,7 @@ export function createMural(el, opts) {
       if (o.tool) { tool = o.tool; if (BRUSH.includes(tool)) brush = tool; }
       if (o.color) pickColor(o.color);
       if (o.head && (o.head === "std" || HEAD_IDS.has(o.head))) { head = o.head; try { localStorage.setItem("gl-wall-cap", head); } catch (e) {} }
-      if (typeof o.size === "number") { size = clamp(o.size, 0, 4); try { localStorage.setItem("gl-wall-size", String(size)); } catch (e) {} }
+      if (typeof o.size === "number") { size = clamp(o.size, 0, SIZE_TOP); try { localStorage.setItem("gl-wall-size", String(size)); } catch (e) {} }
       if (o.keep) keepColor(o.keep);
       sync();
     },

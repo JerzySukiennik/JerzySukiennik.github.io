@@ -289,7 +289,7 @@
             ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^-?[0-9]+(,-?[0-9]+)*$/)"
           },
           "w": {
-            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 200"
+            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 4000"
           },
           "t": {
             ".validate": "newData.val() === now"
@@ -307,7 +307,7 @@
             ".validate": "newData.isString() && newData.val().length <= 4000 && newData.val().matches(/^[0-9,;-]+$/)"
           },
           "s": {
-            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;|-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 30000 && newData.val().matches(/^[0-9,;|-]+$/)"
           },
           "q": {
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
@@ -430,7 +430,7 @@
             ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^-?[0-9]+(,-?[0-9]+)*$/)"
           },
           "w": {
-            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 200"
+            ".validate": "newData.isNumber() && newData.val() >= 3 && newData.val() <= 4000"
           },
           "t": {
             ".validate": "newData.val() === now"
@@ -448,7 +448,7 @@
             ".validate": "newData.isString() && newData.val().length <= 4000 && newData.val().matches(/^[0-9,;-]+$/)"
           },
           "s": {
-            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;|-]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 30000 && newData.val().matches(/^[0-9,;|-]+$/)"
           },
           "q": {
             ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().matches(/^[-_A-Za-z0-9,|:]*$/)"
@@ -849,7 +849,7 @@
             ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 30000 && newData.val().matches(/^[0-9,;]+$/)"
           },
           "v": {
             ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,8}$/)"
@@ -858,7 +858,7 @@
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
           "c": {
-            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9a-f,]*$/)"
           },
           "fu": {
             ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
@@ -911,7 +911,7 @@
               ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
             },
             "w": {
-              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 4000"
             },
             "z": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"
@@ -989,7 +989,7 @@
             ".validate": "newData.isString() && newData.val().matches(/^[0-9]{8}$/)"
           },
           "h": {
-            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9,;]+$/)"
+            ".validate": "newData.isString() && newData.val().length <= 30000 && newData.val().matches(/^[0-9,;]+$/)"
           },
           "v": {
             ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9]{1,8}$/)"
@@ -998,7 +998,7 @@
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
           "c": {
-            ".validate": "newData.isString() && newData.val().length <= 3000 && newData.val().matches(/^[0-9a-f,]*$/)"
+            ".validate": "newData.isString() && newData.val().length <= 9000 && newData.val().matches(/^[0-9a-f,]*$/)"
           },
           "fu": {
             ".validate": "newData.isNumber() && newData.val() > -10 && newData.val() < 10"
@@ -1051,7 +1051,7 @@
               ".validate": "newData.isString() && newData.val().matches(/^(skinny|fat|flat|splat|drip|soft|dust|brush|roller)$/)"
             },
             "w": {
-              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() < 1000"
+              ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 4000"
             },
             "z": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30 && newData.val() % 1 === 0"

@@ -456,6 +456,7 @@ html.tall .wv-mat>[data-mh="sw"],html.tall .wv-mat>[data-mh="se"]{bottom:-12px}
 .pt-say .pt-cut-hint{min-height:44px}
 .pt-cut-side input[type=range]{width:100%;margin:4px 0 0;padding:0;background:none;box-shadow:none;accent-color:var(--navy)}
 .pt-imp-f{display:flex;flex-direction:column;gap:2px}
+.pt-imp-det-n{font-style:normal;color:#555}
 .pt-imp-mode .btn[aria-pressed="true"]{font-weight:bold;box-shadow:var(--pressed)}
 .pt-imp-board{position:relative}
 .pt-imp-board.over canvas{outline:3px dashed #fff;outline-offset:-10px}
