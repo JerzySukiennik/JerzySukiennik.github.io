@@ -1,0 +1,17 @@
+{
+ "wait": 3500,
+ "steps": [
+  {
+   "eval": "\nconst a = window.__wc.app, s = a.song, base = s.heads[0];\nconst mk = (id, look, role, preset, color, wordColor, extra) => Object.assign({}, base, { id, look, role, preset, color, wordColor }, extra || {});\ns.lang = 'pl';\ns.lines = ['Mam w głowie drut i światło', 'śpiewam, choć nie mam serca', 'każde słowo to iskra', 'lecę z ust prosto do ciebie'].map((text) => ({ text, singers: [] }));\ns.heads = [\n  mk('h1', 'wire', 'lead', 'baritone', '#4fd2ff', '#7dffb6', { lo: 45, hi: 64, tract: 17.6 }),\n  mk('h2', 'jurek', 'lead', 'tenor', '#a58bff', '#ffc6f1', { lo: 50, hi: 69, tract: 15.8, rd: 1.05, breath: 0.2, vib: 22 }),\n  mk('h3', 'robot', 'harmony', 'alto', '#7dffb6', '#9fe8ff', { lo: 53, hi: 74, tract: 14.9, rd: 0.32, vib: 0, rough: 0, harm: 'up3' }),\n];\ns.lineSingers = null;\ns.lines[3].singers = ['h1', 'h2'];\na.commit();\nconst i = document.getElementById('input'); i.value = ''; i.focus();\n"
+  },
+  {
+   "wait": 2500
+  },
+  {
+   "key": "Space"
+  },
+  {
+   "wait": 900
+  }
+ ]
+}

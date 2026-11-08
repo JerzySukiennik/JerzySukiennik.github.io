@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "wire-choir",
+      "name": "Wire Choir",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "choir.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/wire-choir",
+      "blurb": "Type a line and glowing heads sing it, every tongue and jaw movement driven by a real model of the human throat.",
+      "body": [
+        "Type a sentence in Polish or English and press Enter: the heads sing it on a melody composed from your words, with chords underneath and the stressed syllables landing on the beat, while the words fly out of their mouths. Shift+Enter keeps the line, Space plays everything you kept, and line by line it grows into a song.",
+        "There is no recorded voice anywhere. Each head runs a physical model of a throat in an AudioWorklet: a glottal pulse feeding a tube of short sections with a nasal branch, hiss for fricatives and bursts for plosives. The same numbers move the tongue, jaw, lips and larynx you see, so the picture is the sound.",
+        "Try this first: add a second head, make it a robot or a ghost made of points and give it the harmony or the beatbox. Then open Play and perform the melody yourself on the keyboard or a MIDI piano, where every key sings the next syllable, and export the result as a link, a WAV or a vertical video."
+      ],
+      "stack": [
+        "Web Audio",
+        "AudioWorklet",
+        "three.js",
+        "Articulatory synthesis",
+        "JavaScript"
+      ],
+      "image": "project-images/wire-choir.webp"
+    },
+    {
+      "hidden": false,
       "slug": "starnet",
       "name": "Gzowo StarNet",
       "category": "Web app",
