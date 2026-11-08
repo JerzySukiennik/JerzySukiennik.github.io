@@ -1013,6 +1013,107 @@ async function tick(env) {
   ]);
 }
 
+const BLOG_KINDS = ["rocket", "heart", "fire", "star"], BLOG_IMG = /^data:image\/(webp|jpeg|png);base64,([A-Za-z0-9+/]+=*)$/, BLOG_SLUG = /^[a-z0-9-]{1,40}$/;
+const blogKey = (env, req) => {
+  const k = req.headers.get("x-blog") || "";
+  if (!env.BLOG_KEY || k.length < 24 || k !== env.BLOG_KEY) throw new Fail("Wrong blog key", 403);
+};
+const blogText = (s, n) => String(s == null ? "" : s).replace(/\r\n?/g, "\n").replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "").slice(0, n);
+const blogRow = (r) => ({ id: r.id, status: r.status, title: r.title, body: r.body, imgs: JSON.parse(r.imgs || "[]"), project: r.project || null, by: r.by, t: r.t, pub: r.pub, up: r.up });
+
+async function blogCounts(env, ids, who) {
+  const re = {}, mine = {};
+  ids.forEach((id) => { re[id] = Object.fromEntries(BLOG_KINDS.map((k) => [k, 0])); mine[id] = []; });
+  if (!ids.length) return { re, mine };
+  const qs = ids.map((_, i) => "?" + (i + 1)).join(",");
+  const rows = (await env.DB.prepare(`SELECT post, kind, COUNT(*) AS n FROM blog_reacts WHERE post IN (${qs}) GROUP BY post, kind`).bind(...ids).all()).results;
+  rows.forEach((r) => { if (re[r.post] && r.kind in re[r.post]) re[r.post][r.kind] = r.n; });
+  if (who) {
+    const m = (await env.DB.prepare(`SELECT post, kind FROM blog_reacts WHERE who = ?${ids.length + 1} AND post IN (${qs})`).bind(...ids, who).all()).results;
+    m.forEach((r) => { if (mine[r.post]) mine[r.post].push(r.kind); });
+  }
+  return { re, mine };
+}
+
+async function blogList(env, url) {
+  const who = /^[a-z0-9]{12,32}$/.test(url.searchParams.get("who") || "") ? url.searchParams.get("who") : null;
+  const rows = (await env.DB.prepare("SELECT * FROM blog_posts WHERE status = 'live' ORDER BY pub DESC LIMIT 30").all()).results.map(blogRow);
+  const { re, mine } = await blogCounts(env, rows.map((r) => r.id), who);
+  return { posts: rows.map((r) => ({ id: r.id, title: r.title, body: r.body, imgs: r.imgs, project: r.project, pub: r.pub, re: re[r.id], mine: mine[r.id] })) };
+}
+
+async function blogImg(env, id) {
+  if (!/^[a-f0-9]{16}$/.test(id)) throw new Fail("Not found", 404);
+  const r = await env.DB.prepare("SELECT mime, data FROM blog_imgs WHERE id = ?").bind(id).first();
+  if (!r) throw new Fail("Not found", 404);
+  const bin = Uint8Array.from(atob(r.data), (c) => c.charCodeAt(0));
+  return new Response(bin, { headers: { "content-type": r.mime, "cache-control": "public, max-age=31536000, immutable" } });
+}
+
+async function blogReact(env, req, body) {
+  const post = String(body.post || ""), kind = String(body.kind || ""), who = String(body.who || "");
+  if (!/^[a-f0-9]{12}$/.test(post) || !BLOG_KINDS.includes(kind) || !/^[a-z0-9]{12,32}$/.test(who)) throw new Fail("Bad reaction");
+  const live = await env.DB.prepare("SELECT 1 FROM blog_posts WHERE id = ? AND status = 'live'").bind(post).first();
+  if (!live) throw new Fail("Not found", 404);
+  await ipLimit(env, req, "blogreact", 300);
+  const had = await env.DB.prepare("SELECT 1 FROM blog_reacts WHERE post = ? AND kind = ? AND who = ?").bind(post, kind, who).first();
+  if (had) await env.DB.prepare("DELETE FROM blog_reacts WHERE post = ? AND kind = ? AND who = ?").bind(post, kind, who).run();
+  else await env.DB.prepare("INSERT INTO blog_reacts (post, kind, who, t) VALUES (?, ?, ?, ?)").bind(post, kind, who, Date.now()).run();
+  const { re, mine } = await blogCounts(env, [post], who);
+  return { re: re[post], mine: mine[post] };
+}
+
+async function blogAdmin(env) {
+  const rows = (await env.DB.prepare("SELECT * FROM blog_posts ORDER BY COALESCE(pub, up) DESC LIMIT 200").all()).results.map(blogRow);
+  const { re } = await blogCounts(env, rows.map((r) => r.id));
+  return { posts: rows.map((r) => ({ ...r, re: re[r.id] })) };
+}
+
+async function blogSave(env, body) {
+  const now = Date.now(), id = body.id ? String(body.id) : null;
+  const old = id ? await env.DB.prepare("SELECT * FROM blog_posts WHERE id = ?").bind(id).first() : null;
+  if (id && !old) throw new Fail("No such post", 404);
+  const has = (k) => Object.prototype.hasOwnProperty.call(body, k) && body[k] !== undefined;
+  const title = has("title") || !old ? blogText(body.title, 140).replace(/\n/g, " ").trim() : old.title;
+  const text = has("body") || !old ? blogText(body.body, 12000).trim() : old.body;
+  if (!title) throw new Fail("A post needs a title");
+  const project = has("project") || !old ? (body.project && BLOG_SLUG.test(String(body.project)) ? String(body.project) : null) : old.project;
+  const status = body.status === "live" ? "live" : body.status === "draft" ? "draft" : old ? old.status : "draft";
+  const by = body.by === "concierge" ? "concierge" : old ? old.by : "jurek";
+  const postId = old ? old.id : [...crypto.getRandomValues(new Uint8Array(6))].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const keepOld = new Set(old ? JSON.parse(old.imgs || "[]") : []);
+  const keep = (Array.isArray(body.imgs) ? body.imgs : old ? [...keepOld] : []).map(String).filter((x) => keepOld.has(x));
+  const add = Array.isArray(body.add) ? body.add.slice(0, 12) : [];
+  if (keep.length + add.length > 12) throw new Fail("Up to 12 pictures in one post");
+  const fresh = [];
+  for (const u of add) {
+    const m = BLOG_IMG.exec(String(u || ""));
+    if (!m) throw new Fail("Pictures must be PNG, JPEG or WebP");
+    if (m[2].length * 0.75 > 1500000) throw new Fail("A picture is too big, keep it under 1.5 MB");
+    const iid = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+    await env.DB.prepare("INSERT INTO blog_imgs (id, post, mime, data, t) VALUES (?, ?, ?, ?, ?)").bind(iid, postId, "image/" + m[1], m[2], now).run();
+    fresh.push(iid);
+  }
+  const imgs = [...keep, ...fresh];
+  const gone = [...keepOld].filter((x) => !imgs.includes(x));
+  if (gone.length) await env.DB.prepare(`DELETE FROM blog_imgs WHERE id IN (${gone.map((_, i) => "?" + (i + 1)).join(",")})`).bind(...gone).run();
+  const pub = status === "live" ? (old && old.pub ? old.pub : now) : null;
+  if (old) await env.DB.prepare("UPDATE blog_posts SET status = ?, title = ?, body = ?, imgs = ?, project = ?, up = ?, pub = ? WHERE id = ?").bind(status, title, text, JSON.stringify(imgs), project, now, pub, postId).run();
+  else await env.DB.prepare("INSERT INTO blog_posts (id, status, title, body, imgs, project, by, t, up, pub) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(postId, status, title, text, JSON.stringify(imgs), project, by, now, now, pub).run();
+  return { post: blogRow(await env.DB.prepare("SELECT * FROM blog_posts WHERE id = ?").bind(postId).first()) };
+}
+
+async function blogDelete(env, body) {
+  const id = String(body.id || "");
+  if (!/^[a-f0-9]{12}$/.test(id)) throw new Fail("No such post", 404);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM blog_imgs WHERE post = ?").bind(id),
+    env.DB.prepare("DELETE FROM blog_reacts WHERE post = ?").bind(id),
+    env.DB.prepare("DELETE FROM blog_posts WHERE id = ?").bind(id),
+  ]);
+  return { ok: true };
+}
+
 async function route(req, env, ctx) {
   const url = new URL(req.url);
   const path = url.pathname.replace(/\/+$/, "") || "/";
@@ -1095,6 +1196,12 @@ async function route(req, env, ctx) {
     await themeRoll(env, /^\d{4}-\d{2}-\d{2}$/.test(String(body.week || "")) ? body.week : undefined);
     return { ok: true };
   }
+  if (method === "GET" && path === "/blog") return blogList(env, url);
+  if (method === "GET" && path.startsWith("/blog/img/")) return blogImg(env, path.slice(10));
+  if (method === "POST" && path === "/blog/react") return blogReact(env, req, body);
+  if (method === "GET" && path === "/blog/admin") { blogKey(env, req); return blogAdmin(env); }
+  if (method === "POST" && path === "/blog/save") { blogKey(env, req); return blogSave(env, body); }
+  if (method === "POST" && path === "/blog/delete") { blogKey(env, req); return blogDelete(env, body); }
   if (path === "/admin/feedback") {
     if (!admin) throw new Fail("Nope", 403);
     if (method === "POST") await env.DB.prepare("UPDATE feedback SET done = ? WHERE id = ?").bind(body.done ? 1 : 0, +body.id).run();
@@ -1109,7 +1216,7 @@ export default {
     const origin = allowedOrigin(req.headers.get("origin"));
     const cors = {
       "access-control-allow-methods": "GET, POST, OPTIONS",
-      "access-control-allow-headers": "content-type, authorization, x-admin",
+      "access-control-allow-headers": "content-type, authorization, x-admin, x-blog",
       "access-control-max-age": "86400",
       vary: "origin",
     };

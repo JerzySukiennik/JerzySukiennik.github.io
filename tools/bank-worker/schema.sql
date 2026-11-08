@@ -22,3 +22,8 @@ CREATE TABLE IF NOT EXISTS themes (week TEXT PRIMARY KEY, title TEXT, about TEXT
 CREATE TABLE IF NOT EXISTS theme_entries (id TEXT PRIMARY KEY, week TEXT, wall TEXT, w TEXT, sig TEXT, score INTEGER, comment TEXT, ops TEXT, t INTEGER, framed INTEGER DEFAULT 0, moved INTEGER DEFAULT 0, copies TEXT, back TEXT);
 CREATE INDEX IF NOT EXISTS theme_entries_wk ON theme_entries(week, wall, w);
 CREATE TABLE IF NOT EXISTS gallery (wall TEXT, week TEXT, slot INTEGER, title TEXT, winners TEXT, t INTEGER, PRIMARY KEY (wall, week));
+CREATE TABLE IF NOT EXISTS blog_posts (id TEXT PRIMARY KEY, status TEXT, title TEXT, body TEXT, imgs TEXT, project TEXT, by TEXT, t INTEGER, up INTEGER, pub INTEGER);
+CREATE INDEX IF NOT EXISTS blog_posts_pub ON blog_posts(status, pub);
+CREATE TABLE IF NOT EXISTS blog_imgs (id TEXT PRIMARY KEY, post TEXT, mime TEXT, data TEXT, t INTEGER);
+CREATE INDEX IF NOT EXISTS blog_imgs_post ON blog_imgs(post);
+CREATE TABLE IF NOT EXISTS blog_reacts (post TEXT, kind TEXT, who TEXT, t INTEGER, PRIMARY KEY (post, kind, who));

@@ -79,7 +79,7 @@ function importmap() {
     three: "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
   };
-  for (const f of ["views.mjs", "map.mjs", "mural.mjs", "life.mjs", "boot.mjs", "weather.mjs", "glass.mjs", "rocket.mjs", "garden.mjs", "fishing.mjs", "hangar.mjs", "board.mjs", "claw.mjs", "folks.mjs", "bank.mjs", "exchange.mjs", "museum.mjs", "paint.mjs", "coaster.mjs", "stencil.mjs", "blimps.mjs", "wall3d.mjs", "season.mjs"]) map[`/assets/${f}`] = `/assets/${f}?v=${ver("assets/" + f)}`;
+  for (const f of ["views.mjs", "map.mjs", "mural.mjs", "life.mjs", "boot.mjs", "weather.mjs", "glass.mjs", "rocket.mjs", "garden.mjs", "fishing.mjs", "hangar.mjs", "board.mjs", "claw.mjs", "folks.mjs", "bank.mjs", "exchange.mjs", "museum.mjs", "paint.mjs", "coaster.mjs", "stencil.mjs", "blimps.mjs", "wall3d.mjs", "season.mjs", "blog.mjs"]) map[`/assets/${f}`] = `/assets/${f}?v=${ver("assets/" + f)}`;
   return `<script type="importmap">${JSON.stringify({ imports: map })}</script>`;
 }
 

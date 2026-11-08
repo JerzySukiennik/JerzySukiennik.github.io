@@ -1129,3 +1129,66 @@ html.co-riding .pan-go{visibility:hidden}
 .w3-phone{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;background:#008080}
 .w3-phone .w3-card{position:static;max-width:420px}
 @media (max-width:900px){.w3-cols{grid-template-columns:1fr 1fr}.w3-slot{width:52px}.w3-slot span{display:none}}
+
+:root{--gt:26px}
+html.tall{--gt:32px}
+.gt{position:fixed;left:0;right:0;bottom:var(--tb);z-index:19;height:var(--gt)}
+.gt[hidden]{display:none}
+html.booting .gt,.is-painting .gt,.is-painting .gt-read{visibility:hidden}
+html.has-gt .pan{bottom:calc(var(--tb) + var(--gt))}
+html.tall.has-gt .desk{padding-bottom:calc(var(--tb) + var(--gt))}
+.gt-tick{display:flex;align-items:stretch;width:100%;height:100%;margin:0;padding:2px;border:0;background:var(--face);box-shadow:var(--raised);font:inherit;color:#000;text-align:left;cursor:pointer}
+.gt-lab{flex:none;display:flex;align-items:center;gap:6px;padding:0 8px;color:#fff;background:linear-gradient(90deg,var(--navy),var(--title2));font-weight:bold}
+.gt-run{flex:1;min-width:0;display:flex;align-items:center;overflow:hidden;margin:0 3px;background:#fbf8ef;box-shadow:var(--sunken)}
+.gt-roll{display:inline-flex;align-items:center;white-space:nowrap;padding-left:10px;font:13px Georgia,"Times New Roman",serif;color:#1d1a16;animation:gtroll 40s linear infinite}
+.gt-roll em{margin:0 30px 0 10px;font:11px var(--font);font-style:normal;color:#6d6455}
+.gt-tick:hover .gt-roll,.gt-tick:focus-visible .gt-roll{animation-play-state:paused}
+@keyframes gtroll{to{transform:translateX(-50%)}}
+.gt-go{flex:none;display:flex;align-items:center;padding:0 12px;box-shadow:var(--raised)}
+.gt-tick[aria-expanded="true"] .gt-go{box-shadow:var(--pressed)}
+.gt-read{position:fixed;left:8px;bottom:calc(var(--tb) + var(--gt) + 6px);z-index:45;display:flex;flex-direction:column;width:min(540px,calc(100vw - 16px));height:min(640px,calc(100vh - var(--tb) - var(--gt) - 24px));padding:3px;background:var(--face);box-shadow:var(--raised),-2px 3px 0 rgba(0,0,0,.25);transform:translateY(calc(100% + 80px));visibility:hidden;transition:transform .28s cubic-bezier(.2,.8,.25,1),visibility 0s .28s}
+.gt-read.on{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,.8,.25,1)}
+html.tall .gt-read{left:0;right:0;width:auto;bottom:calc(var(--tb) + var(--gt));height:min(80vh,calc(100vh - var(--tb) - var(--gt) - 10px));height:min(80dvh,calc(100dvh - var(--tb) - var(--gt) - 10px))}
+.gt-sub{flex:none;font-weight:normal;font-size:11px;opacity:.9}
+.gt-edit{flex:none;height:18px;margin-left:6px;padding:0 6px;border:0;background:var(--face);box-shadow:var(--raised);font:11px var(--font);cursor:pointer}
+.gt-paper{flex:1;min-height:0;margin-top:3px;padding:12px 14px 16px;overflow:auto;overscroll-behavior:contain;background:#fbf8ef;box-shadow:var(--sunken);color:#1d1a16}
+.gt-post h3{margin:0 0 4px;font:bold 21px/1.15 Georgia,"Times New Roman",serif}
+.gt-date{margin:0 0 10px;font-size:11px;color:#6d6455;text-transform:uppercase;letter-spacing:.6px}
+.gt-body p{margin:0 0 10px;font:15px/1.5 Georgia,"Times New Roman",serif;overflow-wrap:anywhere}
+.gt-body a{color:#0000ee}
+.gt-gal{position:relative;margin:4px 0 6px;background:#222;box-shadow:var(--sunken)}
+.gt-gal img{display:block;width:100%;height:auto;max-height:360px;object-fit:contain}
+.gt-gal button{position:absolute;top:50%;width:28px;height:36px;margin-top:-18px;border:0;background:var(--face);box-shadow:var(--raised);font:bold 15px var(--font);cursor:pointer}
+.gt-prev{left:6px}.gt-next{right:6px}
+.gt-dots{display:flex;justify-content:center;gap:5px;margin:0 0 10px}
+.gt-dots i{width:7px;height:7px;background:#bdb5a2}
+.gt-dots i.on{background:#1d1a16}
+.gt-proj{display:flex;align-items:center;gap:10px;margin:6px 0 12px;padding:6px;background:#fff;box-shadow:var(--raised);color:#000;text-decoration:none}
+.gt-proj img{flex:none;width:72px;height:54px;object-fit:cover;box-shadow:var(--sunken)}
+.gt-proj b{display:block}
+.gt-proj span span{display:block;font-size:12px;color:#444}
+.gt-re{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}
+.gt-re button{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border:0;background:var(--face);box-shadow:var(--raised);font:12px var(--font);cursor:pointer}
+.gt-re button.me{box-shadow:var(--pressed);font-weight:bold}
+.gt-older h4,.gt-ed h4{margin:0 0 6px;padding-top:8px;border-top:1px solid #cfc7b3;font:bold 12px var(--font);text-transform:uppercase;letter-spacing:.6px;color:#5a5348}
+.gt-older a{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dotted #cfc7b3;color:#1d1a16;text-decoration:none;font:14px Georgia,serif}
+.gt-older a:hover{color:#0000ee}
+.gt-older a.cur{font-weight:bold}
+.gt-older a span{flex:none;font:11px var(--font);color:#6d6455}
+.gt-empty{font:15px Georgia,serif;color:#6d6455}
+.gt-ed label{display:flex;flex-direction:column;gap:3px;margin:0 0 10px;font-weight:bold}
+.gt-ed input[type=text],.gt-ed textarea,.gt-ed select{font:14px var(--font);padding:4px;border:0;background:#fff;box-shadow:var(--sunken)}
+.gt-ed textarea{resize:vertical;font:15px/1.45 Georgia,serif}
+.gt-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.gt-state{margin-left:auto;font-weight:bold}
+.gt-note{min-height:1em;margin:0 0 8px;color:#000080}
+.gt-pics{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.gt-pics span{position:relative;width:84px;height:64px;box-shadow:var(--sunken);background:#222}
+.gt-pics img{width:100%;height:100%;object-fit:cover}
+.gt-pics button{position:absolute;right:2px;top:2px;width:18px;height:18px;padding:0;border:0;background:var(--face);box-shadow:var(--raised);font:bold 12px/1 var(--font);cursor:pointer}
+.gt-addpic{justify-content:center;align-items:center;width:84px;height:64px;margin:0!important;background:var(--face);box-shadow:var(--raised);font-weight:normal!important;cursor:pointer}
+.gt-list{margin:0 0 10px;padding:0;list-style:none}
+.gt-list button{display:flex;justify-content:space-between;gap:10px;width:100%;padding:7px 4px;border:0;border-bottom:1px dotted #cfc7b3;background:none;font:14px Georgia,serif;text-align:left;cursor:pointer}
+.gt-list button span{flex:none;font:11px var(--font);color:#6d6455}
+.gt-prevw{padding:10px;background:#fff;box-shadow:var(--sunken)}
+@media (prefers-reduced-motion:reduce){.gt-roll{animation:none}.gt-read,.gt-read.on{transition:none}}

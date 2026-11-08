@@ -18,6 +18,7 @@ import { createExchange } from "/assets/exchange.mjs";
 import { createMuseum } from "/assets/museum.mjs";
 import { createCoaster } from "/assets/coaster.mjs";
 import { createBlimps } from "/assets/blimps.mjs";
+import { createBlog } from "/assets/blog.mjs";
 import "/assets/paint.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
@@ -395,6 +396,7 @@ const weather = createWeather({ world, mapCanvas });
 const launch = createLaunch(world), garden = createGarden(world), fishing = createFishing(world);
 const hangar = createHangar(world), board = createBoard(world), claw = createClaw(world), folks = createFolks(world);
 const bank = createBank(world), exchange = createExchange(world), museum = createMuseum(world), coaster = createCoaster(world, { riders: () => folks.riders() });
+const blog = createBlog(desk, { data });
 let wallP = 0, panT = 0;
 
 function wallPanel(x) {
