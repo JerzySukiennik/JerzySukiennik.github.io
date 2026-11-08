@@ -9,7 +9,7 @@ import { picker, cutter } from "/assets/stencil.mjs";
 import { PAL, FROZEN, seasonal } from "/assets/season.mjs";
 import { me as wallet, code as walletCode, api as bank, ensure } from "/assets/bank.mjs";
 
-const U = 0.01, WX = 1000, WY = 323, UPH = 877, ARTY = 323 / 129, TW = 250, TH = 300, RF = 0.5, RN = 2.4;
+const U = 0.01, WX = 1000, WY = 323, UPH = 877, ARTY = 323 / 129, TW = 250, TH = 300, RF = 0.5, RN = 2.4, PHOTO_R = 1.8;
 const WALL_H = (WY + UPH) * U, THICK = 0.4, EYE = 1.65, RAD = 0.28;
 const X = (ux) => ux * U, Y = (uy) => (WY - uy) * U;
 const SND = "/assets/wall3d/", SPR = "/assets/map/";
@@ -336,10 +336,11 @@ function start() {
     });
   }
   function detail() {
-    const cx = camera.position.x / U, cy = WY - camera.position.y / U, cz = camera.position.z / U;
+    const cx = camera.position.x / U, cy = WY - camera.position.y / U, cz = camera.position.z / U, shot = drone.on && drone.to ? drone.to.x / U : null;
     W3.tiles.forEach((t) => {
       const dx = Math.max(t.v.x0 - cx, 0, cx - t.x1), dy = Math.max(t.v.y0 - cy, 0, cy - t.y1), d = Math.hypot(dx, dy, cz) * U, cur = t.want || t.v.r;
-      const r = d < 6 ? RN : d > 9 ? RF : cur;
+      let r = d < 6 ? RN : d > 9 ? RF : cur;
+      if (shot !== null && t.x1 > shot - 1300 && t.v.x0 < shot + 1300) r = Math.max(r, PHOTO_R);
       if (r !== cur) { t.want = r; if (t.job) t.again = true; else queueTile(t); }
     });
   }
@@ -894,7 +895,7 @@ function start() {
     hudSync();
   }
 
-  const shotSize = [1600, 900];
+  const shotSize = [1920, 1080];
   function startDrone() {
     if (drone.on || api.busy()) return;
     drone.on = true;
@@ -928,7 +929,7 @@ function start() {
       const n = 3 - Math.floor(drone.t / 0.6);
       ui.count.textContent = n > 0 ? String(n) : "";
       camera.position.y = drone.to.y + Math.sin(drone.t * 2.2) * 0.04;
-      if (drone.t >= 1.8) { ui.count.hidden = true; takePhoto(); drone.phase = "photo"; drone.t = 0; }
+      if (drone.t >= 1.8 && (!W3.jobs.size || drone.t > 9)) { ui.count.hidden = true; takePhoto(); drone.phase = "photo"; drone.t = 0; }
     } else if (drone.phase === "back") {
       const u = clamp(drone.t / 1.8, 0, 1), e = ease(u);
       camera.position.lerpVectors(drone.to, eyePos(), e);
@@ -939,7 +940,7 @@ function start() {
   function takePhoto() {
     shot("shutter", 0.9);
     ui.flashEl.classList.remove("on"); void ui.flashEl.offsetWidth; ui.flashEl.classList.add("on");
-    const w = shotSize[0] / 2, h = shotSize[1] / 2, rt = new THREE.WebGLRenderTarget(w, h, { colorSpace: THREE.SRGBColorSpace });
+    const ss = Math.max(1, Math.min(2, Math.floor(renderer.capabilities.maxTextureSize / shotSize[0]))), w = shotSize[0] * ss, h = shotSize[1] * ss, rt = new THREE.WebGLRenderTarget(w, h, { colorSpace: THREE.SRGBColorSpace });
     drone.cam.aspect = w / h; drone.cam.updateProjectionMatrix();
     drone.cam.position.copy(camera.position); drone.cam.quaternion.copy(camera.quaternion);
     ringGrp.visible = false;
@@ -957,12 +958,13 @@ function start() {
     for (let y = 0; y < h; y++) im.data.set(px.subarray((h - 1 - y) * w * 4, (h - y) * w * 4), y * w * 4);
     sx.putImageData(im, 0, 0);
     const big = canvas(shotSize[0], shotSize[1]), bx = big.getContext("2d");
-    bx.imageSmoothingEnabled = false;
+    bx.imageSmoothingEnabled = true;
+    bx.imageSmoothingQuality = "high";
     bx.drawImage(small, 0, 0, shotSize[0], shotSize[1]);
-    bx.font = "bold 22px Tahoma, Verdana, sans-serif";
+    bx.font = "bold 26px Tahoma, Verdana, sans-serif";
     const tag = "gzowo.fun/wall", tw = bx.measureText(tag).width;
-    bx.fillStyle = "rgba(0,0,0,.45)"; bx.fillRect(shotSize[0] - tw - 34, shotSize[1] - 46, tw + 22, 32);
-    bx.fillStyle = "#fff"; bx.fillText(tag, shotSize[0] - tw - 23, shotSize[1] - 22);
+    bx.fillStyle = "rgba(0,0,0,.45)"; bx.fillRect(shotSize[0] - tw - 40, shotSize[1] - 54, tw + 26, 38);
+    bx.fillStyle = "#fff"; bx.fillText(tag, shotSize[0] - tw - 27, shotSize[1] - 26);
     const d = new Date(), name = `gzowo-wall-${d.toISOString().slice(0, 10)}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}.png`;
     ui.photoImg.src = big.toDataURL("image/png");
     ui.photoSave.download = name;
@@ -1271,7 +1273,7 @@ function start() {
     if (frame % 4 === 0) syncMates(dt * 4);
     mates.forEach((m) => { if (m.live && m.aim && Math.random() < dt * 30) emit(new THREE.Vector3(m.x + 0.25, m.y + 1.25, 0.62), new THREE.Vector3(m.aim[0], m.aim[1], 0), m.c && /^#/.test(m.c) ? m.c : "#ffffff", 2, 0.12, 4.5, false); });
 
-    pump(5);
+    pump(drone.on ? 10 : 5);
     uploads();
     if (frame % 2 === 0 || api.busy()) overlays();
     if (frame % 15 === 0) info(res);
