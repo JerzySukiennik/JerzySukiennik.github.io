@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "apogee",
+      "name": "Apogee",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "apogee.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/apogee",
+      "blurb": "A Mac browser that blocks every ad, cleans up YouTube and answers your questions on a drawn board.",
+      "body": [
+        "Apogee is our own browser for the Mac, built natively in Swift on WebKit, the engine inside Safari. The window stays pure black, ads and trackers are blocked everywhere, and YouTube loses its ads, skips sponsor segments, plays in the highest quality and glows around the edges with ambient light. Passwords live in your Mac's keychain and come over from Brave, Chrome or the Passwords app in one click.",
+        "The interesting part is how little it relies on other people's extensions. The blocker turns EasyList, EasyPrivacy, EasyList Polish, the AdGuard lists and Peter Lowe's list into about 234,000 native WebKit rules and refreshes them every week. The assistant, Max, runs on Gemini with your own free key: ask it about the page you are on, or hand it a task and it works through the site itself, stopping before anything that pays, sends, deletes or needs a password.",
+        "Try this first: type a question that starts with a question mark into the address bar, like ?how does a liquid rocket engine work. Instead of ten blue links you get a board with checked facts and sources, a diagram drawn for you, sometimes a little simulation you can play with, and photos from Wikimedia. Pinch a page to see all your tabs, swipe with three fingers to switch between them."
+      ],
+      "stack": [
+        "Swift",
+        "SwiftUI",
+        "WebKit",
+        "Gemini",
+        "Apple Translation"
+      ],
+      "image": "project-images/apogee.webp"
+    },
+    {
+      "hidden": false,
       "slug": "wire-choir",
       "name": "Wire Choir",
       "category": "Experiment",
