@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "interstellar",
+      "name": "Interstellar",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "interstellar.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/interstellar",
+      "blurb": "Wake alone on a spinning ship, fly to a water world where a second costs a month, then fall into a black hole.",
+      "body": [
+        "A first-person space journey in eight chapters. You wake in a cryo pod on a rotating station, climb to the hub, undock a small ship and fly it yourself: to an ocean planet where time runs slow, back to a station that has aged without you, and finally into the black hole. It is a fan-made, non-commercial project with its own story and text.",
+        "Everything you see is built in the browser from code: the ships, the cockpit screens, the ocean with its wave and the black hole are all procedural, with no image or model files. The game records what you do, and the last chapter is assembled from that recording, so the ending is made of your own playthrough. Sounds are real recordings, and it runs as plain ES modules with no build step.",
+        "Try this first: use a computer with a dedicated graphics card, put on headphones, and when you wake up look down at your own hands before you stand. Keyboard and mouse or a gamepad both work."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "GLSL",
+        "Web Audio",
+        "Gamepad API"
+      ],
+      "image": "project-images/interstellar.webp"
+    },
+    {
+      "hidden": false,
       "slug": "gummies",
       "name": "Gummies",
       "category": "Game",
