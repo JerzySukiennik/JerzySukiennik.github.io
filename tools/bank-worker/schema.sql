@@ -27,3 +27,4 @@ CREATE INDEX IF NOT EXISTS blog_posts_pub ON blog_posts(status, pub);
 CREATE TABLE IF NOT EXISTS blog_imgs (id TEXT PRIMARY KEY, post TEXT, mime TEXT, data TEXT, t INTEGER);
 CREATE INDEX IF NOT EXISTS blog_imgs_post ON blog_imgs(post);
 CREATE TABLE IF NOT EXISTS blog_reacts (post TEXT, kind TEXT, who TEXT, t INTEGER, PRIMARY KEY (post, kind, who));
+CREATE TABLE IF NOT EXISTS cards_owned (w TEXT, card TEXT, n INTEGER, t INTEGER, PRIMARY KEY (w, card));

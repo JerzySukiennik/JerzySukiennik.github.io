@@ -12,10 +12,10 @@ export const SPR = {
   wall: [404, WALL_ROWS], wallS: [404, 147], cloud1: [141, 75], cloud2: [161, 77], cloud3: [194, 70], cloud4: [137, 64], sun: [85, 87], tree1: [98, 103], tree2: [72, 101],
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
   dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
-  exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300], starnet: [250, 232],
+  exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300], starnet: [250, 232], kiosk: [170, 252],
 };
 export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
-const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station"];
+const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station", "kiosk"];
 export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
 export const FACE = { x: 2 / 404, y: (13 + TALL - UP_ROWS) / WALL_ROWS, w: 400 / 404, h: (129 + UP_ROWS) / WALL_ROWS };
 const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
@@ -83,6 +83,7 @@ function land(V, H) {
     hangar: at("hangar", 1.25, 0.712, 0.95), board: at("board", 1.59, 0.712, 0.82), claw: at("claw", 1.715, 0.712, 0.95), booth: at("booth", 1.855, 0.712, 0.95),
     exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
     starnet: at("starnet", 1.457, 0.928, 0.95),
+    kiosk: at("kiosk", 2.64, 0.928, 0.72),
   };
   const wallTop = 0.17 * H, wallBase = 0.585 * H, wk = (wallBase - wallTop) / WALL_ROWS;
   const wall = { sprite: "wall", x: 0.012 * V, y: wallTop, w: 404 * wk, h: WALL_ROWS * wk, k: wk };
@@ -104,7 +105,7 @@ function land(V, H) {
       at("cloud1", 0.97, 0.085, 0.4), at("cloud2", 1.18, 0.155, 0.85), at("cloud4", 1.5, 0.11, 0.5), at("cloud3", 1.78, 0.135, 0.9), at("cloud1", 1.95, 0.08, 0.4),
       at("cloud4", 2.15, 0.16, 0.45), at("cloud1", 2.7, 0.1, 0.4)],
     console: box(0.775 * V, 0.928 * H, 56 * s, 64 * s), garden: { x: 0.235 * V, y: 0.632 * H, w: 0.16 * V, h: 0.078 * H },
-    river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8), at("sailboat", 2.62, 0.99, 0.65)], gull: at("gull", 0.955, 0.995, 0.64),
+    river_props: [at("dock", 0.37, 0.975, 0.95)], boats: [at("sailboat", 1.52, 0.985, 0.8), at("sailboat", 2.5, 0.99, 0.65)], gull: at("gull", 0.955, 0.995, 0.64),
     kayaks: [kayak(0.48 * V, 0.975 * H, s * 1.15), kayak(0.585 * V, 0.98 * H, s * 1.15)],
     spurDown: [[0.372, 0.8], [0.371, 0.86], [0.37, 0.905]].map(([x, y]) => [x * V, y * H]), lane: [0.16 * V, 0.88 * V], person: 92 * s, speed: 120 * s,
     sky: { x: 2.02 * V, y: 0.045 * H, w: 0.96 * V, h: 0.37 * H },
@@ -120,6 +121,7 @@ function tall(V) {
     hangar: at("hangar", 585, 800, 0.95), board: at("board", 505, 1100, 0.85), claw: at("claw", 662, 1400, 0.95), booth: at("booth", 522, 1700, 0.95),
     coaster: at("station", 1062, 585, 0.95), exchange: at("exchange", 960, 995, 0.95), museum: at("museum", 985, 1335, 0.95), store: at("store", 975, 1655, 0.95),
     starnet: at("starnet", 565, 1992, 0.9),
+    kiosk: at("kiosk", 975, 1975, 0.82),
   };
   const wall = sprite("wallS", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
@@ -139,7 +141,7 @@ function tall(V) {
     at("bush", 740, 1720, 0.6), at("dish", 712, 1995, 0.5), at("lamp", 452, 2008), at("bush", 520, 2120, 0.75), at("tree3", 650, 2115, 0.7),
     at("tree2", 760, 1300, 0.7),
     at("lamp", 820, 980), at("lamp", 1100, 1320), at("bush", 830, 1320, 0.7), at("pine", 1110, 1180, 0.75), at("lamp", 860, 1640), at("tree1", 1110, 1640, 0.75),
-    at("bench", 960, 1960, 0.75), at("lamp", 1080, 1965), at("tree3", 880, 2120, 0.75), at("bush", 1050, 2140, 0.8), at("pine", 1120, 2232, 0.7),
+    at("bench", 1085, 2118, 0.75), at("lamp", 1080, 1965), at("tree3", 880, 2120, 0.75), at("bush", 1050, 2140, 0.8), at("pine", 1120, 2232, 0.7),
   ];
   return finish({
     mode: "tall", V, W: 3 * V, H: Y(2430), s, k: 2, horizon: Y(478), river: [Y(2340), Y(2430)], places, mural: wall, path, pathWidth: 30 * s, props,

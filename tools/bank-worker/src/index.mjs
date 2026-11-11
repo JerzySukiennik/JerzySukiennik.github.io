@@ -1013,6 +1013,91 @@ async function tick(env) {
   ]);
 }
 
+const CARD_SETS = ["labs", "gzowo", "map"], CARD_RAR = ["common", "rare", "epic", "legendary"], CARD_ID = /^[a-z0-9-]{1,48}$/;
+const PACK_N = 5, PACK_DAY = 80, CARD_SELL = { common: 1, rare: 2, epic: 6, legendary: 25 };
+const PACKS = {
+  labs: { name: "Labs Pack", price: 25, sets: ["labs"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
+  gzowo: { name: "Gzowo Pack", price: 25, sets: ["gzowo"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
+  map: { name: "Map Pack", price: 25, sets: ["map"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
+  gold: { name: "Golden Pack", price: 80, sets: CARD_SETS, odds: [[50, 35, 12, 3], [0, 0, 80, 20]] },
+};
+let CAT = null, CAT_T = 0;
+
+async function catalog(env) {
+  if (CAT && Date.now() - CAT_T < 300000) return CAT;
+  try {
+    const r = await fetch(env.CARDS_URL || "https://gzowo.fun/assets/cards.json");
+    const list = ((await r.json()).cards || []).filter((c) => c && CARD_ID.test(c.id) && CARD_SETS.includes(c.set) && CARD_RAR.includes(c.rarity))
+      .map((c) => ({ id: c.id, set: c.set, rarity: c.rarity }));
+    if (r.ok && list.length >= PACK_N) { CAT = list; CAT_T = Date.now(); }
+  } catch (e) {}
+  if (!CAT) throw new Fail("The kiosk is restocking, try again in a minute", 503);
+  return CAT;
+}
+
+const dice = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
+function drawCard(pool, odds) {
+  let x = dice() * 100, tier = 0;
+  for (let i = 0; i < 4; i++) { if (x < odds[i]) { tier = i; break; } x -= odds[i]; }
+  for (const t of [tier, tier - 1, tier - 2, tier - 3, tier + 1, tier + 2, tier + 3]) {
+    const c = pool.filter((k) => k.rarity === CARD_RAR[t]);
+    if (c.length) return c[Math.floor(dice() * c.length)];
+  }
+  return pool[Math.floor(dice() * pool.length)];
+}
+
+async function cardsOwned(env, id) {
+  const o = {};
+  for (const r of (await env.DB.prepare("SELECT card, n FROM cards_owned WHERE w = ?").bind(id).all()).results) o[r.card] = r.n;
+  return o;
+}
+
+async function cardsView(env, id) {
+  return {
+    packs: Object.entries(PACKS).map(([k, p]) => ({ id: k, name: p.name, price: p.price, sets: p.sets, n: PACK_N, odds: p.odds })),
+    sell: CARD_SELL, owned: id ? await cardsOwned(env, id) : null,
+  };
+}
+
+async function cardsBuy(env, w, body) {
+  const kind = String(body.pack || ""), p = PACKS[kind];
+  if (!p) throw new Fail("No such pack at the kiosk");
+  const pool = (await catalog(env)).filter((c) => p.sets.includes(c.set));
+  if (pool.length < PACK_N) throw new Fail("The kiosk is restocking, try again in a minute", 503);
+  if (w.szy < p.price) throw new Fail("Not enough szyszki", 402);
+  if (!(await bump(env, w.id, "pack", PACK_DAY))) throw new Fail("That's all the packs for today, come back tomorrow");
+  const before = await cardsOwned(env, w.id);
+  await debit(env, w.id, p.price, "cards", p.name);
+  const got = [];
+  for (let i = 0; i < PACK_N; i++) {
+    let c = null;
+    for (let k = 0; k < 8 && (!c || got.includes(c)); k++) c = drawCard(pool, p.odds[i === PACK_N - 1 ? 1 : 0]);
+    got.push(c);
+  }
+  const now = Date.now();
+  try {
+    await env.DB.batch(got.map((c) => env.DB.prepare("INSERT INTO cards_owned (w, card, n, t) VALUES (?1, ?2, 1, ?3) ON CONFLICT(w, card) DO UPDATE SET n = n + 1").bind(w.id, c.id, now)));
+  } catch (e) {
+    await credit(env, w.id, p.price, "cards", "refund: " + p.name);
+    throw e;
+  }
+  const seen = new Set(Object.keys(before));
+  const cards = got.map((c) => { const fresh = !seen.has(c.id); seen.add(c.id); return { id: c.id, fresh }; });
+  return { ok: true, pack: kind, cards, owned: await cardsOwned(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+async function cardsSell(env, w, body) {
+  const cat = new Map((await catalog(env)).map((c) => [c.id, c]));
+  const only = body.card ? String(body.card) : null;
+  const rows = (await env.DB.prepare("SELECT card, n FROM cards_owned WHERE w = ? AND n > 1").bind(w.id).all()).results.filter((r) => cat.has(r.card) && (!only || r.card === only));
+  if (!rows.length) throw new Fail("No duplicates to trade in");
+  const res = await env.DB.batch(rows.map((r) => env.DB.prepare("UPDATE cards_owned SET n = 1 WHERE w = ?1 AND card = ?2 AND n = ?3").bind(w.id, r.card, r.n)));
+  let got = 0, count = 0;
+  res.forEach((x, i) => { if (x.meta.changes) { count += rows[i].n - 1; got += (rows[i].n - 1) * CARD_SELL[cat.get(rows[i].card).rarity]; } });
+  if (got) await credit(env, w.id, got, "cards", `traded in ${count} duplicate card${count === 1 ? "" : "s"}`);
+  return { ok: true, got, count, owned: await cardsOwned(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
 const BLOG_KINDS = ["rocket", "heart", "fire", "star"], BLOG_IMG = /^data:image\/(webp|jpeg|png);base64,([A-Za-z0-9+/]+=*)$/, BLOG_SLUG = /^[a-z0-9-]{1,40}$/;
 const blogKey = (env, req) => {
   const k = req.headers.get("x-blog") || "";
@@ -1196,6 +1281,9 @@ async function route(req, env, ctx) {
     await themeRoll(env, /^\d{4}-\d{2}-\d{2}$/.test(String(body.week || "")) ? body.week : undefined);
     return { ok: true };
   }
+  if (method === "GET" && path === "/cards") return cardsView(env, id);
+  if (method === "POST" && path === "/cards/buy") return cardsBuy(env, await need(), body);
+  if (method === "POST" && path === "/cards/sell") return cardsSell(env, await need(), body);
   if (method === "GET" && path === "/blog") return blogList(env, url);
   if (method === "GET" && path.startsWith("/blog/img/")) return blogImg(env, path.slice(10));
   if (method === "POST" && path === "/blog/react") return blogReact(env, req, body);

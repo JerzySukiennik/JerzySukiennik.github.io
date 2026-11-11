@@ -28,6 +28,7 @@ const cdnPoster = (url) => url.replace("/video/upload/", "/video/upload/so_1,w_7
 const PLAY = "&#9654;&#xFE0E;";
 
 const ICONS = {
+  cards: ["................", "......kkkkkkkkk.", "......kccccccck.", "..kkkkkkkkkccck.", "..kwwwwwwwkccck.", "..kwaaaaawkccck.", "..kwaaaaawkccck.", "..kwaaaaawkccck.", "..kwaaaaawkccck.", "..kwwwwwwwkccck.", "..kwddddwwkccck.", "..kwwwwwwwkccck.", "..kwdddwwwkkkkk.", "..kwwwwwwwk.....", "..kkkkkkkkk.....", "................"],
   cone: ["................", "......eeee......", ".......ee.......", ".....kkkkkk.....", "....krrrkrrk....", "...krrkrrkrrk...", "...kkkrkkrkkk...", "...krrrkrrrrk...", "...krkkrkkkrk...", "....krrrkrrk....", "....kkkrkkkk....", ".....krrrrk.....", ".....kkrrkk.....", "......krrk......", ".......kk.......", "................"],
   bank: ["................", ".......kk.......", ".....kkggkk.....", "...kkggggggkk...", ".kkggggggggggkk.", ".kkkkkkkkkkkkkk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", ".kwk.kwkkwk.kwk.", "kkkkkkkkkkkkkkkk", "kggggggggggggggk", "kkkkkkkkkkkkkkkk", "................"],
   frame: ["................", "kkkkkkkkkkkkkkkk", "krrrrrrrrrrrrrrk", "krkkkkkkkkkkkkrk", "krkbbbbbbbbccbrk", "krkbbbbbbbbccbrk", "krkbbbbbbbbbbbrk", "krkbbbbebbbbbbrk", "krkbbbeeebbbbbrk", "krkbbeeeeebbebrk", "krkeeeeeeeeeeerk", "krkeeeeeeeeeeerk", "krkkkkkkkkkkkkrk", "krrrrrrrrrrrrrrk", "kkkkkkkkkkkkkkkk", "................"],
@@ -247,6 +248,7 @@ ${item('href="#" data-wallet role="menuitem"', "cone", "Wallet")}
 ${item('href="#" data-exchange role="menuitem"', "bank", "Gzowo Street Exchange")}
 ${item('href="#" data-museum role="menuitem"', "frame", "Museum")}
 ${item('href="#" data-store role="menuitem"', "store", "Store")}
+${item('href="#cards" data-cards role="menuitem"', "cards", "Card Kiosk")}
 ${item('href="#" data-coaster role="menuitem"', "coaster", "Coaster")}
 ${item('href="#" data-open="guide" role="menuitem"', "bubble", "Ask the Guide")}
 <li class="sep"></li>

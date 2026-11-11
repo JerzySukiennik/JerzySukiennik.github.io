@@ -39,6 +39,29 @@ Home has four doors: `/rockets/`, `/printing/`, `/games/`, `/software/`. A proje
 
 `assets/sfx/rain.mp3` (the rain you get by clicking a cloud) is "Rain on window" by ckjzam, CC0 1.0, https://freesound.org/people/ckjzam/sounds/457153/, trimmed to a 24 s loop and loudness-normalised with ffmpeg.
 
+The Card Kiosk (`assets/sfx/cards/`) uses only CC0 1.0 recordings from freesound.org, cut and peak-normalised with ffmpeg:
+
+| File | Sound | Author | Source |
+|---|---|---|---|
+| tear.mp3 | stock-plastic-cheese-tearing-00 | pbimal | https://freesound.org/s/646772/ |
+| rip.mp3 | SFX_STICKERRIPPER_candyWrapper_47 | MrFossy | https://freesound.org/s/590222/ |
+| crinkle.mp3 | Candy Wrapper Crinkle | BluetoothBoy | https://freesound.org/s/269338/ |
+| flip.mp3 | cardsound32562 | memes_hodachy | https://freesound.org/s/554208/ |
+| deal.mp3 | Card Deal | RealSquink | https://freesound.org/s/787405/ |
+| deal2.mp3 | Playing Card Deal Variation 1 | el_boss | https://freesound.org/s/571577/ |
+| shuffle.mp3 | shuffle05 | SilverDubloons | https://freesound.org/s/817574/ |
+| whoosh.mp3 | Swinging staff whoosh (strong) 04 | Nightflame | https://freesound.org/s/422513/ |
+| thud.mp3 | Book Clap | penguinnom | https://freesound.org/s/793442/ |
+| cone.mp3 | Crack 4 | HenKonen | https://freesound.org/s/682115/ |
+| crunch.mp3 | Crunchy Pine Cones | d.n.audio.uk | https://freesound.org/s/263810/ |
+| rare.mp3 | Triangle_Open_04 | cabled_mess | https://freesound.org/s/349504/ |
+| epic.mp3 | Mystical Wind Chimes Transition FX | djlprojects | https://freesound.org/s/419594/ |
+| charge.mp3 | Reverse Swell 2.5s | Qvantor | https://freesound.org/s/877966/ |
+| legend.mp3 | Small Gong_Soft Hit_RAW and wind chimes - single 04 | cabled_mess, Anthousai | https://freesound.org/s/369428/ and https://freesound.org/s/398496/ |
+| ding.mp3 | ding2 | MashedTatoes2 | https://freesound.org/s/515643/ |
+
+The cards themselves come from `data/cards.json` (photo cards from the Gzowo Dataset and pixel cards from the map sprites) plus every project that has a picture; `tools/build.mjs` writes the catalog to `assets/cards.json`, and the `gzowo-bank` worker reads it from there to fill the packs.
+
 The big wall at `/wall/` (`assets/wall3d/`) uses only CC0 1.0 recordings from freesound.org, cut into loops and loudness-normalised with ffmpeg:
 
 | File | Sound | Author | Source |
