@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "gummies",
+      "name": "Gummies",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "gummies.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/gummies",
+      "blurb": "Pour your own gummies, pull them out of the mold, add chocolate and sour sugar, then heat-seal them in a pouch.",
+      "body": [
+        "Gummies is a white studio table with a silicone mold, a pitcher, a chocolate bottle, a sugar shaker and an empty pouch. Pick a mold (bears, worms, cola bottles, rockets, or one you draw yourself), choose a colour and a flavour, and pour. The mass sets on its own after a few seconds, and then every gummy can be pulled out by hand or tipped out with the whole mold.",
+        "Nothing here is a ready-made model. The mass is a small fluid simulation that fills the cavities, overflows and makes puddles, and each gummy is cut from whatever the liquid looked like when it set, so a half-filled bear comes out thin and a splash on the table becomes a blob you can peel off. Gummies are soft bodies that stretch, wobble and bounce, and chocolate and sour sugar stay exactly where they landed.",
+        "Try this first: pour white into the fried egg, add a drop of yellow in the middle, and wait. Then drop your gummies into the pouch, give it a colour, a pattern and a name, and clamp the heat sealer on top. Sealed pouches go to your collection, and you can publish one so that anyone can pour your gummies onto their own table."
+      ],
+      "stack": [
+        "JavaScript",
+        "three.js",
+        "WebGL2",
+        "Web Audio",
+        "Firebase Realtime Database"
+      ],
+      "image": "project-images/gummies.webp"
+    },
+    {
+      "hidden": false,
       "slug": "arbuz-express",
       "name": "Arbuz Express",
       "category": "Game",
