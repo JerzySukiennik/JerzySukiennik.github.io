@@ -2668,7 +2668,7 @@ export function createMural(el, opts) {
     run.pay = pay;
     const j = run.quote, price = pay === "szy" ? `${j.szy} szyszki` : `${n3(j[pay])} ${pay.toUpperCase()}`;
     const b = sellText(`<p class="pt-sell-i"><img alt="Your drawing" src="${run.img}"></p><p data-sell-msg></p>
-<p class="bk-row"><button class="btn go" type="button" data-sell-yes>Yes, sell it</button><button class="btn" type="button" data-sell-back>No, go back</button></p>`, `Sell the lit up paint to Haiku for ${price}? It disappears from the wall for good.`);
+<p class="bk-row"><button class="btn go" type="button" data-sell-yes>Yes, sell it</button><button class="btn" type="button" data-sell-back>No, go back</button></p>`, `Sell the lit up paint to Haiku for ${price}? It disappears from the wall for good and comes back as a card at the kiosk.`);
     b.querySelector("[data-sell-yes]").focus();
   }
   async function finishSell(btn) {
@@ -2683,6 +2683,7 @@ export function createMural(el, opts) {
       sync();
       if (selling === run) closeSell();
       toast(`Haiku bought your drawing: +${pay === "szy" ? j.got + " szyszki" : n3(j.got) + " " + pay.toUpperCase()}`);
+      if (j.card) dispatchEvent(new CustomEvent("gz:card", { detail: j.card }));
     } catch (e) {
       if (selling !== run) return;
       sellText(`<p data-sell-msg></p><p class="bk-row"><button class="btn" type="button" data-sell-x>OK</button></p>`, e.message);

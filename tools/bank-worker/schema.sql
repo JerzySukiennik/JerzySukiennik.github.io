@@ -28,3 +28,5 @@ CREATE TABLE IF NOT EXISTS blog_imgs (id TEXT PRIMARY KEY, post TEXT, mime TEXT,
 CREATE INDEX IF NOT EXISTS blog_imgs_post ON blog_imgs(post);
 CREATE TABLE IF NOT EXISTS blog_reacts (post TEXT, kind TEXT, who TEXT, t INTEGER, PRIMARY KEY (post, kind, who));
 CREATE TABLE IF NOT EXISTS cards_owned (w TEXT, card TEXT, n INTEGER, t INTEGER, PRIMARY KEY (w, card));
+CREATE TABLE IF NOT EXISTS wall_shots (quote TEXT PRIMARY KEY, img TEXT, score INTEGER, comment TEXT, title TEXT, t INTEGER);
+CREATE TABLE IF NOT EXISTS wall_art (id TEXT PRIMARY KEY, w TEXT, title TEXT, comment TEXT, score INTEGER, szy INTEGER, img TEXT, t INTEGER);

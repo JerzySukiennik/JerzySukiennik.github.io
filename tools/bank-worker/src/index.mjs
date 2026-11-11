@@ -396,7 +396,7 @@ function tidy(t, max) {
 const MUSEUM = "You are Haiku, the friendly art critic of the Gzowo Museum on gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. Visitors paint in a small MS Paint style editor. Judge effort, creativity, composition and colour on a 1 to 10 scale: 1-2 an accidental scribble or empty canvas, 3-4 a quick doodle, 5-6 a clear picture with some care, 7-8 a detailed and thoughtful picture, 9-10 genuinely impressive. Be honest but warm. Mark it unsafe if the picture, title or description shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.";
 const BUYER = "You are Haiku, the art buyer of the Gzowo wall on gzowo.fun, a pixel-art website about a plot of land in Gzowo, Poland, by a 14-year-old maker. Visitors spray paint on one long shared brick wall with spray cans, chalk, neon, masking tape and stencils. A visitor wants to sell you one drawing they made there; you see it cut out from the wall with the wall behind it. Judge effort, creativity, composition and colour on a 1 to 10 scale: 1-2 a random scribble or a few lines, 3-4 a quick doodle, 5-6 a clear picture or tag with some care, 7-8 a detailed and thoughtful piece, 9-10 genuinely impressive graffiti. Be honest but warm. Mark it unsafe if it shows sexual content, nudity, gore, hate symbols, slurs, bullying of a real person, or personal data like phone numbers or addresses.";
 
-async function critic(env, system, b64, type, text) {
+async function critic(env, system, b64, type, text, named = false) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
@@ -405,11 +405,12 @@ async function critic(env, system, b64, type, text) {
       tools: [{
         name: "review", description: "Record the review of the picture.",
         input_schema: {
-          type: "object", additionalProperties: false, required: ["score", "safe", "comment"],
+          type: "object", additionalProperties: false, required: named ? ["score", "safe", "comment", "title"] : ["score", "safe", "comment"],
           properties: {
             score: { type: "integer", minimum: 1, maximum: 10 },
             safe: { type: "boolean" },
             comment: { type: "string", description: "One or two short playful sentences in English about this picture, at most 200 characters." },
+            ...(named ? { title: { type: "string", description: "A name for this picture in English, two to four words, like the title on a museum label. No quotes." } } : {}),
           },
         },
       }],
@@ -424,7 +425,7 @@ async function critic(env, system, b64, type, text) {
   const data = await res.json();
   const use = (data.content || []).find((c) => c.type === "tool_use");
   if (!use) throw new Fail("Haiku is out for lunch, try again in a minute", 503);
-  return { score: clamp(Math.round(+use.input.score || 1), 1, 10), safe: use.input.safe !== false, comment: tidy(String(use.input.comment || ""), 240) };
+  return { score: clamp(Math.round(+use.input.score || 1), 1, 10), safe: use.input.safe !== false, comment: tidy(String(use.input.comment || ""), 240), title: tidy(String(use.input.title || "").replace(/["\u201c\u201d]/g, ""), 40).replace(/\.+$/, "") };
 }
 
 async function hang(env, req, w, body) {
@@ -504,6 +505,7 @@ async function purchase(env, w, artId, body) {
     ledger(env, a.owner, "art", a.price - royalty, 0, 0, `sold "${a.title}"`),
   ];
   if (royalty) ops.push(env.DB.prepare("UPDATE wallets SET szy = szy + ? WHERE id = ?").bind(royalty, a.author), ledger(env, a.author, "art", royalty, 0, 0, `10% from resale of "${a.title}"`));
+  ops.push(env.DB.prepare("INSERT OR IGNORE INTO cards_owned (w, card, n, t) VALUES (?, ?, 1, ?)").bind(a.author, "a-" + artId, Date.now()));
   await env.DB.batch(ops);
   return { ok: true, art: await piece(env, artId, w.id), me: await view(env, await me(env, w.id)) };
 }
@@ -556,13 +558,15 @@ async function wallQuote(env, req, w, body) {
   if (await env.DB.prepare("SELECT 1 FROM wall_sold WHERE sig = ?").bind(sig).first()) throw new Fail("Haiku already bought this one");
   await ipLimit(env, req, "wallq", 60);
   if (!(await bump(env, w.id, "wallq", WALL_LOOKS))) throw new Fail("Haiku has looked at enough of your drawings today, come back tomorrow");
-  const r = await critic(env, BUYER, m[1], "image/jpeg", "Here is my drawing from the wall. How good is it?");
+  const r = await critic(env, BUYER, m[1], "image/jpeg", "Here is my drawing from the wall. How good is it?", true);
   if (!r.safe) throw new Fail("Haiku won't buy this one");
   const ink = list.reduce((s, x) => s + inkOf(x.v), 0);
   const szy = clamp(Math.round(r.score * 10 * clamp(Math.sqrt(ink / WALL_INK), 0.1, 1)), 1, 100);
   const id = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
-  await env.DB.prepare("INSERT INTO wall_quotes (id, w, wall, ids, sig, szy, t) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .bind(id, w.id, wallOf(req)[0], JSON.stringify(list.map((x) => [x.p, x.id])), sig, szy, Date.now()).run();
+  await env.DB.batch([
+    env.DB.prepare("INSERT INTO wall_quotes (id, w, wall, ids, sig, szy, t) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(id, w.id, wallOf(req)[0], JSON.stringify(list.map((x) => [x.p, x.id])), sig, szy, Date.now()),
+    env.DB.prepare("INSERT INTO wall_shots (quote, img, score, comment, title, t) VALUES (?, ?, ?, ?, ?, ?)").bind(id, m[1], r.score, r.comment, r.title, Date.now()),
+  ]);
   const p = await prices(env);
   return { quote: id, szy, score: r.score, comment: r.comment, gzm: r6(szy / p.gzm), gzf: r6(szy / p.gzf) };
 }
@@ -604,7 +608,20 @@ async function wallSell(env, req, w, body) {
       ledger(env, w.id, "wall", 0, pay === "gzm" ? got : 0, pay === "gzf" ? got : 0, "Haiku bought a drawing from the wall"),
     ]);
   }
-  return { ok: true, pay, got, me: await view(env, await me(env, w.id)) };
+  let card = null;
+  try {
+    const shot = await env.DB.prepare("SELECT * FROM wall_shots WHERE quote = ?").bind(q.id).first();
+    if (shot) {
+      const now = Date.now();
+      await env.DB.batch([
+        env.DB.prepare("INSERT OR IGNORE INTO wall_art (id, w, title, comment, score, szy, img, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(q.id, w.id, shot.title, shot.comment, shot.score, q.szy, shot.img, now),
+        env.DB.prepare("INSERT INTO cards_owned (w, card, n, t) VALUES (?1, ?2, 1, ?3) ON CONFLICT(w, card) DO UPDATE SET n = n + 1").bind(w.id, "w-" + q.id, now),
+        env.DB.prepare("DELETE FROM wall_shots WHERE quote = ?").bind(q.id),
+      ]);
+      card = { id: "w-" + q.id, rarity: artRarity(shot.score) };
+    }
+  } catch (e) { console.error(e && e.stack ? e.stack : e); }
+  return { ok: true, pay, got, card, me: await view(env, await me(env, w.id)) };
 }
 
 const WX = 1000, THEME_PRIZE = [60, 40, 25], THEME_TRIES = 3, STENCILS = 5, PUSH = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
@@ -1010,16 +1027,18 @@ async function tick(env) {
     env.DB.prepare("DELETE FROM ipday WHERE day < ?").bind(new Date(now - 3 * DAY).toISOString().slice(0, 10)),
     env.DB.prepare("DELETE FROM ledger WHERE t < ?").bind(now - 90 * DAY),
     env.DB.prepare("DELETE FROM wall_quotes WHERE t < ?").bind(now - DAY),
+    env.DB.prepare("DELETE FROM wall_shots WHERE t < ?").bind(now - DAY),
   ]);
 }
 
-const CARD_SETS = ["labs", "gzowo", "map"], CARD_RAR = ["common", "rare", "epic", "legendary"], CARD_ID = /^[a-z0-9-]{1,48}$/;
+const CARD_SETS = ["labs", "gzowo", "map"], ALL_SETS = [...CARD_SETS, "gallery"], CARD_RAR = ["common", "rare", "epic", "legendary"], CARD_ID = /^[a-z0-9-]{1,48}$/;
 const PACK_N = 5, PACK_DAY = 80, CARD_SELL = { common: 1, rare: 2, epic: 6, legendary: 25 };
 const PACKS = {
   labs: { name: "Labs Pack", price: 25, sets: ["labs"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
   gzowo: { name: "Gzowo Pack", price: 25, sets: ["gzowo"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
   map: { name: "Map Pack", price: 25, sets: ["map"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
-  gold: { name: "Golden Pack", price: 80, sets: CARD_SETS, odds: [[50, 35, 12, 3], [0, 0, 80, 20]] },
+  gallery: { name: "Gallery Pack", price: 25, sets: ["gallery"], odds: [[74, 20, 5, 1], [0, 78, 18, 4]] },
+  gold: { name: "Golden Pack", price: 80, sets: ALL_SETS, odds: [[50, 35, 12, 3], [0, 0, 80, 20]] },
 };
 let CAT = null, CAT_T = 0;
 
@@ -1036,10 +1055,23 @@ async function catalog(env) {
 }
 
 const dice = () => crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296;
-function drawCard(pool, odds) {
+const artRarity = (score) => (score >= 9 ? "legendary" : score >= 7 ? "epic" : score >= 5 ? "rare" : "common");
+const anon = (nick, id) => nick || "anon " + String(id).slice(0, 4);
+async function galleryCards(env) {
+  const [a, w] = await env.DB.batch([
+    env.DB.prepare("SELECT a.id, a.title, a.comment, a.score, a.author, au.nick FROM art a LEFT JOIN wallets au ON au.id = a.author WHERE a.sales > 0 ORDER BY a.t DESC LIMIT 500"),
+    env.DB.prepare("SELECT x.id, x.title, x.comment, x.score, x.w, au.nick FROM wall_art x LEFT JOIN wallets au ON au.id = x.w ORDER BY x.t DESC LIMIT 500"),
+  ]);
+  return [
+    ...a.results.map((r) => ({ id: "a-" + r.id, set: "gallery", rarity: artRarity(r.score), name: r.title, text: r.comment || "", tag: "Painted by " + anon(r.nick, r.author), img: `/art/${r.id}/img`, bg: "paper" })),
+    ...w.results.map((r) => ({ id: "w-" + r.id, set: "gallery", rarity: artRarity(r.score), name: r.title || "Wall drawing", text: r.comment || "", tag: "Sprayed by " + anon(r.nick, r.w), img: `/cards/img/${r.id}`, bg: "brick" })),
+  ];
+}
+
+function drawCard(pool, odds, up) {
   let x = dice() * 100, tier = 0;
   for (let i = 0; i < 4; i++) { if (x < odds[i]) { tier = i; break; } x -= odds[i]; }
-  for (const t of [tier, tier - 1, tier - 2, tier - 3, tier + 1, tier + 2, tier + 3]) {
+  for (const t of up ? [tier, tier + 1, tier + 2, tier + 3, tier - 1, tier - 2, tier - 3] : [tier, tier - 1, tier - 2, tier - 3, tier + 1, tier + 2, tier + 3]) {
     const c = pool.filter((k) => k.rarity === CARD_RAR[t]);
     if (c.length) return c[Math.floor(dice() * c.length)];
   }
@@ -1053,17 +1085,18 @@ async function cardsOwned(env, id) {
 }
 
 async function cardsView(env, id) {
+  const art = await galleryCards(env);
   return {
-    packs: Object.entries(PACKS).map(([k, p]) => ({ id: k, name: p.name, price: p.price, sets: p.sets, n: PACK_N, odds: p.odds })),
-    sell: CARD_SELL, owned: id ? await cardsOwned(env, id) : null,
+    packs: Object.entries(PACKS).map(([k, p]) => ({ id: k, name: p.name, price: p.price, sets: p.sets, n: PACK_N, odds: p.odds, ready: k !== "gallery" || art.length >= PACK_N })),
+    sell: CARD_SELL, owned: id ? await cardsOwned(env, id) : null, art,
   };
 }
 
 async function cardsBuy(env, w, body) {
   const kind = String(body.pack || ""), p = PACKS[kind];
   if (!p) throw new Fail("No such pack at the kiosk");
-  const pool = (await catalog(env)).filter((c) => p.sets.includes(c.set));
-  if (pool.length < PACK_N) throw new Fail("The kiosk is restocking, try again in a minute", 503);
+  const pool = [...(p.sets.some((x) => CARD_SETS.includes(x)) ? await catalog(env) : []), ...(p.sets.includes("gallery") ? await galleryCards(env) : [])].filter((c) => p.sets.includes(c.set));
+  if (pool.length < PACK_N) throw new Fail(kind === "gallery" ? "Not enough sold drawings for a pack yet" : "The kiosk is restocking, try again in a minute", kind === "gallery" ? 409 : 503);
   if (w.szy < p.price) throw new Fail("Not enough szyszki", 402);
   if (!(await bump(env, w.id, "pack", PACK_DAY))) throw new Fail("That's all the packs for today, come back tomorrow");
   const before = await cardsOwned(env, w.id);
@@ -1071,7 +1104,7 @@ async function cardsBuy(env, w, body) {
   const got = [];
   for (let i = 0; i < PACK_N; i++) {
     let c = null;
-    for (let k = 0; k < 8 && (!c || got.includes(c)); k++) c = drawCard(pool, p.odds[i === PACK_N - 1 ? 1 : 0]);
+    for (let k = 0; k < 8 && (!c || got.includes(c)); k++) c = drawCard(pool, p.odds[i === PACK_N - 1 ? 1 : 0], i === PACK_N - 1);
     got.push(c);
   }
   const now = Date.now();
@@ -1087,7 +1120,7 @@ async function cardsBuy(env, w, body) {
 }
 
 async function cardsSell(env, w, body) {
-  const cat = new Map((await catalog(env)).map((c) => [c.id, c]));
+  const cat = new Map([...(await catalog(env)), ...(await galleryCards(env))].map((c) => [c.id, c]));
   const only = body.card ? String(body.card) : null;
   const rows = (await env.DB.prepare("SELECT card, n FROM cards_owned WHERE w = ? AND n > 1").bind(w.id).all()).results.filter((r) => cat.has(r.card) && (!only || r.card === only));
   if (!rows.length) throw new Fail("No duplicates to trade in");
@@ -1282,6 +1315,12 @@ async function route(req, env, ctx) {
     return { ok: true };
   }
   if (method === "GET" && path === "/cards") return cardsView(env, id);
+  const shot = /^\/cards\/img\/([a-f0-9]{16})$/.exec(path);
+  if (method === "GET" && shot) {
+    const a = await env.DB.prepare("SELECT img FROM wall_art WHERE id = ?").bind(shot[1]).first();
+    if (!a) throw new Fail("No such drawing", 404);
+    return new Response(Uint8Array.from(atob(a.img), (c) => c.charCodeAt(0)), { headers: { "content-type": "image/jpeg", "cache-control": "public, max-age=31536000, immutable" } });
+  }
   if (method === "POST" && path === "/cards/buy") return cardsBuy(env, await need(), body);
   if (method === "POST" && path === "/cards/sell") return cardsSell(env, await need(), body);
   if (method === "GET" && path === "/blog") return blogList(env, url);

@@ -1,23 +1,25 @@
 /* Gzowo Cards: the card kiosk on the plot. Foil packs bought with szyszki and torn open by hand, cards flipped one by one
-   with a moment for every rarity, holographic finishes, and an album to fill, all backed by the gzowo-bank worker. */
+   with a moment for every rarity, holographic finishes, and an album to fill, all backed by the gzowo-bank worker.
+   Drawings sold on the wall and paintings sold in the museum come back as Gallery cards. */
 
-import { api, ensure, me, toast, cone } from "/assets/bank.mjs";
+import { api, ensure, me, toast, cone, BANK } from "/assets/bank.mjs";
 import { esc, store } from "/assets/folks.mjs";
 import { icon } from "/assets/views.mjs";
 
 const RAR = ["common", "rare", "epic", "legendary"], RANK = Object.fromEntries(RAR.map((r, i) => [r, i]));
 const RNAME = { common: "Common", rare: "Rare", epic: "Epic", legendary: "Legendary" };
 const RCOL = { common: "#eef2fb", rare: "#58b4ff", epic: "#c77bff", legendary: "#ffc21f" };
-const SETS = [["labs", "Labs"], ["gzowo", "Gzowo"], ["map", "The Map"]];
+const SETS = [["labs", "Labs"], ["gzowo", "Gzowo"], ["map", "The Map"], ["gallery", "Gallery"]];
 const PACK = {
   labs: { art: '<img src="/assets/map/lab.webp" alt="" draggable="false">', line: "Games, apps and AI from the Labs" },
   gzowo: { art: '<img class="ph" src="/assets/cards/g-osmiornica.jpg" alt="" draggable="false">', line: "Real photos from the plot in Gzowo" },
   map: { art: '<img src="/assets/map/arcade.webp" alt="" draggable="false">', line: "Pixel things from this map" },
+  gallery: { art: icon("frame", 64), line: "Art that players sold" },
   gold: { art: icon("cone", 64), line: "All three sets, one Epic or better" },
 };
 const SOUNDS = ["tear", "rip", "crinkle", "flip", "deal", "deal2", "shuffle", "whoosh", "thud", "cone", "crunch", "rare", "epic", "charge", "legend", "ding"];
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const C = { cat: null, list: [], packs: null, sell: {}, owned: {}, tab: "packs", fresh: new Set(), busy: false, stage: null, loading: null };
+const C = { cat: null, base: null, list: [], packs: null, sell: {}, owned: {}, tab: "packs", fresh: new Set(), busy: false, stage: null, loading: null };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -59,12 +61,10 @@ function play(name, o = {}) {
 function load(force) {
   if (C.loading && !force) return C.loading;
   C.loading = (async () => {
-    if (!C.cat || force) {
-      const j = await fetch("/assets/cards.json" + (force ? "?t=" + Date.now() : "")).then((r) => r.json());
-      C.list = j.cards;
-      C.cat = new Map(j.cards.map((c) => [c.id, c]));
-    }
+    if (!C.base || force) C.base = (await fetch("/assets/cards.json" + (force ? "?t=" + Date.now() : "")).then((r) => r.json())).cards;
     const v = await api("/cards");
+    C.list = [...C.base, ...(v.art || []).map((c) => ({ ...c, img: BANK + c.img }))];
+    C.cat = new Map(C.list.map((c) => [c.id, c]));
     C.packs = v.packs;
     C.sell = v.sell;
     C.owned = v.owned || {};
@@ -75,7 +75,7 @@ function load(force) {
 function cardHTML(c, cls = "") {
   const art = c.set === "map"
     ? `<span class="gk-art gk-bg-${c.bg}">${c.icon ? icon(c.icon, 64) : `<img src="${c.sprite}" alt="" draggable="false">`}<i class="gk-holo"></i></span>`
-    : `<span class="gk-art"><img src="${c.img}" alt="" draggable="false" decoding="async"><i class="gk-holo"></i></span>`;
+    : `<span class="gk-art${c.set === "gallery" ? " gk-fit gk-bg-" + c.bg : ""}"><img src="${c.img}" alt="" draggable="false" decoding="async"><i class="gk-holo"></i></span>`;
   return `<span class="gk gk-${c.set} gk-${c.rarity}${c.full ? " gk-full" : ""}${cls ? " " + cls : ""}">` +
     `<span class="gk-in">${art}<b class="gk-name">${esc(c.name)}</b><span class="gk-tag"><i class="gk-gem"></i>${esc(c.tag)}</span><span class="gk-txt">${esc(c.text)}</span><span class="gk-foot"><span>${SETS.find((x) => x[0] === c.set)[1]}</span><span>${RNAME[c.rarity]}</span></span></span>` +
     `<i class="gk-glare"></i></span>`;
@@ -106,9 +106,10 @@ function packsView() {
   const szy = me() ? me().szy : null;
   const odds = C.packs.map((p) => `<tr><th>${esc(p.name)}</th>${p.odds[0].map((v) => `<td>${v}%</td>`).join("")}<td>${p.odds[1].map((v, i) => (v ? `${RNAME[RAR[i]]} ${v}%` : "")).filter(Boolean).join(", ")}</td></tr>`).join("");
   return `<div class="gk-rack">${C.packs.map((p) => `<form class="gk-slot" data-gk-buy="${p.id}"><button class="gk-slot-b" type="button" data-gk-peek aria-label="${esc(p.name)}">${packHTML(p.id, p.name, p.n, "is-idle")}</button>
-<b>${esc(p.name)}</b><span>${PACK[p.id].line}</span><button class="btn go" type="submit"${szy !== null && szy < p.price ? " disabled" : ""}>${cone(16)} ${p.price}</button><span class="bk-note" data-note>${szy !== null && szy < p.price ? `${p.price - Math.floor(szy)} more to go` : ""}</span></form>`).join("")}</div>
+<b>${esc(p.name)}</b><span>${PACK[p.id].line}</span><button class="btn go" type="submit"${p.ready === false || (szy !== null && szy < p.price) ? " disabled" : ""}>${cone(16)} ${p.price}</button><span class="bk-note" data-note>${p.ready === false ? `Opens after ${p.n} sold drawings, ${total("gallery")} so far` : szy !== null && szy < p.price ? `${p.price - Math.floor(szy)} more to go` : ""}</span></form>`).join("")}</div>
 <details class="gk-info"><summary>${C.packs[0].n} cards in every pack. The last one is always Rare or better.</summary><table><tr><th>Cards 1 to ${C.packs[0].n - 1}</th>${RAR.map((r) => `<th>${RNAME[r]}</th>`).join("")}<th>Last card</th></tr>${odds}</table>
-<p>Extra copies of a card can be traded back in at the album: ${RAR.map((r) => `${RNAME[r]} ${C.sell[r]}`).join(", ")} szyszki each.</p></details>`;
+<p>Extra copies of a card can be traded back in at the album: ${RAR.map((r) => `${RNAME[r]} ${C.sell[r]}`).join(", ")} szyszki each.</p>
+<p>Sell a drawing from the wall to Haiku, or a painting in the museum, and it becomes a Gallery card. You get the first copy, everyone else can pull it from a Gallery Pack or a Golden Pack. The score Haiku gives sets how rare it is.</p></details>`;
 }
 
 function albumView() {
@@ -116,6 +117,7 @@ function albumView() {
   const ex = extras();
   return `<div class="gk-album">${SETS.map(([set, label]) => {
     const list = C.list.filter((c) => c.set === set).sort((a, b) => RANK[b.rarity] - RANK[a.rarity] || a.name.localeCompare(b.name));
+    if (!list.length) return `<h3 class="gk-set">${label}<span>0 / 0</span></h3><p class="gk-none">No drawings sold yet. Sell one from the wall to Haiku, or a painting in the museum, and it shows up here as a card.</p>`;
     return `<h3 class="gk-set">${label}<span>${have(set)} / ${list.length}</span></h3><div class="gk-prog"><i style="width:${list.length ? have(set) / list.length * 100 : 0}%"></i></div><div class="gk-grid">${list.map((c) => {
       const n = C.owned[c.id] || 0;
       return n ? `<button class="gk-cell${C.fresh.has(c.id) ? " is-fresh" : ""}" type="button" data-gk-card="${c.id}" title="${esc(c.name)}" aria-label="${esc(c.name)}, ${RNAME[c.rarity]}">${cardHTML(c, "gk-mini")}${n > 1 ? `<i class="gk-n">x${n}</i>` : ""}</button>`
@@ -636,7 +638,9 @@ document.addEventListener("click", (e) => {
   const cell = t.closest("[data-gk-card]");
   if (cell) { loadSfx(); look(cell.dataset.gkCard); return; }
   const s = t.closest("[data-gk-sell]");
-  if (s) sell(s.dataset.gkSell || null);
+  if (s) { sell(s.dataset.gkSell || null); return; }
+  const show = t.closest("[data-gk-show]");
+  if (show) { loadSfx(); openKiosk("album"); load().then(() => { render(); look(show.dataset.gkShow); }).catch(() => {}); }
 });
 document.addEventListener("submit", (e) => {
   const f = e.target.closest("[data-gk-buy]");
@@ -645,6 +649,13 @@ document.addEventListener("submit", (e) => {
   buy(f.dataset.gkBuy, f);
 });
 addEventListener("gz:wallet", () => { if (!C.stage && !document.querySelector(".gk-look")) render(); });
+addEventListener("gz:card", (e) => {
+  const d = e.detail || {};
+  if (!d.id || !RNAME[d.rarity]) return;
+  C.fresh.add(d.id);
+  toast(`Your drawing is now ${d.rarity === "epic" ? "an" : "a"} ${RNAME[d.rarity]} card.`, `<button class="btn" type="button" data-gk-show="${esc(d.id)}">See the card</button>`);
+  load().then(render).catch(() => {});
+});
 
 export function createCards(world) {
   const spot = document.createElement("button");

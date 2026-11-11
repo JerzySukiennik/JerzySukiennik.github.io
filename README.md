@@ -60,7 +60,7 @@ The Card Kiosk (`assets/sfx/cards/`) uses only CC0 1.0 recordings from freesound
 | legend.mp3 | Small Gong_Soft Hit_RAW and wind chimes - single 04 | cabled_mess, Anthousai | https://freesound.org/s/369428/ and https://freesound.org/s/398496/ |
 | ding.mp3 | ding2 | MashedTatoes2 | https://freesound.org/s/515643/ |
 
-The cards themselves come from `data/cards.json` (photo cards from the Gzowo Dataset and pixel cards from the map sprites) plus every project that has a picture; `tools/build.mjs` writes the catalog to `assets/cards.json`, and the `gzowo-bank` worker reads it from there to fill the packs.
+Gallery cards are made by the `gzowo-bank` worker itself: a drawing Haiku buys from the wall (its picture is kept in the `wall_art` table) or a museum painting that gets sold becomes a card, the artist gets the first copy and the score Haiku gave sets the rarity. The other cards come from `data/cards.json` (photo cards from the Gzowo Dataset and pixel cards from the map sprites) plus every project that has a picture; `tools/build.mjs` writes the catalog to `assets/cards.json`, and the `gzowo-bank` worker reads it from there to fill the packs.
 
 The big wall at `/wall/` (`assets/wall3d/`) uses only CC0 1.0 recordings from freesound.org, cut into loops and loudness-normalised with ffmpeg:
 
