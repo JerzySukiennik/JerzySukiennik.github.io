@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "arbuz-express",
+      "name": "Arbuz Express",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "arbuz-express.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/arbuz-express",
+      "blurb": "A monkey drives a watermelon train and you steer it, in glorious 240p, across five cursed TV channels.",
+      "body": [
+        "Arbuz Express is a playable version of that clip where a monkey drives a train made of watermelon halves. You steer, the train never brakes, and every fruit half you pick up becomes another wagon. Space makes the whole train hop in a wave, H honks and crash-zooms on the monkey's face, and holding Shift turns on bass boost, which is exactly as bad as it sounds.",
+        "The low quality is real, not a filter over a sharp picture. The game renders at 144, 240 or 360 lines, then a single shader fakes video compression: blocks, smeared colour, lost macroblocks. The music runs through a bitcrusher that gets worse as you lower the quality. Every texture is painted on a canvas at load, so the game ships no image files at all.",
+        "There are five channels, each with its own fruit, world and soundtrack: the original meadow with the red carpet and the blue house, a desert with camels and flying carpets, a Bollywood palace with dancing monkeys, outer space with a cow in a UFO beam, and a 3 AM version where giant watermelons with eyes creep closer until you honk. Try this first: press C for the camera from the clip, then 5. The captions are in Polish."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL2",
+        "GLSL",
+        "Web Audio"
+      ],
+      "image": "project-images/arbuz-express.webp"
+    },
+    {
+      "hidden": false,
       "slug": "apogee",
       "name": "Apogee",
       "category": "Web app",

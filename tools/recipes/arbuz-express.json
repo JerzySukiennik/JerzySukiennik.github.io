@@ -1,0 +1,1 @@
+{"wait":6000,"steps":[{"click":"#channels .chan"},{"wait":3000},{"key":"KeyC"},{"wait":1600},{"hide":"#tools, #hint, #pad"}],"between":[{"key":"KeyA","hold":350}]}
