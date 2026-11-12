@@ -33,8 +33,12 @@ const EARN = {
   claw: { r: 4, cap: 13, n: "claw machine prize" },
   hangar: { r: 1, cap: 2, n: "visited the hangar" },
   kayak: { r: 1, cap: 3, n: "kayak trip" },
+  pet: { r: 1, cap: 4, n: "petted an animal" },
+  camp: { r: 2, cap: 1, n: "sat by the campfire" },
+  film: { r: 2, cap: 1, n: "watched a film at the cinema" },
+  print: { r: 4, cap: 1, n: "printed a figure", server: true },
 };
-const COUNT_ONLY = { trade: 300, ride: 50, art: 6, clawbuy: 10 };
+const COUNT_ONLY = { trade: 300, ride: 50, art: 6, clawbuy: 10, harvest: 6, pack: 80 };
 
 const QUESTS = [
   ["plant", 2, 15, "Plant 2 flowers in the garden"],
@@ -49,6 +53,12 @@ const QUESTS = [
   ["ride", 1, 20, "Ride the Gzowo Coaster"],
   ["art", 1, 25, "Hang a painting in the museum"],
   ["kayak", 1, 10, "Take a kayak out on the Narew"],
+  ["pet", 2, 10, "Pet two animals on the plot"],
+  ["camp", 1, 10, "Sit by the campfire"],
+  ["film", 1, 10, "Watch a film at the outdoor cinema"],
+  ["print", 1, 15, "Print a figure on the guest printer"],
+  ["harvest", 1, 15, "Harvest something ripe in the garden"],
+  ["pack", 1, 15, "Open a pack of cards at the kiosk"],
 ];
 
 const ITEMS = {
@@ -203,6 +213,7 @@ async function view(env, w) {
     id: w.id.slice(0, 6), nick: w.nick, szy: w.szy, gzm: r6(w.gzm), gzf: r6(w.gzf), items: w.items ? w.items.split(",") : [],
     worth: Math.floor(w.szy + w.gzm * p.gzm + w.gzf * p.gzf), daily: !n.daily, clawExtra: n.clawbuy || 0,
     caps: Object.fromEntries(Object.entries(EARN).map(([k, e]) => [k, [n[k] || 0, e.cap]])), quests, price: { gzm: p.gzm, gzf: p.gzf },
+    job: await jobOf(env, w.id), freeCard: !n.freecard,
   };
 }
 
@@ -221,7 +232,7 @@ async function proofOk(env, req, w, kind, key) {
 async function earn(env, req, w, body) {
   const kind = String(body.kind || "");
   const cfg = EARN[kind];
-  if (!cfg) throw new Fail("Unknown activity");
+  if (!cfg || cfg.server) throw new Fail("Unknown activity");
   let rec = null;
   if (cfg.proof) {
     const used = await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = ?").bind(w.id, today(), kind).first();
@@ -338,14 +349,17 @@ async function buy(env, w, body) {
   return { ok: true, start, me: await view(env, await me(env, w.id)) };
 }
 
-async function pulse(env) {
+async function pulse(env, req) {
   const now = Date.now();
   const p = await prices(env);
   const old = await env.DB.prepare("SELECT gzm, gzf FROM prices WHERE t <= ? ORDER BY t DESC LIMIT 1").bind(now - DAY).first()
     || await env.DB.prepare("SELECT gzm, gzf FROM prices ORDER BY t ASC LIMIT 1").first();
   const live = (await env.DB.prepare("SELECT id, kind, nick, data, t, until FROM live WHERE until > ? AND t < ? ORDER BY t").bind(now, now + 120000).all()).results;
-  const w = await kvGet(env, ["wx_t", "wx_code", "wx_cloud", "wx_rain", "wx_snow", "wx_day", "wx_at", "wind"]);
+  const w = await kvGet(env, ["wx_t", "wx_code", "wx_cloud", "wx_rain", "wx_snow", "wx_day", "wx_at", "wind", "camp"]);
+  const jobs = (await env.DB.prepare("SELECT folk, name, job, until FROM jobs WHERE plot = ? AND paid = 0 AND until > ? ORDER BY t DESC LIMIT 12").bind(plotOf(req), now).all()).results;
+  const cut = await env.DB.prepare("SELECT MAX(t) t FROM harvests").first();
   return {
+    camp: w.camp > now ? w.camp : 0, jobs, rain: await rainDays(env), cut: (cut && cut.t) || 0,
     t: now, gzm: p.gzm, gzf: p.gzf,
     wx: w.wx_at && now - w.wx_at < 3 * 3600000 ? { temp: w.wx_t, code: w.wx_code, cloud: w.wx_cloud, rain: w.wx_rain, snow: w.wx_snow, day: w.wx_day, wind: w.wind, at: w.wx_at } : null,
     chg: { gzm: old ? r2((p.gzm / old.gzm - 1) * 100) : 0, gzf: old ? r2((p.gzf / old.gzf - 1) * 100) : 0 },
@@ -371,7 +385,9 @@ async function market(env) {
 async function top(env, id) {
   const p = await prices(env);
   const rows = (await env.DB.prepare("SELECT id, nick, szy, gzm, gzf, szy + gzm * ?1 + gzf * ?2 AS worth FROM wallets ORDER BY worth DESC LIMIT 25").bind(p.gzm, p.gzf).all()).results;
-  const out = { rows: rows.map((r, i) => ({ rank: i + 1, me: r.id === id, name: r.nick || "anon " + r.id.slice(0, 4), worth: Math.floor(r.worth), gzm: r2(r.gzm), gzf: r2(r.gzf) })) };
+  const done = {};
+  for (const r of (await env.DB.prepare("SELECT w, COUNT(*) n FROM card_claims WHERE k LIKE '%:100' GROUP BY w").all()).results) done[r.w] = r.n;
+  const out = { rows: rows.map((r, i) => ({ rank: i + 1, me: r.id === id, name: r.nick || "anon " + r.id.slice(0, 4), worth: Math.floor(r.worth), gzm: r2(r.gzm), gzf: r2(r.gzf), sets: done[r.id] || 0 })) };
   if (id) {
     const w = await env.DB.prepare("SELECT szy + gzm * ?1 + gzf * ?2 AS worth FROM wallets WHERE id = ?3").bind(p.gzm, p.gzf, id).first();
     if (w) out.mine = { worth: Math.floor(w.worth), rank: (await env.DB.prepare("SELECT COUNT(*) + 1 n FROM wallets WHERE szy + gzm * ?1 + gzf * ?2 > ?3").bind(p.gzm, p.gzf, w.worth).first()).n };
@@ -972,6 +988,7 @@ async function tick(env) {
   const cur = wx && wx.current && typeof wx.current.weather_code === "number" ? wx.current : null, num = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
   const sky = cur ? [kvSet(env, "wx_t", num(cur.temperature_2m)), kvSet(env, "wx_code", num(cur.weather_code)), kvSet(env, "wx_cloud", num(cur.cloud_cover)),
     kvSet(env, "wx_rain", num(cur.rain) + num(cur.showers)), kvSet(env, "wx_snow", num(cur.snowfall)), kvSet(env, "wx_day", num(cur.is_day)), kvSet(env, "wx_at", now)] : [];
+  if (cur && num(cur.rain) + num(cur.showers) > 0.02) sky.push(env.DB.prepare("INSERT INTO raindays (day, min) VALUES (?1, 15) ON CONFLICT(day) DO UPDATE SET min = min + 15").bind(new Date(now).toISOString().slice(0, 10)));
 
   const names = ["hits", "launches", "garden", "fish", "folks", "board", "guestbook", "reviews"];
   const totals = {};
@@ -1028,6 +1045,9 @@ async function tick(env) {
     env.DB.prepare("DELETE FROM ledger WHERE t < ?").bind(now - 90 * DAY),
     env.DB.prepare("DELETE FROM wall_quotes WHERE t < ?").bind(now - DAY),
     env.DB.prepare("DELETE FROM wall_shots WHERE t < ?").bind(now - DAY),
+    env.DB.prepare("DELETE FROM harvests WHERE t < ?").bind(now - 45 * DAY),
+    env.DB.prepare("DELETE FROM raindays WHERE day < ?").bind(new Date(now - 8 * DAY).toISOString().slice(0, 10)),
+    env.DB.prepare("DELETE FROM jobs WHERE paid = 1 AND t < ?").bind(now - 7 * DAY),
   ]);
 }
 
@@ -1088,7 +1108,9 @@ async function cardsView(env, id) {
   const art = await galleryCards(env);
   return {
     packs: Object.entries(PACKS).map(([k, p]) => ({ id: k, name: p.name, price: p.price, sets: p.sets, n: PACK_N, odds: p.odds, ready: k !== "gallery" || art.length >= PACK_N })),
-    sell: CARD_SELL, owned: id ? await cardsOwned(env, id) : null, art,
+    sell: CARD_SELL, owned: id ? await cardsOwned(env, id) : null, art, goals: CARD_GOALS,
+    claims: id ? (await env.DB.prepare("SELECT k FROM card_claims WHERE w = ?").bind(id).all()).results.map((r) => r.k) : [],
+    free: id ? !(await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = 'freecard'").bind(id, today()).first()) : true,
   };
 }
 
@@ -1129,6 +1151,159 @@ async function cardsSell(env, w, body) {
   res.forEach((x, i) => { if (x.meta.changes) { count += rows[i].n - 1; got += (rows[i].n - 1) * CARD_SELL[cat.get(rows[i].card).rarity]; } });
   if (got) await credit(env, w.id, got, "cards", `traded in ${count} duplicate card${count === 1 ? "" : "s"}`);
   return { ok: true, got, count, owned: await cardsOwned(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+const CARD_GOALS = { 25: 10, 50: 25, 75: 50, 100: 150 };
+
+async function cardsFree(env, w) {
+  const pool = [...(await catalog(env)), ...(await galleryCards(env))];
+  if (!pool.length) throw new Fail("The kiosk is restocking, try again in a minute", 503);
+  if (!(await bump(env, w.id, "freecard", 1))) throw new Fail("You already took today's free card, come back tomorrow", 409);
+  const before = await cardsOwned(env, w.id), c = drawCard(pool, [74, 20, 5, 1], false);
+  await env.DB.prepare("INSERT INTO cards_owned (w, card, n, t) VALUES (?1, ?2, 1, ?3) ON CONFLICT(w, card) DO UPDATE SET n = n + 1").bind(w.id, c.id, Date.now()).run();
+  return { ok: true, pack: "free", cards: [{ id: c.id, fresh: !before[c.id] }], owned: await cardsOwned(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+async function cardsClaim(env, w, body) {
+  const set = String(body.set || ""), pct = +body.pct, prize = CARD_GOALS[pct];
+  if (!CARD_SETS.includes(set) || !prize) throw new Fail("No such album goal");
+  const ids = (await catalog(env)).filter((c) => c.set === set).map((c) => c.id), own = await cardsOwned(env, w.id);
+  const have = ids.filter((i) => own[i]).length, need = Math.ceil((ids.length * pct) / 100);
+  if (!ids.length || have < need) throw new Fail(`You need ${need - have} more card${need - have === 1 ? "" : "s"} for that`);
+  const res = await env.DB.prepare("INSERT OR IGNORE INTO card_claims (w, k, t) VALUES (?, ?, ?)").bind(w.id, `${set}:${pct}`, Date.now()).run();
+  if (!res.meta.changes) throw new Fail("Already collected", 409);
+  await credit(env, w.id, prize, "cards", `album goal: ${pct}% of the ${set} set`);
+  return { ok: true, got: prize, claims: (await env.DB.prepare("SELECT k FROM card_claims WHERE w = ?").bind(w.id).all()).results.map((r) => r.k), me: await view(env, await me(env, w.id)) };
+}
+
+const CAMP_BURN = 10 * 60000, CAMP_LOG = 5 * 60000, CAMP_MAX = 30 * 60000;
+async function campLight(env, req) {
+  await ipLimit(env, req, "camp", 60);
+  const now = Date.now(), cur = (await kvGet(env, ["camp"])).camp || 0;
+  const until = Math.min(now + CAMP_MAX, Math.max(cur, now) + (cur > now ? CAMP_LOG : CAMP_BURN));
+  await kvSet(env, "camp", until).run();
+  return { ok: true, camp: until, lit: cur <= now };
+}
+
+const PRINT_MS = 150000, PRINT_DAY = 3, VOX = /^[0-9a-c]{512}$/;
+async function printsView(env) {
+  const rows = (await env.DB.prepare("SELECT id, name, nick, vox, start FROM prints ORDER BY start DESC LIMIT 40").all()).results;
+  return { now: Date.now(), dur: PRINT_MS, prints: rows };
+}
+
+async function printAdd(env, req, id, body) {
+  const vox = String(body.vox || "");
+  if (!VOX.test(vox)) throw new Fail("That model won't fit the printer");
+  if (vox.replace(/0/g, "").length < 6) throw new Fail("Add a few more blocks first");
+  if (!/[^0]/.test(vox.slice(0, 64))) throw new Fail("The model has to stand on the print bed");
+  const name = cleanText(body.name, 20, 2), now = Date.now();
+  if (await env.DB.prepare("SELECT 1 FROM prints WHERE vox = ? AND t > ?").bind(vox, now - DAY).first()) throw new Fail("That exact model was printed today already");
+  const last = await env.DB.prepare("SELECT MAX(start) s FROM prints").first();
+  const start = Math.max(now, last && last.s ? last.s + PRINT_MS : 0);
+  if (start - now > 20 * 60000) throw new Fail("The print queue is full, try again in a few minutes", 429);
+  await ipLimit(env, req, "print", PRINT_DAY + 2);
+  let nick = null;
+  if (id) {
+    const w = await me(env, id);
+    if (!(await bump(env, w.id, "prints", PRINT_DAY))) throw new Fail("Three prints a day, the printer needs to cool down");
+    nick = anon(w.nick, w.id);
+  }
+  const pid = crypto.randomUUID().replace(/-/g, "").slice(0, 16);
+  await env.DB.prepare("INSERT INTO prints (id, w, name, nick, vox, start, t) VALUES (?, ?, ?, ?, ?, ?, ?)").bind(pid, id || null, name, nick, vox, start, now).run();
+  let got = 0;
+  if (id && (await bump(env, id, "print", EARN.print.cap))) { got = EARN.print.r; await credit(env, id, got, "earn", EARN.print.n); }
+  return { ok: true, id: pid, start, wait: start - now, got, me: id ? await view(env, await me(env, id)) : null };
+}
+
+const CROPS = { tulip: ["Tulip bouquet", 3], daisy: ["Daisy bunch", 3], lavender: ["Lavender bundle", 4], sunflower: ["Sunflower seeds", 5], mushroom: ["Mushrooms", 4], bush: ["Berries", 5], tree: ["Apples", 6], pumpkin: ["Pumpkin", 8] };
+const RIPE_H = 24, HARVEST_DAY = 6;
+const cropPrice = (k, day) => Math.max(1, Math.round(CROPS[k][1] * (0.7 + (hash32(k + day) % 61) / 100)));
+async function rainDays(env) {
+  const o = {};
+  for (const r of (await env.DB.prepare("SELECT day, min FROM raindays ORDER BY day DESC LIMIT 5").all()).results) o[r.day] = r.min;
+  return o;
+}
+const grown = (t, rain, now = Date.now()) => (now - t) / 3600000 + Object.entries(rain).reduce((a, [day, min]) => a + (Date.parse(day) + DAY > t ? min / 60 : 0), 0);
+
+async function basketOf(env, id) {
+  const o = {};
+  for (const r of (await env.DB.prepare("SELECT kind, n FROM basket WHERE w = ? AND n > 0").bind(id).all()).results) if (CROPS[r.kind]) o[r.kind] = r.n;
+  return o;
+}
+
+async function gardenView(env, req, id, url) {
+  const plot = plotOf(req), since = +url.searchParams.get("since") || 0, day = today();
+  const rows = (await env.DB.prepare("SELECT id, t FROM harvests WHERE id LIKE ?1 AND t > ?2 ORDER BY t LIMIT 700").bind(plot + ":%", since).all()).results;
+  return {
+    t: rows.length ? rows[rows.length - 1].t : since, cut: rows.map((r) => r.id.slice(plot.length + 1)), ripe: RIPE_H,
+    crops: Object.fromEntries(Object.entries(CROPS).map(([k, c]) => [k, { name: c[0], price: cropPrice(k, day) }])), basket: id ? await basketOf(env, id) : null,
+  };
+}
+
+async function harvest(env, req, w, body) {
+  const key = String(body.id || ""), plot = plotOf(req);
+  if (!/^[-_A-Za-z0-9]{20}$/.test(key)) throw new Fail("Couldn't find that plant");
+  const rec = await rtdb(`${plot}/garden/${key}.json`);
+  if (!rec || typeof rec.t !== "number" || !CROPS[rec.k]) throw new Fail("Couldn't find that plant");
+  if (grown(rec.t, await rainDays(env)) < RIPE_H) throw new Fail("Not ripe yet, give it some time");
+  const owner = await env.DB.prepare("SELECT w FROM proofs WHERE k = ?").bind(`${plot}:garden:${key}`).first();
+  if (owner && owner.w !== w.id) throw new Fail("Another gardener planted that one, it goes wild after two days");
+  const used = await env.DB.prepare("SELECT n FROM earns WHERE w = ? AND day = ? AND kind = 'harvest'").bind(w.id, today()).first();
+  if (used && used.n >= HARVEST_DAY) throw new Fail("Your basket is full for today, come back tomorrow");
+  const res = await env.DB.prepare("INSERT OR IGNORE INTO harvests (id, w, kind, t) VALUES (?, ?, ?, ?)").bind(`${plot}:${key}`, w.id, rec.k, Date.now()).run();
+  if (!res.meta.changes) throw new Fail("Somebody already picked that one", 409);
+  await bump(env, w.id, "harvest", HARVEST_DAY);
+  await env.DB.prepare("INSERT INTO basket (w, kind, n) VALUES (?1, ?2, 1) ON CONFLICT(w, kind) DO UPDATE SET n = n + 1").bind(w.id, rec.k).run();
+  return { ok: true, kind: rec.k, name: CROPS[rec.k][0], price: cropPrice(rec.k, today()), basket: await basketOf(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+async function produceSell(env, w) {
+  const b = await basketOf(env, w.id), kinds = Object.keys(b), day = today();
+  if (!kinds.length) throw new Fail("Your basket is empty");
+  const res = await env.DB.batch(kinds.map((k) => env.DB.prepare("UPDATE basket SET n = 0 WHERE w = ?1 AND kind = ?2 AND n = ?3").bind(w.id, k, b[k])));
+  let got = 0, count = 0;
+  res.forEach((x, i) => { if (x.meta.changes) { count += b[kinds[i]]; got += b[kinds[i]] * cropPrice(kinds[i], day); } });
+  if (got) await credit(env, w.id, got, "garden", `sold ${count} from the garden at the store`);
+  return { ok: true, got, count, basket: await basketOf(env, w.id), me: await view(env, await me(env, w.id)) };
+}
+
+const JOBS = { fish: "Fishing at the dock", garden: "Weeding the garden", hangar: "Sweeping the hangar", store: "Minding the store", cinema: "Selling popcorn at the cinema", kiosk: "Sorting cards at the kiosk" };
+const SHIFT_MS = 3 * 3600000, SHIFT_COST = 30, SHIFT_DAY = 2;
+async function jobOf(env, id) {
+  const j = await env.DB.prepare("SELECT folk, name, job, t, until FROM jobs WHERE w = ? AND paid = 0 ORDER BY t DESC LIMIT 1").bind(id).first();
+  return j ? { folk: j.folk, name: j.name, job: j.job, what: JOBS[j.job], t: j.t, until: j.until, done: Date.now() >= j.until } : null;
+}
+
+async function workHire(env, req, w, body) {
+  const folk = String(body.folk || ""), job = String(body.job || ""), plot = plotOf(req);
+  if (!JOBS[job]) throw new Fail("No such job on the plot");
+  if (!/^[-_A-Za-z0-9]{20}$/.test(folk)) throw new Fail("Couldn't find that folk");
+  if (await jobOf(env, w.id)) throw new Fail("Your folk is still on a shift, collect the pay first");
+  const rec = await rtdb(`${plot}/folks/${folk}.json`);
+  const name = rec && typeof rec.n === "string" ? rec.n.slice(0, 16) : "";
+  if (!name || !NAME_OK.test(name) || bad(name)) throw new Fail("Couldn't find that folk");
+  if (w.szy < SHIFT_COST) throw new Fail("Not enough szyszki", 402);
+  if (!(await bump(env, w.id, "shift", SHIFT_DAY))) throw new Fail("Two shifts a day is plenty, let them rest");
+  await debit(env, w.id, SHIFT_COST, "work", `sent ${name} to work: ${JOBS[job].toLowerCase()}`);
+  const now = Date.now(), ms = +env.SHIFT_MS || SHIFT_MS;
+  await env.DB.prepare("INSERT INTO jobs (id, w, plot, folk, name, job, t, until, paid, pay) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)")
+    .bind(crypto.randomUUID().replace(/-/g, "").slice(0, 16), w.id, plot, folk, name, job, now, now + ms).run();
+  return { ok: true, me: await view(env, await me(env, w.id)) };
+}
+
+async function workCollect(env, w) {
+  const j = await env.DB.prepare("SELECT id, name, job, until FROM jobs WHERE w = ? AND paid = 0 ORDER BY t DESC LIMIT 1").bind(w.id).first();
+  if (!j) throw new Fail("Nobody is out working for you");
+  const left = j.until - Date.now();
+  if (left > 0) throw new Fail(`${j.name} is back in ${Math.ceil(left / 60000)} min`);
+  const r = dice();
+  const [pay, story] = r < 0.1 ? [10 + Math.floor(dice() * 8), "dozed off in the sun and came back with pocket change"]
+    : r < 0.68 ? [34 + Math.floor(dice() * 15), "put in a solid shift"]
+      : r < 0.95 ? [50 + Math.floor(dice() * 21), "worked hard and got a big tip"] : [110, "found a golden pine cone on the job"];
+  const res = await env.DB.prepare("UPDATE jobs SET paid = 1, pay = ?1 WHERE id = ?2 AND paid = 0").bind(pay, j.id).run();
+  if (!res.meta.changes) throw new Fail("Already collected", 409);
+  await credit(env, w.id, pay, "work", `${j.name} ${story}`);
+  return { ok: true, pay, cost: SHIFT_COST, name: j.name, story, me: await view(env, await me(env, w.id)) };
 }
 
 const BLOG_KINDS = ["rocket", "heart", "fire", "star"], BLOG_IMG = /^data:image\/(webp|jpeg|png);base64,([A-Za-z0-9+/]+=*)$/, BLOG_SLUG = /^[a-z0-9-]{1,40}$/;
@@ -1248,7 +1423,7 @@ async function route(req, env, ctx) {
   if (method === "GET" && path === "/pulse") {
     const last = (await kvGet(env, ["tick"])).tick || 0;
     if (Date.now() - last > 20 * 60000) ctx.waitUntil(tick(env));
-    return pulse(env);
+    return pulse(env, req);
   }
   if (method === "GET" && path === "/market") return market(env);
   if (method === "GET" && path === "/top") return top(env, id);
@@ -1323,6 +1498,17 @@ async function route(req, env, ctx) {
   }
   if (method === "POST" && path === "/cards/buy") return cardsBuy(env, await need(), body);
   if (method === "POST" && path === "/cards/sell") return cardsSell(env, await need(), body);
+  if (method === "POST" && path === "/cards/free") return cardsFree(env, await need());
+  if (method === "POST" && path === "/cards/claim") return cardsClaim(env, await need(), body);
+  if (method === "POST" && path === "/camp") return campLight(env, req);
+  if (method === "GET" && path === "/prints") return printsView(env);
+  if (method === "POST" && path === "/prints") return printAdd(env, req, id, body);
+  if (method === "GET" && path === "/garden") return gardenView(env, req, id, url);
+  if (method === "POST" && path === "/garden/harvest") return harvest(env, req, await need(), body);
+  if (method === "POST" && path === "/garden/sell") return produceSell(env, await need());
+  if (method === "GET" && path === "/work") return { jobs: JOBS, cost: SHIFT_COST, hours: (+env.SHIFT_MS || SHIFT_MS) / 3600000, job: id ? await jobOf(env, id) : null };
+  if (method === "POST" && path === "/work/hire") return workHire(env, req, await need(), body);
+  if (method === "POST" && path === "/work/collect") return workCollect(env, await need());
   if (method === "GET" && path === "/blog") return blogList(env, url);
   if (method === "GET" && path.startsWith("/blog/img/")) return blogImg(env, path.slice(10));
   if (method === "POST" && path === "/blog/react") return blogReact(env, req, body);

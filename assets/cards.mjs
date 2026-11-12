@@ -16,6 +16,7 @@ const PACK = {
   map: { art: '<img src="/assets/map/arcade.webp" alt="" draggable="false">', line: "Pixel things from this map" },
   gallery: { art: icon("frame", 64), line: "Art that players sold" },
   gold: { art: icon("cone", 64), line: "All three sets, one Epic or better" },
+  free: { art: icon("cards", 64), line: "One free card every day" },
 };
 const SOUNDS = ["tear", "rip", "crinkle", "flip", "deal", "deal2", "shuffle", "whoosh", "thud", "cone", "crunch", "rare", "epic", "charge", "legend", "ding"];
 const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -68,6 +69,9 @@ function load(force) {
     C.packs = v.packs;
     C.sell = v.sell;
     C.owned = v.owned || {};
+    C.goals = v.goals || {};
+    C.claims = new Set(v.claims || []);
+    C.free = v.free !== false;
   })().finally(() => { C.loading = null; });
   return C.loading;
 }
@@ -89,10 +93,11 @@ function packHTML(kind, name, n, cls = "") {
   const body = [...jag.map(([x, y]) => `${x.toFixed(1)}% ${Math.max(0, (y - 11.25) / 89 * 100).toFixed(2)}%`), ...Array.from({ length: 23 }, (_, i) => `${(100 - i / 22 * 100).toFixed(1)}% ${i % 2 ? 100 : 97.6}%`)].join(",");
   const p = PACK[kind], top = `<span class="gk-pk-cut"><span class="gk-pk-strip" style="clip-path:polygon(${strip})"></span></span>`;
   return `<span class="gk-pack gk-pk-${kind}${cls ? " " + cls : ""}"><span class="gk-pk-in"><i></i><i></i><i></i></span>` +
-    `<span class="gk-pk-body" style="clip-path:polygon(${body})"><span class="gk-pk-face"><em>Gzowo Cards</em><span class="gk-pk-art">${p.art}</span><b>${esc(name)}</b><small>${n} cards</small></span><i class="gk-pk-crimp"></i><i class="gk-pk-shine"></i></span>` +
+    `<span class="gk-pk-body" style="clip-path:polygon(${body})"><span class="gk-pk-face"><em>Gzowo Cards</em><span class="gk-pk-art">${p.art}</span><b>${esc(name)}</b><small>${n} ${n === 1 ? "card" : "cards"}</small></span><i class="gk-pk-crimp"></i><i class="gk-pk-shine"></i></span>` +
     `<span class="gk-pk-top"><span class="gk-pk-sa">${top}</span><span class="gk-pk-sd">${top}</span></span><i class="gk-pk-glow"></i></span>`;
 }
 
+const FREE = { id: "free", name: "Daily Card", n: 1, price: 0 };
 const have = (set) => C.list.filter((c) => (!set || c.set === set) && C.owned[c.id]).length;
 const total = (set) => C.list.filter((c) => !set || c.set === set).length;
 function extras() {
@@ -105,7 +110,9 @@ function packsView() {
   if (!C.packs) return `<p class="bk-pad">Opening the kiosk...</p>`;
   const szy = me() ? me().szy : null;
   const odds = C.packs.map((p) => `<tr><th>${esc(p.name)}</th>${p.odds[0].map((v) => `<td>${v}%</td>`).join("")}<td>${p.odds[1].map((v, i) => (v ? `${RNAME[RAR[i]]} ${v}%` : "")).filter(Boolean).join(", ")}</td></tr>`).join("");
-  return `<div class="gk-rack">${C.packs.map((p) => `<form class="gk-slot" data-gk-buy="${p.id}"><button class="gk-slot-b" type="button" data-gk-peek aria-label="${esc(p.name)}">${packHTML(p.id, p.name, p.n, "is-idle")}</button>
+  return `<form class="gk-daily" data-gk-free><button class="gk-slot-b" type="button" data-gk-peek aria-label="Daily card">${packHTML("free", FREE.name, 1, "is-idle")}</button><p><b>Daily card</b><span>One free card every day, from any set. Come back tomorrow for the next one.</span><span class="bk-note" data-note></span></p>
+<button class="btn go" type="submit"${C.free ? "" : " disabled"}>${C.free ? "Take it" : "Taken today"}</button></form>
+<div class="gk-rack">${C.packs.map((p) => `<form class="gk-slot" data-gk-buy="${p.id}"><button class="gk-slot-b" type="button" data-gk-peek aria-label="${esc(p.name)}">${packHTML(p.id, p.name, p.n, "is-idle")}</button>
 <b>${esc(p.name)}</b><span>${PACK[p.id].line}</span><button class="btn go" type="submit"${p.ready === false || (szy !== null && szy < p.price) ? " disabled" : ""}>${cone(16)} ${p.price}</button><span class="bk-note" data-note>${p.ready === false ? `Opens after ${p.n} sold drawings, ${total("gallery")} so far` : szy !== null && szy < p.price ? `${p.price - Math.floor(szy)} more to go` : ""}</span></form>`).join("")}</div>
 <details class="gk-info"><summary>${C.packs[0].n} cards in every pack. The last one is always Rare or better.</summary><table><tr><th>Cards 1 to ${C.packs[0].n - 1}</th>${RAR.map((r) => `<th>${RNAME[r]}</th>`).join("")}<th>Last card</th></tr>${odds}</table>
 <p>Extra copies of a card can be traded back in at the album: ${RAR.map((r) => `${RNAME[r]} ${C.sell[r]}`).join(", ")} szyszki each.</p>
@@ -118,7 +125,11 @@ function albumView() {
   return `<div class="gk-album">${SETS.map(([set, label]) => {
     const list = C.list.filter((c) => c.set === set).sort((a, b) => RANK[b.rarity] - RANK[a.rarity] || a.name.localeCompare(b.name));
     if (!list.length) return `<h3 class="gk-set">${label}<span>0 / 0</span></h3><p class="gk-none">No drawings sold yet. Sell one from the wall to Haiku, or a painting in the museum, and it shows up here as a card.</p>`;
-    return `<h3 class="gk-set">${label}<span>${have(set)} / ${list.length}</span></h3><div class="gk-prog"><i style="width:${list.length ? have(set) / list.length * 100 : 0}%"></i></div><div class="gk-grid">${list.map((c) => {
+    const got = have(set), goals = set === "gallery" ? "" : `<p class="gk-goals">${Object.entries(C.goals || {}).map(([pct, prize]) => {
+      const need = Math.ceil((list.length * pct) / 100), done = C.claims.has(`${set}:${pct}`);
+      return done ? `<span class="gk-goal is-done">${pct}% collected</span>` : got >= need ? `<button class="btn go gk-goal" type="button" data-gk-goal="${set}:${pct}">${pct}%: collect ${cone(16)} ${prize}</button>` : `<span class="gk-goal">${pct}%: ${cone(16)} ${prize}, ${need - got} to go</span>`;
+    }).join("")}</p>`;
+    return `<h3 class="gk-set">${label}<span>${have(set)} / ${list.length}</span></h3><div class="gk-prog"><i style="width:${list.length ? have(set) / list.length * 100 : 0}%"></i></div>${goals}<div class="gk-grid">${list.map((c) => {
       const n = C.owned[c.id] || 0;
       return n ? `<button class="gk-cell${C.fresh.has(c.id) ? " is-fresh" : ""}" type="button" data-gk-card="${c.id}" title="${esc(c.name)}" aria-label="${esc(c.name)}, ${RNAME[c.rarity]}">${cardHTML(c, "gk-mini")}${n > 1 ? `<i class="gk-n">x${n}</i>` : ""}</button>`
         : `<button class="gk-cell" type="button" disabled aria-label="Missing ${RNAME[c.rarity]} card"><span class="gk gk-miss gk-${c.rarity}"><b>?</b><i class="gk-gem"></i></span></button>`;
@@ -213,15 +224,17 @@ async function buy(kind, slot) {
   try {
     await ensure();
     if (!C.packs) await load();
-    const res = await api("/cards/buy", { pack: kind });
+    const res = await api(kind === "free" ? "/cards/free" : "/cards/buy", kind === "free" ? {} : { pack: kind });
+    if (kind === "free") C.free = false;
     C.owned = res.owned;
     if (res.cards.some((c) => !C.cat.has(c.id))) await load(true).catch(() => {});
     res.cards.forEach((c) => { if (c.fresh) C.fresh.add(c.id); });
     const tray = document.querySelector(".tray-w");
-    if (from && tray) { const t = tray.getBoundingClientRect(); flyCones({ x: t.left + t.width / 2, y: t.top }, { x: from.left + from.width / 2, y: from.top + from.height / 2 }, 7); await wait(calm ? 0 : 620); }
+    if (from && tray && kind !== "free") { const t = tray.getBoundingClientRect(); flyCones({ x: t.left + t.width / 2, y: t.top }, { x: from.left + from.width / 2, y: from.top + from.height / 2 }, 7); await wait(calm ? 0 : 620); }
     await openStage(kind, res, from);
   } catch (e) {
-    const live = win() && win().querySelector(`[data-gk-buy="${kind}"] [data-note]`);
+    const live = win() && win().querySelector(kind === "free" ? "[data-gk-free] [data-note]" : `[data-gk-buy="${kind}"] [data-note]`);
+    if (kind === "free" && e.status === 409) { C.free = false; render(); }
     if (slot && live) live.textContent = e.message; else toast(e.message);
   }
   C.busy = false;
@@ -304,7 +317,7 @@ function layout(S) {
 
 async function openStage(kind, res, from) {
   if (C.stage) closeStage(true);
-  const pack = C.packs.find((p) => p.id === kind);
+  const pack = C.packs.find((p) => p.id === kind) || FREE;
   const items = res.cards.map((c) => ({ ...c, card: C.cat.get(c.id) })).filter((c) => c.card).sort((a, b) => RANK[a.card.rarity] - RANK[b.card.rarity]);
   const best = items.length ? items[items.length - 1].card.rarity : "common";
   items.forEach((it) => { if (it.card.img) new Image().src = it.card.img; });
@@ -316,7 +329,7 @@ async function openStage(kind, res, from) {
     `<div class="gk-sc" style="--z:${20 - i}"><div class="gk-fl">${cardHTML(it.card)}<span class="gk-back">${icon("cone", 64)}</span></div><b class="gk-new">NEW</b></div>`).join("")}</div>
 <canvas class="gk-fx"></canvas><i class="gk-flash"></i><b class="gk-call"></b><span class="gk-count"></span><p class="gk-hint"></p>
 <div class="gk-top"><button class="btn" type="button" data-gk-mute>${muted() ? "Sound off" : "Sound on"}</button><button class="btn" type="button" data-gk-skip>Skip</button></div>
-<div class="gk-bar"><p></p><div><button class="btn go" type="button" data-gk-keep>Put in the album</button><button class="btn" type="button" data-gk-again>Open another, ${cone(16)} ${pack.price}</button></div></div>`;
+<div class="gk-bar"><p></p><div><button class="btn go" type="button" data-gk-keep>Put in the album</button>${kind === "free" ? "" : `<button class="btn" type="button" data-gk-again>Open another, ${cone(16)} ${pack.price}</button>`}</div></div>`;
   document.body.append(stage);
   const q = (s) => stage.querySelector(s);
   const S = C.stage = { stage, kind, pack, items, best, phase: "arrive", k: 0, hero: null, lock: false, fx: fxOf(stage), pkw: q(".gk-pkw"), pk: q(".gk-pack"), hint: q(".gk-hint"), rays: q(".gk-rays"), dim: q(".gk-dim"),
@@ -578,7 +591,7 @@ function fan(S, now) {
   const fresh = S.items.filter((it) => it.fresh).length;
   S.bar.querySelector("p").textContent = fresh ? `${fresh} new ${fresh === 1 ? "card" : "cards"} for the album.` : "No new cards this time. Trade the extra copies in at the album.";
   const again = S.bar.querySelector("[data-gk-again]");
-  again.disabled = !me() || me().szy < S.pack.price;
+  if (again) again.disabled = !me() || me().szy < S.pack.price;
   S.bar.classList.add("on");
 }
 
@@ -639,15 +652,32 @@ document.addEventListener("click", (e) => {
   if (cell) { loadSfx(); look(cell.dataset.gkCard); return; }
   const s = t.closest("[data-gk-sell]");
   if (s) { sell(s.dataset.gkSell || null); return; }
+  const goal = t.closest("[data-gk-goal]");
+  if (goal) { claim(goal); return; }
   const show = t.closest("[data-gk-show]");
   if (show) { loadSfx(); openKiosk("album"); load().then(() => { render(); look(show.dataset.gkShow); }).catch(() => {}); }
 });
 document.addEventListener("submit", (e) => {
-  const f = e.target.closest("[data-gk-buy]");
+  const f = e.target.closest("[data-gk-buy], [data-gk-free]");
   if (!f) return;
   e.preventDefault();
-  buy(f.dataset.gkBuy, f);
+  buy(f.dataset.gkBuy || "free", f);
 });
+
+async function claim(btn) {
+  const [set, pct] = btn.dataset.gkGoal.split(":");
+  btn.disabled = true;
+  try {
+    const j = await api("/cards/claim", { set, pct: +pct });
+    C.claims = new Set(j.claims);
+    loadSfx();
+    play("ding");
+    const tray = document.querySelector(".tray-w"), r = btn.getBoundingClientRect();
+    if (tray) { const t = tray.getBoundingClientRect(); flyCones({ x: r.left + r.width / 2, y: r.top }, { x: t.left + t.width / 2, y: t.top }, Math.min(12, 3 + Math.round(j.got / 15))); }
+    toast(`+${j.got} for ${pct}% of the ${SETS.find((x) => x[0] === set)[1].replace(/^The /, "")} set.${+pct === 100 ? " A full set, it shows next to your name in the Top 25." : ""}`);
+  } catch (e) { toast(e.message); }
+  render();
+}
 addEventListener("gz:wallet", () => { if (!C.stage && !document.querySelector(".gk-look")) render(); });
 addEventListener("gz:card", (e) => {
   const d = e.detail || {};

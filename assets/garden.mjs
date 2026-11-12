@@ -1,5 +1,8 @@
 /* Gzowo Labs garden: a fenced bed on the plot where every visitor can plant something, once a minute. Plants are drawn pixel by pixel and
-   grow with real time, from a sprout to full bloom over a couple of days, so the garden slowly fills up with everyone who came by. */
+   grow with real time, from a sprout to full bloom over a couple of days, so the garden slowly fills up with everyone who came by.
+   Real rain in Gzowo makes them grow faster. A ripe plant sparkles: click it to pick it into your basket and sell it at the Store. */
+
+import { api, ensure, toast } from "/assets/bank.mjs";
 
 const DB = "https://raft-e8d47-default-rtdb.firebaseio.com";
 const LOCAL = ["localhost", "127.0.0.1", "0.0.0.0", "[::1]"];
@@ -23,10 +26,17 @@ function pushId() {
   return id;
 }
 
-function stageOf(t) {
-  const age = Date.now() - t;
-  return age < 120000 ? 0 : age < 3600000 ? 1 : age < 86400000 ? 2 : age < 3 * 86400000 ? 3 : 4;
+let RAIN = {}, RIPE = 24;
+function grown(t) {
+  let h = (Date.now() - t) / 3600000;
+  for (const day in RAIN) if (Date.parse(day) + 86400000 > t) h += RAIN[day] / 60;
+  return h;
 }
+function stageOf(t) {
+  const h = grown(t);
+  return h < 1 / 30 ? 0 : h < 1 ? 1 : h < RIPE ? 2 : h < 3 * RIPE ? 3 : 4;
+}
+const TALL = { tulip: 9, sunflower: 17, daisy: 7, lavender: 10, bush: 11, tree: 20, mushroom: 6, pumpkin: 6 };
 
 function plant(put, kind, st, seed) {
   const h = (n) => ((seed >>> n) & 255) / 255;
@@ -113,20 +123,29 @@ export function createGarden(world) {
   bed.insertAdjacentHTML("beforeend", `<span class="spot-l"><b>Garden</b><em>plant something</em></span>`);
   spots.append(bed);
   const label = bed.querySelector(".spot-l em");
-  const plants = new Map();
-  let g = null, p = 2, W = 1, H = 1, last = "", pick = null, at = null, flashT = 0;
+  const plants = new Map(), cut = new Set();
+  let g = null, p = 2, W = 1, H = 1, last = "", pick = null, at = null, flashT = 0, cutT = 0, cutSeen = -1, busy = false;
+  const spotOf = (it) => [Math.round(3 + (it.u / 1000) * (W - 6)), TOP + Math.round(4 + (it.v / 1000) * (H - 7))];
 
   function render() {
     if (!g) return;
     const c = front.getContext("2d");
     c.clearRect(0, 0, W, H + TOP);
     const list = [...plants.values()].sort((a, b) => a.v - b.v);
+    let ripe = 0;
     for (const it of list) {
-      const x0 = Math.round(3 + (it.u / 1000) * (W - 6)), y0 = TOP + Math.round(4 + (it.v / 1000) * (H - 7));
-      plant((dx, dy, col) => { const x = x0 + dx, y = y0 + dy; if (x >= 0 && y >= 0 && x < W && y < H + TOP) { c.fillStyle = col; c.fillRect(x, y, 1, 1); } }, it.k, stageOf(it.t), hash(it.id));
+      const [x0, y0] = spotOf(it), st = stageOf(it.t);
+      plant((dx, dy, col) => { const x = x0 + dx, y = y0 + dy; if (x >= 0 && y >= 0 && x < W && y < H + TOP) { c.fillStyle = col; c.fillRect(x, y, 1, 1); } }, it.k, st, hash(it.id));
+      if (st < 3) continue;
+      ripe++;
+      const sy = y0 - (TALL[it.k] || 8) - 3;
+      c.fillStyle = "#fff6b0";
+      c.fillRect(x0 - 1, sy, 3, 1); c.fillRect(x0, sy - 1, 1, 3);
+      c.fillStyle = "#ffffff";
+      c.fillRect(x0, sy, 1, 1);
     }
     const n = plants.size;
-    label.textContent = n ? `${n} ${n === 1 ? "plant" : "plants"}, plant something` : "plant something";
+    label.textContent = ripe ? `${ripe} ripe to pick, ${n} ${n === 1 ? "plant" : "plants"}` : n ? `${n} ${n === 1 ? "plant" : "plants"}, plant something` : "plant something";
   }
 
   const ok = (v) => v && typeof v.k === "string" && KINDS.some(([k]) => k === v.k) && Number.isFinite(v.u) && Number.isFinite(v.v) && Number.isFinite(v.t);
@@ -135,7 +154,7 @@ export function createGarden(world) {
     Object.keys(data || {}).sort().forEach((id) => {
       const v = data[id];
       if (id > last) last = id;
-      if (plants.has(id) || !ok(v)) return;
+      if (plants.has(id) || cut.has(id) || !ok(v)) return;
       plants.set(id, { id, k: v.k, u: v.u, v: v.v, t: v.t });
       added = true;
     });
@@ -151,6 +170,53 @@ export function createGarden(world) {
   setInterval(poll, 30000);
   setInterval(render, 120000);
   addEventListener("visibilitychange", () => { if (!document.hidden) poll(); });
+
+  async function cuts() {
+    try {
+      const j = await api(`/garden?since=${cutT}`);
+      cutT = j.t || cutT;
+      RIPE = j.ripe || RIPE;
+      let gone = false;
+      (j.cut || []).forEach((id) => { cut.add(id); if (plants.delete(id)) gone = true; });
+      if (gone) render();
+    } catch (e) {}
+  }
+  addEventListener("gz:pulse", (e) => {
+    const d = e.detail;
+    if (!d) return;
+    const wet = JSON.stringify(d.rain || {}) !== JSON.stringify(RAIN);
+    RAIN = d.rain || {};
+    if (d.cut !== cutSeen) { cutSeen = d.cut; cuts(); }
+    else if (wet) render();
+  });
+
+  function ripeAt(cx, cy) {
+    let best = null, bd = 7;
+    for (const it of plants.values()) {
+      if (stageOf(it.t) < 3) continue;
+      const [x0, y0] = spotOf(it), d = Math.abs(cx - x0) + Math.max(0, cy - y0 - 2) + Math.max(0, y0 - (TALL[it.k] || 8) - 4 - cy);
+      if (d < bd) { bd = d; best = it; }
+    }
+    return best;
+  }
+
+  async function harvest(it) {
+    if (busy) return;
+    busy = true;
+    try {
+      await ensure();
+      const j = await api("/garden/harvest", { id: it.id });
+      cut.add(it.id);
+      plants.delete(it.id);
+      render();
+      dispatchEvent(new CustomEvent("gz:basket", { detail: j.basket }));
+      toast(`Picked: ${j.name}. It's in your basket, worth ${j.price} today.`, `<button class="btn" type="button" data-store="produce">Sell at the Store</button>`);
+    } catch (e) {
+      if (e.status === 409) { cut.add(it.id); plants.delete(it.id); render(); }
+      flash(/^Another/.test(e.message) ? "not yours yet, it goes wild after two days" : /^Your basket/.test(e.message) ? "basket full for today" : e.message.toLowerCase());
+    }
+    busy = false;
+  }
 
   function flash(msg) {
     label.textContent = msg;
@@ -196,6 +262,8 @@ export function createGarden(world) {
   bed.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
+    const fr = front.getBoundingClientRect(), hit = ripeAt(((e.clientX - fr.left) / fr.width) * W, ((e.clientY - fr.top) / fr.height) * (H + TOP));
+    if (hit) { close(); harvest(hit); return; }
     let lastAt = 0;
     try { lastAt = +localStorage.getItem("gl-plant") || 0; } catch (err) {}
     const left = Math.ceil((WAIT - (Date.now() - lastAt)) / 1000);

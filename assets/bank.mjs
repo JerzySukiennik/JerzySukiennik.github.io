@@ -10,6 +10,7 @@ export const BANK = LOCAL.includes(location.hostname) || location.protocol === "
 const LABEL = {
   plant: "Planted a flower", fish: "Caught a fish", fishrec: "Top 10 catch", folk: "Let a folk out", board: "Pinned a card", launch: "Launched a rocket",
   paint: "Sprayed the wall", claw: "Claw machine prize", hangar: "Opened the hangar", kayak: "Took a kayak out",
+  pet: "Petted an animal", camp: "Sat by the campfire", film: "Watched a film",
 };
 const SHOWS = {
   fireworks: "Fireworks over the plot. Everyone on the site sees them, with your name.",
@@ -41,6 +42,7 @@ export async function api(path, body, opts = {}) {
   return j;
 }
 
+let jobT = 0;
 function setMe(m) {
   const first = !S.me;
   S.me = m;
@@ -52,6 +54,11 @@ function setMe(m) {
     const k = m.id + q.slot + q.kind;
     if (q.have >= q.need && !q.done && !S.seen.has(k)) { S.seen.add(k); toast(`Quest done: ${q.text}`, `<button class="btn" type="button" data-quest="${q.slot}">Collect ${q.reward}</button>`); }
   });
+  if (m.job) {
+    const k = "job" + m.job.t;
+    if (m.job.done && !S.seen.has(k)) { S.seen.add(k); toast(`${m.job.name} is back from work.`, `<button class="btn" type="button" data-work-collect>Collect the pay</button>`); }
+    else if (!m.job.done) { clearTimeout(jobT); jobT = setTimeout(() => { if (S.code) api("/me").catch(() => {}); }, Math.min(2147000000, m.job.until - Date.now() + 1500)); }
+  }
   refresh();
 }
 
@@ -210,10 +217,20 @@ function storeIdeas() {
 <label>Your idea<textarea name="text" rows="5" maxlength="500" minlength="5" required></textarea></label><p class="bk-row"><button class="btn go" type="submit">Send for ${cone(16)} 30</button></p><p class="bk-note" data-note></p></form></div>`;
 }
 
+function storeProduce() {
+  const p = S.produce;
+  if (!p) return `<div class="bk-pad"><p>Checking today's prices...</p></div>`;
+  const b = p.basket || {}, kinds = Object.keys(p.crops), total = kinds.reduce((a, k) => a + (b[k] || 0) * p.crops[k].price, 0), n = kinds.reduce((a, k) => a + (b[k] || 0), 0);
+  return `<div class="bk-pad"><p>The store buys what you pick in the garden. Click a ripe plant there to harvest it, up to six a day. Prices change every day, and real rain in Gzowo makes everything grow faster.</p>
+<table class="bk-top bk-crops"><thead><tr><th>From the garden</th><th>Today</th><th>In your basket</th></tr></thead><tbody>${kinds.map((k) => `<tr class="${b[k] ? "me" : ""}"><td>${esc(p.crops[k].name)}</td><td>${p.crops[k].price}</td><td>${b[k] || 0}</td></tr>`).join("")}</tbody></table>
+<p class="bk-row"><button class="btn go" type="button" data-produce-sell${n ? "" : " disabled"}>${n ? `Sell ${n} for ${cone(16)} ${total}` : "Your basket is empty"}</button></p></div>`;
+}
+
 function renderStore(el) {
-  const list = [["shows", "Sky shows"], ["passes", "Passes"], ["wardrobe", "Wardrobe"], ["ideas", "Ideas for Jurek"]];
+  const list = [["shows", "Sky shows"], ["passes", "Passes"], ["wardrobe", "Wardrobe"], ["produce", "Produce"], ["ideas", "Ideas for Jurek"]];
   const t = S.storeTab;
-  el.querySelector(".wb").innerHTML = tabs(list, t, "data-store-tab") + (t === "shows" ? storeShows() : t === "passes" ? storePasses() : t === "wardrobe" ? storeWardrobe() : storeIdeas());
+  if (t === "produce" && !S.produceAt) { S.produceAt = 1; api("/garden").then((j) => { S.produce = j; refresh(); }).catch(() => {}).finally(() => { setTimeout(() => { S.produceAt = 0; }, 20000); }); }
+  el.querySelector(".wb").innerHTML = tabs(list, t, "data-store-tab") + (t === "shows" ? storeShows() : t === "passes" ? storePasses() : t === "wardrobe" ? storeWardrobe() : t === "produce" ? storeProduce() : storeIdeas());
   el.querySelectorAll("[data-item-art]").forEach((c) => itemArt(c, c.dataset.itemArt, 3));
   el.querySelectorAll("[data-prev]").forEach((c) => fire("gz:preview", { canvas: c, kind: c.dataset.prev }));
   el.querySelector(".stb").innerHTML = `<span>${S.me ? fmt(S.me.szy) + " szyszki" : "No wallet yet"}</span><span>Gzowo Store, Gzowo Street</span>`;
@@ -230,7 +247,7 @@ export async function openTop() {
   const el = window.gzDesk.open({ id: "top", title: "Gzowo Street Top 25", icon: "bank", cls: "w-top", body: "<p class=\"bk-pad\">Loading...</p>", status: "<span>Richest wallets on the plot</span>" });
   try {
     const { rows, mine } = await api("/top");
-    el.querySelector(".wb").innerHTML = `<table class="bk-top"><thead><tr><th>#</th><th>Name</th><th>Worth</th><th>GZM</th><th>GZF</th></tr></thead><tbody>${rows.map((r) => `<tr class="${r.me ? "me" : ""}"><td>${r.rank}</td><td>${esc(r.name)}</td><td>${fmt(r.worth)}</td><td>${coins(r.gzm)}</td><td>${coins(r.gzf)}</td></tr>`).join("") || "<tr><td colspan=5>Nobody yet.</td></tr>"}</tbody></table>`;
+    el.querySelector(".wb").innerHTML = `<table class="bk-top"><thead><tr><th>#</th><th>Name</th><th>Worth</th><th>GZM</th><th>GZF</th></tr></thead><tbody>${rows.map((r) => `<tr class="${r.me ? "me" : ""}"><td>${r.rank}</td><td>${esc(r.name)}${r.sets ? ` <span class="bk-sets" title="${r.sets} full card set${r.sets === 1 ? "" : "s"}">${icon("cards", 14)}${r.sets > 1 ? "x" + r.sets : ""}</span>` : ""}</td><td>${fmt(r.worth)}</td><td>${coins(r.gzm)}</td><td>${coins(r.gzf)}</td></tr>`).join("") || "<tr><td colspan=5>Nobody yet.</td></tr>"}</tbody></table>`;
     el.querySelector(".stb").innerHTML = mine ? `<span>You are number ${mine.rank}</span><span>Worth ${fmt(mine.worth)} szyszki</span>` : "<span>Open a wallet to join</span>";
   } catch (e) { el.querySelector(".wb").innerHTML = `<p class="bk-pad">${esc(e.message)}</p>`; }
 }
@@ -312,7 +329,7 @@ document.addEventListener("change", async (e) => {
 document.addEventListener("click", async (e) => {
   const t = e.target;
   if (t.closest("[data-wallet]")) { e.preventDefault(); openWallet(); return; }
-  if (t.closest("[data-store]")) { e.preventDefault(); openStore(); return; }
+  if (t.closest("[data-store]")) { e.preventDefault(); const tab = t.closest("[data-store]").dataset.store; openStore(tab === "produce" ? tab : undefined); return; }
   if (t.closest("[data-top]")) { e.preventDefault(); openTop(); return; }
   const tab = t.closest("[data-bk-tab]");
   if (tab) { S.tab = tab.dataset.bkTab; renderWallet(tab.closest(".win")); return; }
@@ -322,6 +339,30 @@ document.addEventListener("click", async (e) => {
   if (q) {
     q.disabled = true;
     try { const j = await api("/quest", { slot: +q.dataset.quest }); toast(`+${j.got} for a finished quest.`); q.closest(".bk-toast") && q.closest(".bk-toast").remove(); } catch (err) { toast(err.message); }
+    return;
+  }
+  const pay = t.closest("[data-work-collect]");
+  if (pay) {
+    pay.disabled = true;
+    try {
+      const j = await api("/work/collect", {});
+      toast(`${j.name} ${j.story}: +${j.pay} szyszki for a ${j.cost} shift.`);
+      const box = pay.closest(".bk-toast, .fk-card");
+      if (box) box.remove();
+      poll();
+    } catch (err) { toast(err.message); pay.disabled = false; }
+    return;
+  }
+  const sell = t.closest("[data-produce-sell]");
+  if (sell) {
+    sell.disabled = true;
+    try {
+      const j = await api("/garden/sell", {});
+      S.produce = { ...S.produce, basket: j.basket };
+      toast(`Sold ${j.count} from the garden for ${j.got} szyszki.`);
+      fire("gz:basket", j.basket);
+    } catch (err) { toast(err.message); }
+    refresh();
     return;
   }
   const b = t.closest("[data-bk]");
@@ -351,6 +392,7 @@ export async function poll() {
 }
 document.addEventListener("visibilitychange", () => { if (!document.hidden && (!S.pulse || Date.now() - S.pulse.t > 50000)) poll(); });
 
+addEventListener("gz:basket", (e) => { if (S.produce) { S.produce = { ...S.produce, basket: e.detail }; refresh(); } });
 addEventListener("gz:planted", (e) => earn("plant", { proof: e.detail.id }));
 addEventListener("gz:fish-done", (e) => { const d = e.detail || {}; if (!d.miss && d.key !== "boot") earn("fish", { cm: d.cm }); });
 addEventListener("gz:fish-saved", (e) => earn("fishrec", { proof: e.detail.id }));
@@ -361,6 +403,9 @@ addEventListener("gz:painted", () => earn("paint"));
 addEventListener("gz:claw-win", (e) => earn("claw", { item: e.detail }));
 addEventListener("gz:hangar", () => earn("hangar"));
 addEventListener("gz:kayak", () => earn("kayak"));
+addEventListener("gz:pet", () => earn("pet"));
+addEventListener("gz:camp-sit", () => earn("camp"));
+addEventListener("gz:film", () => earn("film"));
 
 export function createBank(world) {
   const spots = world.querySelector(".spots");
@@ -377,6 +422,6 @@ export function createBank(world) {
   poll();
   if (location.hash === "#inbox") setTimeout(openInbox, 400);
   addEventListener("hashchange", () => { if (location.hash === "#inbox") openInbox(); });
-  window.gzBank = { me: () => S.me, buy, ensure, toast, openWallet, openStore };
+  window.gzBank = { me: () => S.me, buy, ensure, toast, openWallet, openStore, api, poll };
   return { layout() {} };
 }

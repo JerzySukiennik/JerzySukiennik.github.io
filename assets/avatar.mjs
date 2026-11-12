@@ -63,6 +63,11 @@ const LINES = {
   fishBack: ["Enough fishing.", "Back to work.", "My arms are tired."],
   zzz: ["Zzz...", "Zzz... rockets...", "Zzz... one more level..."],
   hangar: ["The whole fleet lives in here.", "Mind the fins.", "Every rocket here has flown. Almost.", "Smells like rocket motors."],
+  camp: ["Nothing beats a campfire.", "Sausages on a stick, the Gzowo way.", "Smoke follows the handsome one.", "I could sit here all night."],
+  campLit: ["Campfire! Wait for me!", "Somebody lit the fire!", "Fire's on, I'm coming."],
+  cinema: ["Tonight on the big screen: my own films.", "I cut that one on the beat.", "Popcorn is on the house."],
+  prints: ["What are the guests printing today?", "Layer by layer, like the real one.", "Print something and it goes on the shelf."],
+  kiosk: ["One more pack. Just one.", "I still miss a Legendary."],
   board: ["Read the notes. Some are funny.", "Pin something!", "Who drew that?"],
   claw: ["This claw is rigged. Probably.", "I won a crown once!", "Three goes a day. Use them well."],
   booth: ["Make your own little Gzowian!", "Try a crown. Trust me.", "Everyone here is made by visitors."],
@@ -671,6 +676,14 @@ void main(){
   addEventListener("gz:folk-new", () => { if (running && S.state !== "trip") { say(fresh(LINES.folkNew), "say", 2400); pop("heart"); } });
   addEventListener("gz:claw-win", () => { if (running && S.state !== "trip") { say(fresh(LINES.clawWin), "shout", 2200); pop("alert", 1100); } });
   addEventListener("gz:pinned", () => { if (running && S.state !== "trip" && Math.random() < 0.8) say(fresh(LINES.pinned), "say", 2200); });
+  addEventListener("gz:camp", () => {
+    if (!running || S.state === "trip" || dozing || !G) return;
+    const st = G.stations.find((x) => x.key === "camp");
+    if (!st || Math.abs(st.x - S.x) > G.V * 1.2) return;
+    say(fresh(LINES.campLit), "shout", 2000);
+    pop("alert", 1000);
+    S.key = "camp"; S.target = st.s; S.state = "walk";
+  });
   addEventListener("gz:hangar", () => { if (running && S.state !== "trip" && onScreen()) { say(fresh(LINES.hangar), "say", 2200); pop("alert", 1000); } });
   addEventListener("gz:scrub", () => { if (running && S.state !== "trip" && onScreen()) say(fresh(LINES.scrub), "say", 2200); });
   addEventListener("gz:open", (e) => {

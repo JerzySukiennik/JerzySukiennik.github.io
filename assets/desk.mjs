@@ -20,6 +20,11 @@ import { createCoaster } from "/assets/coaster.mjs";
 import { createBlimps } from "/assets/blimps.mjs";
 import { createBlog } from "/assets/blog.mjs";
 import { createCards } from "/assets/cards.mjs";
+import { createNight } from "/assets/night.mjs";
+import { createCamp } from "/assets/camp.mjs";
+import { createCinema } from "/assets/cinema.mjs";
+import { createPets } from "/assets/pets.mjs";
+import { createPrinter } from "/assets/printer.mjs";
 import "/assets/paint.mjs";
 import { playBoot } from "/assets/boot.mjs";
 
@@ -109,6 +114,11 @@ function layout() {
   exchange.layout(geo);
   museum.layout(geo);
   coaster.layout(geo);
+  night.layout(geo);
+  camp.layout(geo);
+  cinema.layout(geo);
+  pets.layout(geo);
+  printer.layout(geo);
   const art = world.querySelector("[data-wall-art]");
   art.parentNode.style.setProperty("--lx", ((geo.short ? geo.mural.w : Math.min(geo.run.w, geo.V - geo.run.x)) / 2).toFixed(1) + "px");
   drawWall(art, Math.ceil(geo.run.w / geo.run.k), geo.short);
@@ -399,6 +409,7 @@ const hangar = createHangar(world), board = createBoard(world), claw = createCla
 const bank = createBank(world), exchange = createExchange(world), museum = createMuseum(world), coaster = createCoaster(world, { riders: () => folks.riders() });
 const blog = createBlog(desk, { data });
 const cards = createCards(world);
+const night = createNight(world), camp = createCamp(world), cinema = createCinema(world), pets = createPets(world), printer = createPrinter(world);
 let wallP = 0, panT = 0;
 
 function wallPanel(x) {

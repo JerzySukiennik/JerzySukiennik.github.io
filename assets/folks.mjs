@@ -288,6 +288,11 @@ const SAY = {
   about: ["Gzowo 34, got it."],
   mural: ["Nice wall.", "Who painted that?", "I want to spray too."],
   idle: ["What a nice day.", "La la la.", "Hmm...", "I like it here.", "Where was I going?"],
+  camp: ["Warm!", "Pass the sausages.", "I love a good fire.", "Look at the sparks!", "Who has marshmallows?", "Best seat on the plot."],
+  cinema: ["Shh, the film!", "Popcorn?", "Great picture.", "I love this part.", "Front row!"],
+  prints: ["What is it printing?", "Layer by layer...", "I want one of those."],
+  kiosk: ["Any legendaries?", "One more pack..."],
+  work: ["Busy, busy.", "On the clock!", "Almost done.", "Hard at work.", "This pays well.", "Back to it."],
 };
 
 export function createFolks(world) {
@@ -304,7 +309,7 @@ export function createFolks(world) {
   tag.hidden = true;
   world.append(tag);
 
-  const cache = new Map(), walkers = new Map();
+  const cache = new Map(), walkers = new Map(), hubs = new Map();
   let g = null, k = 2, paused = false, raf = 0, last = 0, first = true, card = null, jurekAt = 0, polling = null, draft = null;
 
   const pointAt = (s) => {
@@ -317,6 +322,35 @@ export function createFolks(world) {
   };
   const R = (a, b) => a + Math.random() * (b - a);
   const viewX = () => { const p = window.gzMap && window.gzMap.pan; return p ? p.scrollLeft : 0; };
+
+  const nearS = ([x, y]) => {
+    let best = 0, bd = Infinity;
+    g.path.pts.forEach((q, i) => { const d = Math.hypot(q[0] - x, q[1] - y); if (d < bd) { bd = d; best = i; } });
+    return g.path.len[best];
+  };
+  function jobS(F) {
+    const key = F.job.key, st = g.stations.find((x) => x.key === key);
+    const base = key === "fish" ? g.trip.s : key === "garden" ? nearS([g.garden.x + g.garden.w / 2, g.garden.y + g.garden.h]) : st ? st.s : F.s;
+    let h = 0;
+    for (let i = 0; i < F.id.length; i++) h = (h * 31 + F.id.charCodeAt(i)) >>> 0;
+    return Math.max(0, Math.min(g.path.total, base + ((h % 7) - 3) * 0.3 * g.person));
+  }
+  function freeSeat(F) {
+    const h = F.hub && hubs.get(F.hub.key);
+    if (h && h.taken.get(F.hub.seat) === F.id) h.taken.delete(F.hub.seat);
+    F.hub = null;
+  }
+  function leave(F) {
+    freeSeat(F);
+    F.sit = false; F.state = "back"; F.to = pointAt(F.s);
+    hush(F);
+  }
+  function endJob(F, t) {
+    F.job = null; F.toJob = false;
+    if (F.extra) { drop(F); return; }
+    F.state = "idle"; F.until = t + 900;
+    say(F, "Shift over!", 2000);
+  }
 
   function nearStation(x, y) {
     let best = null, bd = Infinity;
@@ -371,6 +405,7 @@ export function createFolks(world) {
   }
 
   function drop(F) {
+    freeSeat(F);
     poof(F.x, F.y - FH * k * 0.4);
     F.el.remove();
     if (F.bub) F.bub.remove();
@@ -379,7 +414,8 @@ export function createFolks(world) {
 
   function place(F) {
     const w = FW * k, h = FH * k;
-    F.el.style.transform = `translate(${Math.round(F.x - w / 2)}px,${Math.round(F.y - h + k * 2)}px)`;
+    if (!!F.sit !== !!F.sat) { F.sat = !!F.sit; F.el.classList.toggle("is-sit", F.sat); }
+    F.el.style.transform = `translate(${Math.round(F.x - w / 2)}px,${Math.round(F.y - h + k * (F.sit ? 6 : 2))}px)`;
     const z = Math.round(F.y);
     if (z !== F.z) { F.z = z; F.el.style.zIndex = z; }
     if (F.bub && F.bub.classList.contains("on")) {
@@ -393,6 +429,20 @@ export function createFolks(world) {
   function show(F, n) { if (F.fr !== n) { F.fr = n; paintFrame(F.el, F.sh, n, k); } }
 
   function next(F, t) {
+    if (F.job) { F.toJob = true; F.key = ""; F.target = jobS(F); F.state = "walk"; hush(F); return; }
+    if (F.hub) {
+      const h = hubs.get(F.hub.key);
+      if (h && h.on) { F.target = nearS(h.seats[F.hub.seat]); F.state = "walk"; return; }
+      freeSeat(F);
+    }
+    const open = [...hubs.values()].filter((h) => h.on && Math.random() < h.pull && h.seats.some((_, i) => !h.taken.has(i)));
+    if (open.length) {
+      const h = open[Math.floor(Math.random() * open.length)], free = h.seats.map((_, i) => i).filter((i) => !h.taken.has(i)), i = free[Math.floor(Math.random() * free.length)];
+      h.taken.set(i, F.id);
+      F.hub = { key: h.key, seat: i };
+      F.key = ""; F.target = nearS(h.seats[i]); F.state = "walk"; hush(F);
+      return;
+    }
     const roll = Math.random();
     if (roll < 0.58) {
       const near = g.stations.filter((st) => st.key !== F.key).sort((a, b) => Math.abs(a.s - F.s) - Math.abs(b.s - F.s));
@@ -406,6 +456,12 @@ export function createFolks(world) {
   }
 
   function arrive(F, t) {
+    if (F.toJob && F.job) { F.toJob = false; F.state = "work"; F.chat = t + R(2500, 7000); return; }
+    if (F.hub) {
+      const h = hubs.get(F.hub.key);
+      if (h && h.on) { F.state = "go"; F.to = h.seats[F.hub.seat]; return; }
+      freeSeat(F);
+    }
     F.state = "idle";
     F.until = t + (F.key ? R(3000, 6500) : R(800, 2500));
     if (F.key && Math.random() < 0.55) say(F, line(F.key), 2600);
@@ -453,6 +509,27 @@ export function createFolks(world) {
         [F.x, F.y] = pointAt(F.s);
         if (Math.abs(F.target - F.s) < 1) arrive(F, t);
         show(F, F_WALK[Math.floor(F.ph / 0.17) % 2]);
+      } else if (F.state === "go" || F.state === "back") {
+        const dx = F.to[0] - F.x, dy = F.to[1] - F.y, d = Math.hypot(dx, dy), st = speed * dt;
+        if (d <= st) {
+          F.x = F.to[0]; F.y = F.to[1];
+          if (F.state === "go") {
+            F.state = "sit"; F.sit = true; F.until = t + R(28000, 70000); F.chat = t + R(6000, 16000);
+            if (Math.random() < 0.6) say(F, line(F.hub.key), 2600);
+          } else { F.state = "idle"; F.until = t + R(400, 1400); }
+        } else { F.x += (dx / d) * st; F.y += (dy / d) * st; }
+        show(F, F.state === "sit" ? F_IDLE : F_WALK[Math.floor(F.ph / 0.17) % 2]);
+      } else if (F.state === "sit") {
+        const h = F.hub && hubs.get(F.hub.key);
+        if (t > F.until || !h || !h.on || F.job) leave(F);
+        else if (t > F.chat) { F.chat = t + R(9000, 22000); if (Math.random() < 0.5) say(F, line(F.hub.key), 2400); }
+        show(F, F_IDLE);
+      } else if (F.state === "work") {
+        if (!F.job || Date.now() > F.job.until) endJob(F, t);
+        else {
+          show(F, F_WAVE[F.side][Math.floor(F.ph / 0.5) % 2]);
+          if (t > F.chat) { F.chat = t + R(10000, 24000); say(F, line("work"), 2200); }
+        }
       } else {
         if (t > F.until) next(F, t);
         if (F.state === "wave") show(F, F_WAVE[F.side][Math.floor(F.ph / 0.22) % 2]);
@@ -480,7 +557,7 @@ export function createFolks(world) {
       cache.set(id, rec);
     }));
     if (!g) return;
-    walkers.forEach((F) => { if (!ids.includes(F.id)) drop(F); });
+    walkers.forEach((F) => { if (ids.includes(F.id)) F.extra = false; else if (F.job) F.extra = true; else drop(F); });
     ids.forEach((id) => {
       const rec = cache.get(id);
       if (!rec) return;
@@ -505,7 +582,7 @@ export function createFolks(world) {
     if (!c) return;
     const F = walkers.get(c.dataset.folk);
     if (!F) return;
-    tag.textContent = F.rec.n;
+    tag.textContent = F.rec.n + (F.job ? ", at work" : "");
     tag.hidden = false;
     tag.style.cssText = `left:${Math.round(F.x)}px;top:${Math.round(F.y + k * 2)}px;z-index:${F.z + 1}`;
   });
@@ -521,7 +598,7 @@ export function createFolks(world) {
     const age = Math.max(0, Math.round((Date.now() - F.rec.t) / 86400000));
     card.innerHTML = `<header class="tb"><span class="tb-t">${esc(F.rec.n)}</span><span class="tb-btns"><button class="tb-x" type="button" data-fk-x aria-label="Close"></button></span></header>
 <div class="fk-cb"><canvas></canvas><div><p class="fk-cn">${esc(F.rec.n)}</p>${F.rec.l ? `<p class="fk-cl">“${esc(F.rec.l)}”</p>` : ""}<p class="fk-cd">${age === 0 ? "Made today" : `Made ${age} day${age === 1 ? "" : "s"} ago`}${mine().includes(F.id) ? ", yours" : ""}</p></div></div>
-<p class="fk-ca"><button class="btn" type="button" data-fk-hi>Say hi</button><button class="btn" type="button" data-folks="make">Make your own</button><button class="btn" type="button" data-folks="index">All folks</button></p>`;
+<p class="fk-ca"><button class="btn" type="button" data-fk-hi>Say hi</button>${mine().includes(F.id) ? `<button class="btn" type="button" data-fk-work>Send to work</button>` : ""}<button class="btn" type="button" data-folks="make">Make your own</button><button class="btn" type="button" data-folks="index">All folks</button></p>`;
     paintFrame(card.querySelector("canvas"), F.sh, F_WAVE.r[0], 3);
     document.body.append(card);
     const r = card.getBoundingClientRect();
@@ -530,8 +607,78 @@ export function createFolks(world) {
     card.addEventListener("click", (e) => {
       if (e.target.closest("[data-fk-x]")) closeCard();
       else if (e.target.closest("[data-fk-hi]")) { F.state = "wave"; F.side = "r"; F.until = performance.now() + 2000; say(F, F.rec.l || line("hi"), 2400); wake(); closeCard(); }
+      else if (e.target.closest("[data-fk-work]")) workMenu(F);
+      else if (e.target.closest("[data-fk-job]")) hire(F, e.target.closest("[data-fk-job]"));
     });
   }
+  async function workMenu(F) {
+    const box = card.querySelector(".fk-ca"), B = window.gzBank;
+    box.innerHTML = `<span class="fk-wn">Asking around the plot...</span>`;
+    try {
+      await B.ensure();
+      const j = await B.api("/work");
+      if (!card || !box.isConnected) return;
+      const mins = (ms) => { const m = Math.max(1, Math.ceil((ms - Date.now()) / 60000)); return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`; };
+      if (j.job) {
+        box.innerHTML = j.job.done ? `<span class="fk-wn">${esc(j.job.name)} is back from work.</span><button class="btn" type="button" data-work-collect>Collect the pay</button>`
+          : `<span class="fk-wn">${esc(j.job.name)} is out ${esc(j.job.what.toLowerCase())}, back in ${mins(j.job.until)}. One shift at a time.</span>`;
+        return;
+      }
+      const hrs = j.hours >= 1 ? `${Math.round(j.hours)} hours` : `${Math.round(j.hours * 3600)} seconds`;
+      box.innerHTML = `<span class="fk-wn">A shift costs ${j.cost} szyszki and takes ${hrs}. ${esc(F.rec.n)} comes back with the pay: usually more than it cost, sometimes less.</span>` +
+        Object.entries(j.jobs).map(([key, name]) => `<button class="btn" type="button" data-fk-job="${key}">${esc(name)}</button>`).join("");
+    } catch (err) { if (box.isConnected) box.innerHTML = `<span class="fk-wn">${esc(err.message)}</span>`; }
+  }
+
+  async function hire(F, btn) {
+    const B = window.gzBank, box = card.querySelector(".fk-ca");
+    btn.disabled = true;
+    try {
+      await B.api("/work/hire", { folk: F.id, job: btn.dataset.fkJob });
+      B.toast(`${F.rec.n} went to work. Come back later for the pay.`);
+      closeCard();
+      B.poll();
+    } catch (err) { if (box.isConnected) box.insertAdjacentHTML("afterbegin", `<span class="fk-wn fk-err">${esc(err.message)}</span>`); btn.disabled = false; }
+  }
+
+  async function setJobs(list) {
+    const jobs = Array.isArray(list) ? list : [], live = new Set(jobs.map((j) => j.folk));
+    walkers.forEach((F) => { if (F.job && !live.has(F.id)) endJob(F, performance.now()); });
+    if (!g) return;
+    for (const j of jobs) {
+      if (!walkers.has(j.folk)) {
+        let rec = cache.get(j.folk);
+        if (!rec) {
+          const [f, w] = await Promise.all([get(`${PLOT}/folks/${j.folk}.json`), get(`${PLOT}/wear/${j.folk}.json`)]);
+          if (!f) continue;
+          rec = parse(f);
+          rec.w = parseWear(w);
+          rec.on = 0;
+          cache.set(j.folk, rec);
+        }
+        if (!walkers.has(j.folk)) spawn(j.folk, rec, "random").extra = true;
+      }
+      const F = walkers.get(j.folk);
+      if (F.job) { F.job.until = j.until; continue; }
+      F.job = { key: j.job, until: j.until };
+      if (F.state === "sit") leave(F);
+      else if (F.state === "idle" || F.state === "wave") F.until = 0;
+    }
+    wake();
+  }
+  addEventListener("gz:pulse", (e) => { if (e.detail) setJobs(e.detail.jobs); });
+  addEventListener("gz:hub", (e) => {
+    const d = e.detail, h = hubs.get(d.key) || { key: d.key, taken: new Map() };
+    h.on = !!d.on; h.seats = d.seats; h.pull = d.pull || 0.34;
+    hubs.set(d.key, h);
+    walkers.forEach((F) => {
+      if (!F.hub || F.hub.key !== d.key) return;
+      if (F.state === "sit") { if (h.on) { [F.x, F.y] = h.seats[F.hub.seat]; place(F); } else leave(F); }
+      else if (F.state === "go") F.to = h.seats[F.hub.seat];
+    });
+    wake();
+  });
+
   world.addEventListener("click", (e) => {
     const c = e.target.closest(".fk");
     if (!c) return;
@@ -858,6 +1005,7 @@ export function createFolks(world) {
       walkers.forEach((F) => {
         F.s = Math.min(F.s, g.path.total);
         F.target = Math.min(F.target, g.path.total);
+        if (F.state === "sit" || F.state === "go" || F.state === "back") { freeSeat(F); F.sit = false; F.state = "idle"; F.until = 0; }
         [F.x, F.y] = pointAt(F.s);
         F.fr = -1;
         show(F, F_IDLE);

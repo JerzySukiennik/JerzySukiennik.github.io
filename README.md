@@ -60,6 +60,23 @@ The Card Kiosk (`assets/sfx/cards/`) uses only CC0 1.0 recordings from freesound
 | legend.mp3 | Small Gong_Soft Hit_RAW and wind chimes - single 04 | cabled_mess, Anthousai | https://freesound.org/s/369428/ and https://freesound.org/s/398496/ |
 | ding.mp3 | ding2 | MashedTatoes2 | https://freesound.org/s/515643/ |
 
+The campfire (`assets/sfx/camp/`) and the animals (`assets/sfx/pets/`) also use only CC0 1.0 recordings from freesound.org, cut and normalised with `redesign/Niepotrzebne/art/plot2/audio2.py`:
+
+| File | Recording | Author | Source |
+| --- | --- | --- | --- |
+| camp/fire.mp3 | fire small campfire crackling short +air tone | kyles | https://freesound.org/s/637523/ |
+| pets/meow.mp3 | New Cat Meow 1 | steffcaffrey | https://freesound.org/s/479272/ |
+| pets/bark.mp3 | single bark - small to medium dog | haulaway | https://freesound.org/s/630648/ |
+| pets/woof.mp3 | Single Dog Bark | kwahmah_02 | https://freesound.org/s/277058/ |
+| pets/baa.mp3 | mini Goat Baa | satoristudios3 | https://freesound.org/s/677218/ |
+
+## Plot life
+
+- `assets/night.mjs` follows the real sun over Gzowo (52.67 N, 21.12 E). `?time=21:30` previews an hour, `?time=now` clears it.
+- `assets/cinema/` holds small copies of the finished reels and films from `~/Documents/Gzowo Labs` (480 x 270 or 270 x 480, with their music) and `program.mp4`, the silent 160 x 90 loop for the screen on the map. `redesign/Niepotrzebne/art/plot2/films.sh` rebuilds them; the order and lengths are listed in `assets/cinema.mjs`.
+- The campfire, cinema and print stand sprites were generated with `google/gemini-3-pro-image` and cut out of magenta (`redesign/Niepotrzebne/art/plot2/`). The four animals are pixel frames written by hand in `pets.py` there.
+- New garden kinds need a rules change in the Realtime Database, so the harvest uses the eight existing plants.
+
 Gallery cards are made by the `gzowo-bank` worker itself: a drawing Haiku buys from the wall (its picture is kept in the `wall_art` table) or a museum painting that gets sold becomes a card, the artist gets the first copy and the score Haiku gave sets the rarity. The other cards come from `data/cards.json` (photo cards from the Gzowo Dataset and pixel cards from the map sprites) plus every project that has a picture; `tools/build.mjs` writes the catalog to `assets/cards.json`, and the `gzowo-bank` worker reads it from there to fill the packs.
 
 The big wall at `/wall/` (`assets/wall3d/`) uses only CC0 1.0 recordings from freesound.org, cut into loops and loudness-normalised with ffmpeg:

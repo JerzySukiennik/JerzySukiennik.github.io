@@ -13,9 +13,10 @@ export const SPR = {
   tree3: [82, 90], pine: [85, 118], bush: [64, 63], lamp: [24, 97], bench: [99, 49], flag: [50, 96], windsock: [50, 78], gull: [66, 82],
   dock: [200, 60], water: [491, 56], hangar: [400, 267], board: [190, 173], claw: [92, 179], booth: [150, 145], dish: [249, 85], sailboat: [93, 104],
   exchange: [330, 323], museum: [380, 200], store: [190, 159], station: [72, 300], starnet: [250, 232], kiosk: [170, 252],
+  camp: [250, 124], cinema: [260, 216], prints: [190, 164],
 };
 export const TICKER = { x: 20 / 330, y: 135 / 323, w: 291 / 330, h: 21 / 323 };
-const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station", "kiosk"];
+const DOM = ["wall", "wallS", "hangar", "board", "claw", "booth", "sailboat", "exchange", "museum", "store", "station", "kiosk", "camp", "cinema", "prints"];
 export const HANGAR_DOOR = { x: 117 / 400, y: 147 / 267, w: 166 / 400, h: 116 / 267, floor: 251 / 267 };
 export const FACE = { x: 2 / 404, y: (13 + TALL - UP_ROWS) / WALL_ROWS, w: 400 / 404, h: (129 + UP_ROWS) / WALL_ROWS };
 const FACE_S = { x: 2 / 404, y: 13 / 147, w: 400 / 404, h: 129 / 147 };
@@ -84,6 +85,7 @@ function land(V, H) {
     exchange: at("exchange", 2.2, 0.712, 0.95), museum: at("museum", 2.49, 0.712, 0.95), store: at("store", 2.725, 0.712, 0.9), coaster: at("station", 2.885, 0.712, 0.95),
     starnet: at("starnet", 1.457, 0.928, 0.95),
     kiosk: at("kiosk", 2.64, 0.928, 0.72),
+    camp: at("camp", 1.19, 0.9, 0.8), prints: at("prints", 1.84, 0.925, 0.85), cinema: at("cinema", 2.31, 0.915, 0.8),
   };
   const wallTop = 0.17 * H, wallBase = 0.585 * H, wk = (wallBase - wallTop) / WALL_ROWS;
   const wall = { sprite: "wall", x: 0.012 * V, y: wallTop, w: 404 * wk, h: WALL_ROWS * wk, k: wk };
@@ -122,6 +124,7 @@ function tall(V) {
     coaster: at("station", 1062, 585, 0.95), exchange: at("exchange", 960, 995, 0.95), museum: at("museum", 985, 1335, 0.95), store: at("store", 975, 1655, 0.95),
     starnet: at("starnet", 565, 1992, 0.9),
     kiosk: at("kiosk", 975, 1975, 0.82),
+    camp: at("camp", 535, 1290, 0.8), prints: at("prints", 600, 1558, 0.85), cinema: at("cinema", 955, 1500, 0.85),
   };
   const wall = sprite("wallS", X(230), Y(2330), X(320) / 404);
   const path = withLengths(spline([[195, 478], [186, 560], [186, 650], [200, 760], [204, 860], [188, 920], [140, 932], [90, 935], [64, 960], [62, 1040],
@@ -342,7 +345,6 @@ async function paintHalf(g, img, half, dpr, pause) {
   }
   const hit = (o) => o.x < x1 && o.x + o.w > x0;
   const draw = (o) => { const im = img[o.sprite]; if (im && hit(o)) c.drawImage(im, o.x, o.y, o.w, o.h); };
-  draw(g.sun);
   c.fillStyle = PAL.hills;
   c.beginPath(); c.moveTo(x0, g.horizon);
   for (let x = x0; x <= x1 + 8; x += 8) c.lineTo(x, g.horizon - (18 + Math.sin(x / g.V * 7) * 10 + Math.sin(x / g.V * 23) * 4) * g.s);
