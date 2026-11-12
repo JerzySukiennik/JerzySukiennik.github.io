@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "chocolate-orange",
+      "name": "Chocolate Orange",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "chocolate-orange.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/chocolate-orange",
+      "blurb": "Open a chocolate orange by hand: tear the lid, peel the foil, tap it on the table and feed the segments to a hungry head.",
+      "body": [
+        "Chocolate Orange is one box on a white table. Turn it around, find the OPEN HERE tab and pull until the glue lets go. Fold the flaps out, slide the ball out in its clear plastic cradle, peel the sticker, pull the foil down, then give the ball a couple of firm taps on the table so the twenty segments come apart.",
+        "The box is the real one: its printed sides are photos of an actual carton, straightened and cut out so the foil ball shows through the windows. The foil is a single sheet bent in a shader, orange outside and silver inside, and it ends up on the table as a crinkled square. Every sound is a real recording, from tearing cardboard to snapping chocolate.",
+        "Try this first: do not rush the foil. Pull it down on one side and watch the rest slide off. Then pick up a segment and bring it close to the head that slides in. It follows the chocolate with its eyes, opens wide, bites twice, and will happily eat all twenty."
+      ],
+      "stack": [
+        "JavaScript",
+        "three.js",
+        "WebGL2",
+        "GLSL",
+        "Web Audio"
+      ],
+      "image": "project-images/chocolate-orange.webp"
+    },
+    {
+      "hidden": false,
       "slug": "interstellar",
       "name": "Interstellar",
       "category": "Game",
