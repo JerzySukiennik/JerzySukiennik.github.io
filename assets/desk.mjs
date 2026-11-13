@@ -572,7 +572,7 @@ function init() {
   });
   data().then((d) => {
     const news = (V.newsWin(d).match(/<ul class="news">[\s\S]*?<\/ul>/) || [""])[0], tag = V.esc(d.site.tagline).replace(/\. /g, ".<br>");
-    blimps.notes({ welcome: `<img class="bl-logo" src="/assets/gzowo-labs-fire.webp" alt="Gzowo Labs" width="515" height="93"><span class="bl-tag">${tag}</span>`, news: `<b class="bl-h">News</b>${news}` });
+    blimps.notes({ welcome: `<img class="bl-logo" src="/assets/gzowo-labs-logo-black.svg" alt="Gzowo Labs" width="430" height="67"><span class="bl-tag">${tag}</span>`, news: `<b class="bl-h">News</b>${news}` });
   }).catch(() => {});
   desk.classList.add("is-ready");
 }
