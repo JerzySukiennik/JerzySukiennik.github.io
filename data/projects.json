@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "candy-wall",
+      "name": "Candy Wall",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "candy-wall.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/candy-wall",
+      "blurb": "Scoop sweets from a giant candy wall, then squeeze, slice and snap every piece and feed it to a very hungry head.",
+      "body": [
+        "Candy Wall is a dark studio with one wall of 48 clear bins, each full of a different sweet: gummy bears, sour belts, jawbreakers, liquid gems, chocolate bars, lollipops. Step up to a bin, its lid swings open, and you dig in with a rainbow metal scoop. Pour the heap into a white flower tray with nine compartments, then carry the tray over to the table.",
+        "Every sweet is a small hand-scripted model with its own hardness, bounce, stickiness, taste and sound. Cutting is real geometry: the knife splits the actual mesh, so fillings, wafer layers and jawbreaker rings show up wherever you slice. Liquid centres drain out and pool on the table, chocolate snaps along its grooves, hard candy shatters. All sound effects are real recordings.",
+        "Try this first: scoop some Liquid Gems, saw one in half and watch the syrup run. Then pick up something sour with the chopsticks and bring it to the head that slides in. It puckers at sour sweets, turns red and pants at hot ones, crackles with popping candy, and tells you what it thinks."
+      ],
+      "stack": [
+        "JavaScript",
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "GLSL",
+        "Web Audio"
+      ],
+      "image": "project-images/candy-wall.webp"
+    },
+    {
+      "hidden": false,
       "slug": "chocolate-orange",
       "name": "Chocolate Orange",
       "category": "Game",
