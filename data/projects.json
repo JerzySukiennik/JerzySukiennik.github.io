@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "lidar-point-cloud-001",
+      "name": "LiDAR Point Cloud 001",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "lidar.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/lidar",
+      "blurb": "Explore a pitch-black facility you can only see by scanning it, while something blind hunts you by sound.",
+      "body": [
+        "A multiplayer horror game played in total darkness. You carry a lidar scanner, and the world only exists where its points land: hold the left mouse button for a fast stream of single points, or charge the right one and release a pulse that throws thousands of them in a cone. Everyone who presses Play drops into the same facility, and every point anyone scans shows up for everybody. White points are the world, green ones are stairs, blue ones are other operators and red ones are the thing that lives down there.",
+        "The creature is blind and hunts by sound. It hears the scanner, your footsteps and, if you allow the microphone, how loud you are in your own room. Only loudness is measured on your device, nothing is recorded or sent. Scanning a person or the creature leaves a frozen trace where the body stood, and it fades within three seconds, so you see where something was and never where it is now. The facility has five generated levels, from a station down to a cave floor. Whoever reaches the bottom ends the round, and a new map is built for everyone.",
+        "No points travel over the network. A scan is sent as a tiny event with a pose, a power and a seed, and every browser casts the same rays against the same generated world. The cloud holds up to 900,000 points in one GPU buffer, the sounds are real recordings, and it runs as plain ES modules with no build step.",
+        "Try this first: put on headphones, fire a charged pulse at a wall right in front of you and then into an open room to see the difference. When the points around you start to tremble, stop scanning and stand still. You need a computer with a keyboard and mouse."
+      ],
+      "stack": [
+        "three.js",
+        "three-mesh-bvh",
+        "GLSL",
+        "Firebase Realtime Database",
+        "Web Audio"
+      ],
+      "image": "project-images/lidar-point-cloud-001.webp"
+    },
+    {
+      "hidden": false,
       "slug": "candy-wall",
       "name": "Candy Wall",
       "category": "Game",
