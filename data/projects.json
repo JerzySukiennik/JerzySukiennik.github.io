@@ -3,6 +3,29 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "costa-del-gzowo",
+      "name": "Costa del Gzowo",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "costa.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/costa-del-gzowo",
+      "blurb": "A golden-hour slice of Florida to walk, drive and fly around: a convertible, a thruster Roadster and a helicopter.",
+      "body": [
+        "A small open world in the browser. A river bridge on the Florida coast at golden hour, tall meadows, palms and the little town of Gzowo Springs with shop fronts, murals, a motel and a rocket on the plaza. You walk around as Dario or as Jurek himself, open the car door, sit down and drive off.",
+        "The picture comes from a custom HDR pipeline on three.js: cascaded sun shadows, ambient occlusion, volumetric fog, temporal anti-aliasing and a river that splashes and ripples under everything that touches it. Tall grass bends in rolling gusts and remembers where wheels, feet and rotor wash pressed it down. Cars crumple, lose bumpers, doors and wheels, catch fire and end as a charred wreck. Jurek's head is a Gaussian splat scan riding on an animated body.",
+        "Try this first: drive the convertible through the meadow and look back at your tracks. Then open the menu and pick the Roadster in the garage: Space lifts it off on cold-gas jets and it hovers low over the river. The Kestrel helicopter starts its turbine when you sit down, Space climbs, W flies and C lands it softly. Q and E tune the radio, where Springs Radio plays the game's own soundtrack."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "WebGL2",
+        "Web Audio"
+      ],
+      "image": "project-images/costa-del-gzowo.webp"
+    },
+    {
+      "hidden": false,
       "slug": "lidar-point-cloud-001",
       "name": "LiDAR Point Cloud 001",
       "category": "Game",
