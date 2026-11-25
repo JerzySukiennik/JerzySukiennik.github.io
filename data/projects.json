@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "babka",
+      "name": "babka.mp4",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "babka.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/babka",
+      "blurb": "Bake a chocolate babka in eight gestures while the video file it lives in falls apart into datamosh.",
+      "body": [
+        "An interactive kitchen video with its keyframes ripped out. You drag the bowl, crack eggs, whisk, pour melted chocolate, bake the loaf and tear it open, and every move corrupts the picture the way a datamoshed clip does: old pixels get dragged along by new motion, bowls leave stacks of copies behind them, colours leak and blocks land in the wrong place.",
+        "The datamosh is real, not a filter. Each frame the scene also renders its motion vectors, and the image you see is predicted from the previous one along 16 pixel blocks plus the residual of the clean frames, like a P-frame in a video codec. Drop the residual and the scene changes without a keyframe: the oven pushes the pixels of the kitchen around until the new picture bleeds through.",
+        "The sound is a cut-up meme collage played from an audio worklet deck, so whisking in circles scratches it like a turntable and sawing with the knife drags it back and forth. Recorded kitchen foley, duck quacks, a falling metal pipe and Windows 98 error chimes cut in on top.",
+        "Try this first: on the title screen run the mouse across the text and watch it smear. At any point hold Space, or touch with two fingers, to throw away every keyframe at once. When an error window pops up, drag it around for the frozen-window trail, or press OK and see what happens."
+      ],
+      "stack": [
+        "three.js",
+        "WebGL",
+        "Web Audio",
+        "AudioWorklet",
+        "earshot"
+      ],
+      "image": "project-images/babka.webp"
+    },
+    {
+      "hidden": false,
       "slug": "costa-del-gzowo",
       "name": "Costa del Gzowo",
       "category": "Game",

@@ -1,0 +1,1 @@
+{"wait": 2500, "steps": [], "note": "shot.mjs renders WebGL without a GPU, which is too slow for the mosh. The published frame comes from Babka/Niepotrzebne/tools/play.mjs (Metal GPU) on the live URL: title screen, cursor dragged across the left half of the title, cursor hidden, 1200x900. Set it with shot.mjs set --frame."}
