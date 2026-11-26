@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "hoodoo",
+      "name": "Hoodoo",
+      "category": "Web app",
+      "status": "live",
+      "year": "2026",
+      "url": "hoodoo.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/hoodoo",
+      "blurb": "Build landscapes that render like late-90s Bryce art: fractal mountains, chrome spheres, mirror water and hazy skies.",
+      "body": [
+        "Hoodoo is a landscape raytracer in the browser that brings back the look of Bryce 3D renders from the late nineties: fractal mountains and red mesas, water that mirrors the sky in long streaks, chrome and glass spheres, checkerboards running to the horizon and haze that swallows the far ranges. The interface around it is new: a dark, quiet editor with a scene list, an inspector and floating labs for terrain, materials and the sky.",
+        "Nothing is copied from the original program. We rebuilt the techniques that gave it that look and tuned them against real Bryce renders: terrains are traced exactly through a pyramid of maximum heights, light bounces up to seven times through reflections and refractions, textures are procedural, and the sky has haze, ground fog, flat cumulus clouds, a moon with stars, a rainbow and a halo. Press Render and the picture refines in the classic passes, from big blocks down to sharp pixels and anti-aliasing.",
+        "Try this first: open the menu, pick Red Mesa or Checker Infinity, drag the sun around the dial and press Render. Then press Describe scene and type something like a Martian canyon at sunset with a chrome sphere over the water: Claude builds the whole scene as a proposal you can keep, refine or discard. Keyframe the camera and the sun and the timeline exports the flight as an MP4."
+      ],
+      "stack": [
+        "WebGL2",
+        "GLSL",
+        "JavaScript",
+        "WebCodecs",
+        "Cloudflare Workers",
+        "Claude"
+      ],
+      "image": "project-images/hoodoo.webp"
+    },
+    {
+      "hidden": false,
       "slug": "breakpad",
       "name": "Breakpad",
       "category": "Experiment",
