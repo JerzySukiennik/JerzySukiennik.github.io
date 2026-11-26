@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "breakpad",
+      "name": "Breakpad",
+      "category": "Experiment",
+      "status": "live",
+      "year": "2026",
+      "url": "breakpad.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/breakpad",
+      "blurb": "Finger-drum jungle and drum and bass on 32 pads while chords, sub bass and vinyl crackle roll underneath.",
+      "body": [
+        "Breakpad is a pad instrument for playing drum and bass with your fingers, the way producers do it on an MPC. Press Space and a backing track starts: chords, a bass line and an atmosphere loop. Then you play the drums on top, the left hand on sixteen drum pads, the right hand on eight chops of a real breakbeat plus vocals, sirens, scratches and a rewind.",
+        "There are nine styles, each with its own tempo, break, bass and chords: Liquid, Jungle 94, Neurofunk, Atmospheric, Jump Up, Halftime, Rollers, Darkstep and Hardcore 92. Every sample is a real CC0 recording, from the VCSL and VSCO 2 libraries to breaks found on Freesound, and each break is cut into chops automatically so every pad starts exactly on a kick, a snare or a hat.",
+        "Try this first: pick Jungle 94, press Space, hold Shift and keep a finger on the snare for a 1/16 roll, press Enter for a breakdown and again for the drop, then hit Rewind on P. The Mac version in the repo turns the whole trackpad into an 8 by 4 grid of pads and puts the effects on the Touch Bar, so you can drum with all ten fingers."
+      ],
+      "stack": [
+        "Web Audio",
+        "JavaScript",
+        "Swift",
+        "WebKit",
+        "NSTouch"
+      ],
+      "image": "project-images/breakpad.webp"
+    },
+    {
+      "hidden": false,
       "slug": "gwiazdka",
       "name": "Gwiazdka",
       "category": "Game",
