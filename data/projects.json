@@ -3,6 +3,31 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "battle-with-ideas",
+      "name": "Battle with Ideas",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "battle-with-ideas.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/battle-with-ideas",
+      "blurb": "Type any idea, in Polish or English, and Claude sculpts it into the arena: sharks, tanks, tornadoes, spacesuits.",
+      "body": [
+        "A wobbly ragdoll party brawler on a floating island. The Great Boredom has turned the world into a grey pencil sketch and the only weapon left is imagination: press Enter, type anything and it joins the fight a few seconds later. A shark with lasers chases your friends, a tornado full of sharks sweeps the island, a spacesuit makes you float.",
+        "Claude Haiku turns the text into a recipe: a toy-like sculpture built from rounded primitives plus a behaviour, from attacks and movement to vehicle seats and outfits strapped to the bones of your character. Every new idea goes into a shared world Book, so the first person to think of something gets the credit and everyone after summons it instantly. One sentence with P repaints the whole island, its colours and its floor physics.",
+        "Try this first: open Practice, type \"tornado z rekinami\" and step back. Then type \"skafander dla mnie\" and jump. Online it is up to six Thinkers in free for all or teams, and in co-op you hold the last Spark against ten waves of the Boredom."
+      ],
+      "stack": [
+        "three.js",
+        "Rapier",
+        "Claude Haiku 5.5",
+        "Cloudflare Workers",
+        "Firebase Realtime Database",
+        "WebRTC"
+      ],
+      "image": "project-images/battle-with-ideas.webp"
+    },
+    {
+      "hidden": false,
       "slug": "babka",
       "name": "babka.mp4",
       "category": "Experiment",
