@@ -3,6 +3,30 @@
   "projects": [
     {
       "hidden": false,
+      "slug": "gwiazdka",
+      "name": "Gwiazdka",
+      "category": "Game",
+      "status": "live",
+      "year": "2026",
+      "url": "gwiazdka.gzowo.fun",
+      "repo": "https://github.com/JerzySukiennik/gwiazdka",
+      "blurb": "Carry the first star of Christmas Eve over Gzowo in a model rocket and play Silent Night on the way up.",
+      "body": [
+        "Gwiazdka is a Christmas present from Claude to Jurek. In Poland nobody sits down to the Christmas Eve supper until the first star appears, and this year the clouds over Gzowo hide it. The star waits in a wrapped box, and the Gzofajfus Classic Mk V carries it up from the launch site next to the house.",
+        "The sky is a sheet of music. Every golden star on the way up is one note of Silent Night: its height is the moment it sounds and its place from left to right is the key, so a clean flight plays the melody in time on a real grand piano while the left hand plays along. A small keyboard along the bottom lights up with each note.",
+        "Try this first: open the box, hold to launch and steer through the clouds without missing a note. At the top the parachute opens on the first try, the star takes its place, and the lights come on in Gzowo."
+      ],
+      "stack": [
+        "JavaScript",
+        "three.js",
+        "WebGL",
+        "GLSL",
+        "Web Audio"
+      ],
+      "image": "project-images/gwiazdka.webp"
+    },
+    {
+      "hidden": false,
       "slug": "battle-with-ideas",
       "name": "Battle with Ideas",
       "category": "Game",
